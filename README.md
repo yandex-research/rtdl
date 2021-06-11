@@ -97,10 +97,10 @@ The instructions are the same as for the PyTorch environment (including installa
 **LICENSE**: _by downloading our dataset you accept licenses of all its components. We
 do not impose any new restrictions in addition to those licenses. You can find the list
 of sources in the section "References" of our paper._
-1. Download the data: [link](https://www.dropbox.com/s/n21wf1swu484jn5/revisiting_tabular_dl_data.tar.gz?dl=1)
-2. Move the archive to the root of the repository: `mv revisiting_tabular_dl_data.tar.gz $PROJECT_DIR`
+1. Download the data: `wget https://www.dropbox.com/s/o53umyg6mn3zhxy/rtdl_data.tar.gz?dl=1`
+2. Move the archive to the root of the repository: `mv rtdl_data.tar.gz $PROJECT_DIR`
 3. Go to the root of the repository: `cd $PROJECT_DIR`
-4. Unpack the archive: `tar -xvf revisiting_tabular_dl_data.tar.gz`
+4. Unpack the archive: `tar -xvf rtdl_data.tar.gz`
 
 ## 4. Tutorial (how to reproduce results)
 *This section only provides specific commands with few comments. After completing the tutorial, we recommend checking the next section for better understanding of how to work with the repository. It will also help to better understand the tutorial.*
