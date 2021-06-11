@@ -95,7 +95,8 @@ def train_eval_gbdt(model, x, y):
 
 
 def train_eval_net(model, X, Y, lr=1e-4):
-    apply_model = lambda x: model(x, x_cat=None)
+    def apply_model(x):
+        return model(x, x_cat=None)
 
     @torch.no_grad()
     def evaluate(parts):
