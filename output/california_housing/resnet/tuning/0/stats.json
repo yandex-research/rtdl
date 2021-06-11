@@ -1,0 +1,151 @@
+{
+    "config": {
+        "base_config": {
+            "data": {
+                "normalization": "quantile_normal",
+                "path": "data/california_housing",
+                "y_policy": "mean_std"
+            },
+            "model": {
+                "activation": "relu",
+                "normalization": "batchnorm"
+            },
+            "seed": 0,
+            "training": {
+                "batch_size": 256,
+                "eval_batch_size": 8192,
+                "n_epochs": 1000000000,
+                "optimizer": "adamw",
+                "patience": 16
+            }
+        },
+        "optimization": {
+            "options": {
+                "n_trials": 100
+            },
+            "sampler": {
+                "seed": 0
+            },
+            "space": {
+                "model": {
+                    "d": [
+                        "int",
+                        64,
+                        512
+                    ],
+                    "d_hidden_factor": [
+                        "uniform",
+                        1.0,
+                        4.0
+                    ],
+                    "hidden_dropout": [
+                        "uniform",
+                        0.0,
+                        0.5
+                    ],
+                    "n_layers": [
+                        "int",
+                        1,
+                        8
+                    ],
+                    "residual_dropout": [
+                        "?uniform",
+                        0.0,
+                        0.0,
+                        0.5
+                    ]
+                },
+                "training": {
+                    "lr": [
+                        "loguniform",
+                        1e-05,
+                        0.01
+                    ],
+                    "weight_decay": [
+                        "?loguniform",
+                        0.0,
+                        1e-06,
+                        0.001
+                    ]
+                }
+            }
+        },
+        "program": "bin/resnet.py"
+    },
+    "environment": {
+        "devices": {
+            "CUDA_VISIBLE_DEVICES": "0",
+            "torch.version.cuda": "10.1",
+            "torch.backends.cudnn.version()": 7603,
+            "torch.cuda.nccl.version()": 2708,
+            "driver": "418.67",
+            "0": {
+                "name": "Tesla V100-PCIE-32GB",
+                "total_memory": 34058272768
+            }
+        }
+    },
+    "best_stats": {
+        "dataset": "california_housing",
+        "algorithm": "resnet",
+        "config": {
+            "data": {
+                "normalization": "quantile_normal",
+                "path": "data/california_housing",
+                "y_policy": "mean_std"
+            },
+            "model": {
+                "activation": "relu",
+                "d": 75,
+                "d_hidden_factor": 2.556748413716543,
+                "hidden_dropout": 0.2694634278997986,
+                "n_layers": 8,
+                "normalization": "batchnorm",
+                "residual_dropout": 0.0896738699587471
+            },
+            "seed": 0,
+            "training": {
+                "batch_size": 256,
+                "eval_batch_size": 8192,
+                "lr": 0.00471425999917588,
+                "n_epochs": 1000000000,
+                "optimizer": "adamw",
+                "patience": 16,
+                "weight_decay": 0.0
+            }
+        },
+        "environment": {
+            "devices": {
+                "CUDA_VISIBLE_DEVICES": "0",
+                "torch.version.cuda": "10.1",
+                "torch.backends.cudnn.version()": 7603,
+                "torch.cuda.nccl.version()": 2708,
+                "driver": "418.67",
+                "0": {
+                    "name": "Tesla V100-PCIE-32GB",
+                    "total_memory": 34058272768
+                }
+            }
+        },
+        "epoch_size": 52,
+        "n_parameters": 233429,
+        "best_epoch": 133,
+        "metrics": {
+            "train": {
+                "rmse": 0.41433896622750604,
+                "score": -0.41433896622750604
+            },
+            "val": {
+                "rmse": 0.4829991327641388,
+                "score": -0.4829991327641388
+            },
+            "test": {
+                "rmse": 0.476248908508118,
+                "score": -0.476248908508118
+            }
+        },
+        "time": "00h 02m 32s",
+        "trial_id": 30
+    },
+    "time": "02h 32m 50s"
+}

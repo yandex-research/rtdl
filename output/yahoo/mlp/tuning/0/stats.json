@@ -1,0 +1,144 @@
+{
+    "config": {
+        "base_config": {
+            "data": {
+                "normalization": "quantile_normal",
+                "path": "data/yahoo",
+                "y_policy": "mean_std"
+            },
+            "model": {},
+            "seed": 0,
+            "training": {
+                "batch_size": 1024,
+                "eval_batch_size": 8192,
+                "n_epochs": 1000000000,
+                "optimizer": "adamw",
+                "patience": 16
+            }
+        },
+        "optimization": {
+            "options": {
+                "n_trials": 100
+            },
+            "sampler": {
+                "seed": 0
+            },
+            "space": {
+                "model": {
+                    "d_layers": [
+                        "$mlp_d_layers",
+                        1,
+                        16,
+                        1,
+                        1024
+                    ],
+                    "dropout": [
+                        "?uniform",
+                        0.0,
+                        0.0,
+                        0.5
+                    ]
+                },
+                "training": {
+                    "lr": [
+                        "loguniform",
+                        1e-05,
+                        0.01
+                    ],
+                    "weight_decay": [
+                        "?loguniform",
+                        0.0,
+                        1e-06,
+                        0.001
+                    ]
+                }
+            }
+        },
+        "program": "bin/mlp.py"
+    },
+    "environment": {
+        "devices": {
+            "CUDA_VISIBLE_DEVICES": "0",
+            "torch.version.cuda": "10.1",
+            "torch.backends.cudnn.version()": 7603,
+            "torch.cuda.nccl.version()": 2708,
+            "driver": "418.67",
+            "0": {
+                "name": "Tesla V100-PCIE-32GB",
+                "total_memory": 34058272768
+            }
+        }
+    },
+    "best_stats": {
+        "dataset": "yahoo",
+        "algorithm": "mlp",
+        "config": {
+            "data": {
+                "normalization": "quantile_normal",
+                "path": "data/yahoo",
+                "y_policy": "mean_std"
+            },
+            "model": {
+                "d_layers": [
+                    666,
+                    105,
+                    105,
+                    105,
+                    105,
+                    105,
+                    105,
+                    105,
+                    105,
+                    105,
+                    105,
+                    105,
+                    105,
+                    427
+                ],
+                "dropout": 0.0
+            },
+            "seed": 0,
+            "training": {
+                "batch_size": 1024,
+                "eval_batch_size": 8192,
+                "lr": 0.0004306606804403568,
+                "n_epochs": 1000000000,
+                "optimizer": "adamw",
+                "patience": 16,
+                "weight_decay": 1.731133664126102e-05
+            }
+        },
+        "environment": {
+            "devices": {
+                "CUDA_VISIBLE_DEVICES": "0",
+                "torch.version.cuda": "10.1",
+                "torch.backends.cudnn.version()": 7603,
+                "torch.cuda.nccl.version()": 2708,
+                "driver": "418.67",
+                "0": {
+                    "name": "Tesla V100-PCIE-32GB",
+                    "total_memory": 34058272768
+                }
+            }
+        },
+        "epoch_size": 463,
+        "n_parameters": 704355,
+        "best_epoch": 5,
+        "metrics": {
+            "train": {
+                "rmse": 0.7236319384515905,
+                "score": -0.7236319384515905
+            },
+            "val": {
+                "rmse": 0.7848791949375326,
+                "score": -0.7848791949375326
+            },
+            "test": {
+                "rmse": 0.7735710134069503,
+                "score": -0.7735710134069503
+            }
+        },
+        "time": "00h 03m 11s",
+        "trial_id": 66
+    }
+}

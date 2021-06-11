@@ -1,0 +1,62 @@
+{
+    "dataset": "data/microsoft",
+    "algorithm": "tabnet",
+    "config": {
+        "data": {
+            "normalization": "quantile_normal",
+            "path": "data/microsoft",
+            "y_policy": "mean_std"
+        },
+        "model": {
+            "batch_momentum": 0.95,
+            "feature_dim": 64,
+            "num_decision_steps": 8,
+            "relaxation_factor": 1.563880969089764,
+            "virtual_batch_size": 512
+        },
+        "seed": 6,
+        "training": {
+            "batch_size": 16384,
+            "display_steps": 100,
+            "epochs": 50000,
+            "grad_thresh": 2000.0,
+            "patience": 16,
+            "schedule": {
+                "decay_rate": 0.7703369252398359,
+                "decay_steps": 2000,
+                "learning_rate": 0.00422820765879952
+            },
+            "sparsity_loss_weight": 1.479692699969368e-05
+        }
+    },
+    "environment": {
+        "devices": {
+            "CUDA_VISIBLE_DEVICES": "0",
+            "torch.version.cuda": "10.2",
+            "torch.backends.cudnn.version()": 7605,
+            "torch.cuda.nccl.version()": 2708,
+            "driver": "450.102.04",
+            "0": {
+                "name": "GeForce GTX 1080 Ti",
+                "total_memory": 11720130560
+            }
+        }
+    },
+    "batch_size": 16384,
+    "epoch_size": 44,
+    "best_epoch": 29,
+    "metrics": {
+        "train": {
+            "rmse": 0.7284049131818603,
+            "score": -0.7284049131818603
+        },
+        "val": {
+            "rmse": 0.7519736094594479,
+            "score": -0.7519736094594479
+        },
+        "test": {
+            "rmse": 0.7554282779879132,
+            "score": -0.7554282779879132
+        }
+    }
+}

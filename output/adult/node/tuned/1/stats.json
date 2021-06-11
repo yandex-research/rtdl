@@ -1,0 +1,109 @@
+{
+    "dataset": "adult",
+    "algorithm": "node",
+    "config": {
+        "data": {
+            "cat_policy": "indices",
+            "normalization": "quantile_normal",
+            "path": "data/adult"
+        },
+        "model": {
+            "bin_function": "entmoid15",
+            "choice_function": "entmax15",
+            "d_embedding": 256,
+            "depth": 6,
+            "layer_dim": 512,
+            "num_layers": 4,
+            "tree_dim": 2
+        },
+        "seed": 1,
+        "training": {
+            "eval_batch_size": 256,
+            "lr": 0.001,
+            "lr_n_decays": 0,
+            "n_epochs": 1000000000,
+            "optimizer": "adam",
+            "patience": 16,
+            "weight_decay": 0.0
+        }
+    },
+    "environment": {
+        "devices": {
+            "CUDA_VISIBLE_DEVICES": "1",
+            "torch.version.cuda": "10.1",
+            "torch.backends.cudnn.version()": 7603,
+            "torch.cuda.nccl.version()": 2708,
+            "driver": "450.102.04",
+            "1": {
+                "name": "GeForce GTX 1080 Ti",
+                "total_memory": 11721506816
+            }
+        }
+    },
+    "batch_size": 256,
+    "epoch_size": 102,
+    "chunk_sizes": {},
+    "eval_batch_sizes": {},
+    "n_parameters": 19333120,
+    "best_epoch_0": 2,
+    "metrics": {
+        "val": {
+            "0": {
+                "precision": 0.8458973884052602,
+                "recall": 0.9235591506572295,
+                "f1-score": 0.8830239752513535,
+                "support": 4945
+            },
+            "1": {
+                "precision": 0.6606822262118492,
+                "recall": 0.46938775510204084,
+                "f1-score": 0.5488441461595824,
+                "support": 1568
+            },
+            "accuracy": 0.8142177184093352,
+            "macro avg": {
+                "precision": 0.7532898073085548,
+                "recall": 0.6964734528796351,
+                "f1-score": 0.715934060705468,
+                "support": 6513
+            },
+            "weighted avg": {
+                "precision": 0.8013069731865793,
+                "recall": 0.8142177184093352,
+                "f1-score": 0.8025704251184044,
+                "support": 6513
+            },
+            "roc_auc": 0.6964734528796351,
+            "score": 0.6964734528796351
+        },
+        "test": {
+            "0": {
+                "precision": 0.8539973400325107,
+                "recall": 0.9294732609569762,
+                "f1-score": 0.8901382417497785,
+                "support": 12435
+            },
+            "1": {
+                "precision": 0.6807426283218057,
+                "recall": 0.4862194487779511,
+                "f1-score": 0.5672683148794176,
+                "support": 3846
+            },
+            "accuracy": 0.8247650635710337,
+            "macro avg": {
+                "precision": 0.7673699841771582,
+                "recall": 0.7078463548674636,
+                "f1-score": 0.7287032783145981,
+                "support": 16281
+            },
+            "weighted avg": {
+                "precision": 0.8130700246809124,
+                "recall": 0.8247650635710337,
+                "f1-score": 0.8138678812839958,
+                "support": 16281
+            },
+            "roc_auc": 0.7078463548674636,
+            "score": 0.780
+        }
+    }
+}

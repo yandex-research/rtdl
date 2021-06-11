@@ -1,0 +1,86 @@
+{
+    "dataset": "microsoft",
+    "algorithm": "node",
+    "config": {
+        "data": {
+            "normalization": "quantile_normal",
+            "path": "data/microsoft",
+            "y_policy": "mean_std"
+        },
+        "model": {
+            "bin_function": "entmoid15",
+            "choice_function": "entmax15",
+            "depth": 8,
+            "layer_dim": 256,
+            "num_layers": 8,
+            "tree_dim": 3
+        },
+        "seed": 0,
+        "training": {
+            "eval_batch_size": 8192,
+            "lr": 0.001,
+            "lr_n_decays": 0,
+            "n_epochs": 1000000000,
+            "optimizer": "adam",
+            "patience": 16,
+            "weight_decay": 0.0
+        }
+    },
+    "environment": {
+        "devices": {
+            "CUDA_VISIBLE_DEVICES": "0,1,2,3",
+            "torch.version.cuda": "10.1",
+            "torch.backends.cudnn.version()": 7603,
+            "torch.cuda.nccl.version()": 2708,
+            "driver": "418.67",
+            "0": {
+                "name": "Tesla V100-PCIE-32GB",
+                "total_memory": 34058272768
+            },
+            "1": {
+                "name": "Tesla V100-PCIE-32GB",
+                "total_memory": 34058272768
+            },
+            "2": {
+                "name": "Tesla V100-PCIE-32GB",
+                "total_memory": 34058272768
+            },
+            "3": {
+                "name": "Tesla V100-PCIE-32GB",
+                "total_memory": 34058272768
+            }
+        }
+    },
+    "batch_size": 1024,
+    "epoch_size": 707,
+    "chunk_sizes": {},
+    "eval_batch_sizes": {},
+    "n_parameters": 47874048,
+    "best_epoch_0": 4,
+    "metrics_0": {
+        "val": {
+            "rmse": 0.7482434727697606,
+            "score": -0.7482434727697606
+        },
+        "test": {
+            "rmse": 0.7518659980894576,
+            "score": -0.7518659980894576
+        }
+    },
+    "time_0": "02h 23m 38s",
+    "metrics": {
+        "train": {
+            "rmse": 0.7230951094015063,
+            "score": -0.7230951094015063
+        },
+        "val": {
+            "rmse": 0.7482434727697606,
+            "score": -0.7482434727697606
+        },
+        "test": {
+            "rmse": 0.7518659980894576,
+            "score": -0.7518659980894576
+        }
+    },
+    "time_final": "02h 24m 43s"
+}

@@ -1,0 +1,145 @@
+{
+    "best_stats": {
+        "dataset": "california_housing",
+        "algorithm": "snn",
+        "config": {
+            "data": {
+                "normalization": "quantile_normal",
+                "path": "data/california_housing",
+                "y_policy": "mean_std"
+            },
+            "model": {
+                "d_layers": [
+                    443,
+                    76,
+                    76,
+                    510
+                ],
+                "dropout": 0.0
+            },
+            "seed": 0,
+            "training": {
+                "eval_batch_size": 8192,
+                "lr": 0.002145001088002643,
+                "lr_n_decays": 0,
+                "n_epochs": 1000000000,
+                "optimizer": "adam",
+                "patience": 16,
+                "weight_decay": 0
+            }
+        },
+        "environment": {
+            "devices": {
+                "CUDA_VISIBLE_DEVICES": "0",
+                "torch.version.cuda": "10.1",
+                "torch.backends.cudnn.version()": 7603,
+                "torch.cuda.nccl.version()": 2708,
+                "driver": "450.80.02",
+                "0": {
+                    "name": "Tesla V100-PCIE-32GB",
+                    "total_memory": 34089730048
+                }
+            }
+        },
+        "batch_size": 256,
+        "epoch_size": 52,
+        "n_parameters": 83364,
+        "best_epoch_0": 85,
+        "metrics_0": {
+            "val": {
+                "rmse": 0.5036989183513724,
+                "score": -0.5036989183513724
+            },
+            "test": {
+                "rmse": 0.497580552734442,
+                "score": -0.497580552734442
+            }
+        },
+        "time_0": "00h 00m 33s",
+        "metrics": {
+            "train": {
+                "rmse": 0.3903213238826114,
+                "score": -0.3903213238826114
+            },
+            "val": {
+                "rmse": 0.5036989183513724,
+                "score": -0.5036989183513724
+            },
+            "test": {
+                "rmse": 0.497580552734442,
+                "score": -0.497580552734442
+            }
+        },
+        "time_final": "00h 00m 33s",
+        "trial_id": 66
+    },
+    "config": {
+        "base_config": {
+            "data": {
+                "normalization": "quantile_normal",
+                "path": "data/california_housing",
+                "y_policy": "mean_std"
+            },
+            "seed": 0,
+            "training": {
+                "eval_batch_size": 8192,
+                "lr_n_decays": 0,
+                "n_epochs": 1000000000,
+                "optimizer": "adam",
+                "patience": 16
+            }
+        },
+        "optimization": {
+            "options": {
+                "n_trials": 100
+            },
+            "sampler": {
+                "seed": 0
+            },
+            "space": {
+                "model": {
+                    "d_layers": [
+                        "$mlp_d_layers",
+                        2,
+                        16,
+                        1,
+                        512
+                    ],
+                    "dropout": [
+                        "?uniform",
+                        0.0,
+                        0.0,
+                        0.1
+                    ]
+                },
+                "training": {
+                    "lr": [
+                        "loguniform",
+                        1e-05,
+                        0.01
+                    ],
+                    "weight_decay": [
+                        "?loguniform",
+                        0,
+                        1e-05,
+                        0.001
+                    ]
+                }
+            }
+        },
+        "program": "bin/snn.py"
+    },
+    "environment": {
+        "devices": {
+            "CUDA_VISIBLE_DEVICES": "0",
+            "torch.version.cuda": "10.1",
+            "torch.backends.cudnn.version()": 7603,
+            "torch.cuda.nccl.version()": 2708,
+            "driver": "450.80.02",
+            "0": {
+                "name": "Tesla V100-PCIE-32GB",
+                "total_memory": 34089730048
+            }
+        }
+    }
+}

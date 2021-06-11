@@ -1,0 +1,233 @@
+{
+    "config": {
+        "base_config": {
+            "data": {
+                "path": "data/epsilon"
+            },
+            "model": {
+                "batch_momentum": 0.99,
+                "virtual_batch_size": 512
+            },
+            "seed": 0,
+            "training": {
+                "batch_size": 4096,
+                "display_steps": 5,
+                "epochs": 50000,
+                "grad_thresh": 2000.0,
+                "patience": 16
+            }
+        },
+        "optimization": {
+            "options": {
+                "n_trials": 100
+            },
+            "sampler": {
+                "seed": 0
+            },
+            "space": {
+                "model": {
+                    "feature_dim": [
+                        "categorical",
+                        [
+                            8,
+                            16,
+                            32,
+                            64,
+                            128
+                        ]
+                    ],
+                    "num_decision_steps": [
+                        "int",
+                        3,
+                        10
+                    ],
+                    "relaxation_factor": [
+                        "uniform",
+                        1,
+                        2
+                    ]
+                },
+                "training": {
+                    "schedule": {
+                        "decay_rate": [
+                            "uniform",
+                            0.4,
+                            0.99
+                        ],
+                        "decay_steps": [
+                            "categorical",
+                            [
+                                100,
+                                500,
+                                2000,
+                                10000
+                            ]
+                        ],
+                        "learning_rate": [
+                            "uniform",
+                            0.001,
+                            0.01
+                        ]
+                    },
+                    "sparsity_loss_weight": [
+                        "loguniform",
+                        1e-06,
+                        0.1
+                    ]
+                }
+            }
+        },
+        "program": "bin/tabnet.py"
+    },
+    "environment": {
+        "devices": {
+            "CUDA_VISIBLE_DEVICES": "0",
+            "torch.version.cuda": "10.2",
+            "torch.backends.cudnn.version()": 7605,
+            "torch.cuda.nccl.version()": 2708,
+            "driver": "450.102.04",
+            "0": {
+                "name": "GeForce GTX 1080 Ti",
+                "total_memory": 11720130560
+            }
+        }
+    },
+    "continuations": [
+        91
+    ],
+    "best_stats": {
+        "dataset": "data/epsilon",
+        "algorithm": "tabnet",
+        "config": {
+            "data": {
+                "path": "data/epsilon"
+            },
+            "model": {
+                "batch_momentum": 0.99,
+                "feature_dim": 16,
+                "num_decision_steps": 9,
+                "relaxation_factor": 1.05621730808912,
+                "virtual_batch_size": 512
+            },
+            "seed": 0,
+            "training": {
+                "batch_size": 4096,
+                "display_steps": 5,
+                "epochs": 50000,
+                "grad_thresh": 2000.0,
+                "patience": 16,
+                "schedule": {
+                    "decay_rate": 0.5746521730180812,
+                    "decay_steps": 500,
+                    "learning_rate": 0.001241495832127813
+                },
+                "sparsity_loss_weight": 2.04916774387818e-05
+            }
+        },
+        "environment": {
+            "devices": {
+                "CUDA_VISIBLE_DEVICES": "0",
+                "torch.version.cuda": "10.2",
+                "torch.backends.cudnn.version()": 7605,
+                "torch.cuda.nccl.version()": 2708,
+                "driver": "450.102.04",
+                "0": {
+                    "name": "GeForce GTX 1080 Ti",
+                    "total_memory": 11720130560
+                }
+            }
+        },
+        "batch_size": 4096,
+        "best_epoch": 45,
+        "metrics": {
+            "train": {
+                "0": {
+                    "precision": 0.897518695829031,
+                    "recall": 0.8955739281387768,
+                    "f1-score": 0.8965452573475402,
+                    "support": 160142
+                },
+                "1": {
+                    "precision": 0.8956149932898474,
+                    "recall": 0.8975590836867721,
+                    "f1-score": 0.8965859846342752,
+                    "support": 159858
+                },
+                "accuracy": 0.896565625,
+                "macro avg": {
+                    "precision": 0.8965668445594392,
+                    "recall": 0.8965665059127744,
+                    "f1-score": 0.8965656209909076,
+                    "support": 320000
+                },
+                "weighted avg": {
+                    "precision": 0.8965676893274409,
+                    "recall": 0.896565625,
+                    "f1-score": 0.896565602918174,
+                    "support": 320000
+                },
+                "roc_auc": 0.8965665059127745,
+                "score": 0.8965665059127745
+            },
+            "val": {
+                "0": {
+                    "precision": 0.8929000300210147,
+                    "recall": 0.8914949419258149,
+                    "f1-score": 0.8921969327683827,
+                    "support": 40035
+                },
+                "1": {
+                    "precision": 0.8914759668232237,
+                    "recall": 0.8928812711122232,
+                    "f1-score": 0.8921780655807382,
+                    "support": 39965
+                },
+                "accuracy": 0.8921875,
+                "macro avg": {
+                    "precision": 0.8921879984221193,
+                    "recall": 0.892188106519019,
+                    "f1-score": 0.8921874991745604,
+                    "support": 80000
+                },
+                "weighted avg": {
+                    "precision": 0.8921886214497683,
+                    "recall": 0.8921875,
+                    "f1-score": 0.892187507428955,
+                    "support": 80000
+                },
+                "roc_auc": 0.892188106519019,
+                "score": 0.892188106519019
+            },
+            "test": {
+                "0": {
+                    "precision": 0.8894795524230478,
+                    "recall": 0.8926965730842242,
+                    "f1-score": 0.8910851592185178,
+                    "support": 50045
+                },
+                "1": {
+                    "precision": 0.8921123478121108,
+                    "recall": 0.8888799919927936,
+                    "f1-score": 0.8904932366713795,
+                    "support": 49955
+                },
+                "accuracy": 0.89079,
+                "macro avg": {
+                    "precision": 0.8907959501175793,
+                    "recall": 0.890788282538509,
+                    "f1-score": 0.8907891979449487,
+                    "support": 100000
+                },
+                "weighted avg": {
+                    "precision": 0.8907947653596543,
+                    "recall": 0.89079,
+                    "f1-score": 0.8907894643100948,
+                    "support": 100000
+                },
+                "roc_auc": 0.8907882825385088,
+                "score": 0.8907882825385088
+            }
+        },
+        "trial_id": 91
+    }
+}

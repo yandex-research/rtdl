@@ -1,0 +1,39 @@
+program = "bin/tabnet.py"
+
+[base_config]
+seed = 0
+
+[base_config.data]
+path = 'data/california_housing'
+normalization = 'quantile_normal'
+y_policy = 'mean_std'
+
+[base_config.training]
+epochs = 50000
+grad_thresh = 2000.0
+display_steps = 100
+patience = 16
+batch_size = 2048
+
+[base_config.model]
+virtual_batch_size = 256
+batch_momentum = 0.95
+
+[optimization.space.model]
+feature_dim = ["categorical", [8, 16, 32, 64, 128]]
+num_decision_steps = ["int", 3, 10]
+relaxation_factor = ["uniform", 1, 2]
+
+[optimization.space.training]
+sparsity_loss_weight = ["loguniform", 1e-6, 0.1]
+
+[optimization.space.training.schedule]
+learning_rate = ["uniform", 0.001, 0.01]
+decay_rate = ["uniform", 0.4, 0.95]
+decay_steps = ["categorical", [100, 500, 2000]]
+
+[optimization.options]
+n_trials = 100
+
+[optimization.sampler]
+seed = 0

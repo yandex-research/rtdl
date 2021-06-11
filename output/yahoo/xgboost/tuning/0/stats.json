@@ -1,0 +1,149 @@
+{
+    "best_stats": {
+        "config": {
+            "dataset": "data/yahoo",
+            "fit": {
+                "early_stopping_rounds": 50,
+                "verbose": false
+            },
+            "model": {
+                "alpha": 2.245127960171405e-06,
+                "booster": "gbtree",
+                "colsample_bylevel": 0.5852245168695216,
+                "colsample_bytree": 0.7162631401486097,
+                "gamma": 6.696041935302954e-08,
+                "lambda": 0,
+                "learning_rate": 0.02675504182392562,
+                "max_depth": 10,
+                "min_child_weight": 4.563861637545892e-08,
+                "n_estimators": 2000,
+                "n_jobs": -1,
+                "subsample": 0.7631921007414002,
+                "tree_method": "gpu_hist"
+            },
+            "seed": 0,
+            "y_policy": "mean_std"
+        },
+        "environment": {
+            "devices": {
+                "CUDA_VISIBLE_DEVICES": "0",
+                "torch.version.cuda": "10.1",
+                "torch.backends.cudnn.version()": 7603,
+                "torch.cuda.nccl.version()": 2708,
+                "driver": "418.67",
+                "0": {
+                    "name": "Tesla V100-PCIE-32GB",
+                    "total_memory": 34058272768
+                }
+            }
+        },
+        "dataset": "yahoo",
+        "algorithm": "xgboost_",
+        "metrics": {
+            "train": {
+                "rmse": 0.4474002131796335,
+                "score": -0.4474002131796335
+            },
+            "val": {
+                "rmse": 0.7493311402012824,
+                "score": -0.7493311402012824
+            },
+            "test": {
+                "rmse": 0.7357917469203897,
+                "score": -0.7357917469203897
+            }
+        },
+        "trial_id": 85
+    },
+    "config": {
+        "base_config": {
+            "dataset": "data/yahoo",
+            "fit": {
+                "early_stopping_rounds": 50,
+                "verbose": false
+            },
+            "model": {
+                "booster": "gbtree",
+                "n_estimators": 2000,
+                "n_jobs": -1,
+                "tree_method": "gpu_hist"
+            },
+            "seed": 0,
+            "y_policy": "mean_std"
+        },
+        "optimization": {
+            "options": {
+                "n_trials": 100
+            },
+            "sampler": {
+                "seed": 0
+            },
+            "space": {
+                "model": {
+                    "alpha": [
+                        "?loguniform",
+                        0,
+                        1e-08,
+                        100.0
+                    ],
+                    "colsample_bylevel": [
+                        "uniform",
+                        0.5,
+                        1.0
+                    ],
+                    "colsample_bytree": [
+                        "uniform",
+                        0.5,
+                        1.0
+                    ],
+                    "gamma": [
+                        "?loguniform",
+                        0,
+                        1e-08,
+                        100.0
+                    ],
+                    "lambda": [
+                        "?loguniform",
+                        0,
+                        1e-08,
+                        100.0
+                    ],
+                    "learning_rate": [
+                        "loguniform",
+                        1e-05,
+                        1
+                    ],
+                    "max_depth": [
+                        "int",
+                        6,
+                        10
+                    ],
+                    "min_child_weight": [
+                        "loguniform",
+                        1e-08,
+                        100000.0
+                    ],
+                    "subsample": [
+                        "uniform",
+                        0.5,
+                        1.0
+                    ]
+                }
+            }
+        },
+        "program": "bin/xgboost_.py"
+    },
+    "environment": {
+        "devices": {
+            "CUDA_VISIBLE_DEVICES": "0",
+            "torch.version.cuda": "10.1",
+            "torch.backends.cudnn.version()": 7603,
+            "torch.cuda.nccl.version()": 2708,
+            "driver": "418.67",
+            "0": {
+                "name": "Tesla V100-PCIE-32GB",
+                "total_memory": 34058272768
+            }
+        }
+    }
+}

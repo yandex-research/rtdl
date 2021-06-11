@@ -1,0 +1,56 @@
+{
+    "dataset": "microsoft",
+    "algorithm": "grownet",
+    "config": {
+        "data": {
+            "normalization": "quantile_normal",
+            "path": "data/microsoft",
+            "y_policy": "mean_std"
+        },
+        "model": {
+            "boost_rate": 1.0,
+            "correct_epoch": 1,
+            "epochs_per_stage": 1,
+            "hidden_d": 64,
+            "num_nets": 80,
+            "sparse": false
+        },
+        "patience": 16,
+        "seed": 4,
+        "training": {
+            "eval_batch_size": 8192,
+            "lr": 0.01,
+            "lr_scaler": 3,
+            "weight_decay": 0.001
+        }
+    },
+    "environment": {
+        "devices": {
+            "CUDA_VISIBLE_DEVICES": "0",
+            "torch.version.cuda": "10.1",
+            "torch.backends.cudnn.version()": 7603,
+            "torch.cuda.nccl.version()": 2708,
+            "driver": "418.67",
+            "0": {
+                "name": "Tesla V100-PCIE-32GB",
+                "total_memory": 34058272768
+            }
+        }
+    },
+    "batch_size": 1024,
+    "epoch_size": 707,
+    "metrics": {
+        "train": {
+            "rmse": 0.7355446476617133,
+            "score": -0.7355446476617133
+        },
+        "val": {
+            "rmse": 0.7508587354478917,
+            "score": -0.7508587354478917
+        },
+        "test": {
+            "rmse": 0.7534964661756378,
+            "score": -0.7534964661756378
+        }
+    }
+}

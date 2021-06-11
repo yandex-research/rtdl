@@ -1,0 +1,74 @@
+{
+    "dataset": "yahoo",
+    "algorithm": "autoint",
+    "config": {
+        "data": {
+            "normalization": "quantile_normal",
+            "path": "data/yahoo",
+            "y_policy": "mean_std"
+        },
+        "model": {
+            "activation": "relu",
+            "attention_dropout": 0.15,
+            "d_token": 32,
+            "initialization": "kaiming",
+            "n_heads": 2,
+            "n_layers": 4,
+            "prenormalization": false,
+            "residual_dropout": 0.0
+        },
+        "seed": 0,
+        "training": {
+            "batch_size": 1024,
+            "eval_batch_size": 8192,
+            "lr": 0.0001,
+            "n_epochs": 1000000000,
+            "optimizer": "adamw",
+            "patience": 16,
+            "weight_decay": 1e-05
+        }
+    },
+    "environment": {
+        "devices": {
+            "CUDA_VISIBLE_DEVICES": "0,1,2,3",
+            "torch.version.cuda": "10.1",
+            "torch.backends.cudnn.version()": 7603,
+            "torch.cuda.nccl.version()": 2708,
+            "driver": "450.80.02",
+            "0": {
+                "name": "Tesla V100-PCIE-32GB",
+                "total_memory": 34089730048
+            },
+            "1": {
+                "name": "Tesla V100-PCIE-32GB",
+                "total_memory": 34089730048
+            },
+            "2": {
+                "name": "Tesla V100-PCIE-32GB",
+                "total_memory": 34089730048
+            },
+            "3": {
+                "name": "Tesla V100-PCIE-32GB",
+                "total_memory": 34089730048
+            }
+        }
+    },
+    "epoch_size": 463,
+    "n_parameters": 61761,
+    "best_epoch": 21,
+    "metrics": {
+        "train": {
+            "rmse": 0.77180143015522,
+            "score": -0.77180143015522
+        },
+        "val": {
+            "rmse": 0.8078424896866914,
+            "score": -0.8078424896866914
+        },
+        "test": {
+            "rmse": 0.7944338421705844,
+            "score": -0.7944338421705844
+        }
+    },
+    "time": "1:12:38"
+}

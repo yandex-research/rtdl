@@ -1,0 +1,62 @@
+{
+    "dataset": "data/year",
+    "algorithm": "tabnet",
+    "config": {
+        "data": {
+            "normalization": "quantile_normal",
+            "path": "data/year",
+            "y_policy": "mean_std"
+        },
+        "model": {
+            "batch_momentum": 0.95,
+            "feature_dim": 64,
+            "num_decision_steps": 3,
+            "relaxation_factor": 1.478400764417078,
+            "virtual_batch_size": 512
+        },
+        "seed": 6,
+        "training": {
+            "batch_size": 16384,
+            "display_steps": 100,
+            "epochs": 50000,
+            "grad_thresh": 2000.0,
+            "patience": 16,
+            "schedule": {
+                "decay_rate": 0.7659349159097861,
+                "decay_steps": 100,
+                "learning_rate": 0.003316750775989794
+            },
+            "sparsity_loss_weight": 0.001114122016424037
+        }
+    },
+    "environment": {
+        "devices": {
+            "CUDA_VISIBLE_DEVICES": "1",
+            "torch.version.cuda": "10.2",
+            "torch.backends.cudnn.version()": 7605,
+            "torch.cuda.nccl.version()": 2708,
+            "driver": "440.33.01",
+            "1": {
+                "name": "GeForce RTX 2080 Ti",
+                "total_memory": 11552096256
+            }
+        }
+    },
+    "batch_size": 16384,
+    "epoch_size": 22,
+    "best_epoch": 40,
+    "metrics": {
+        "train": {
+            "rmse": 8.211045289513885,
+            "score": -8.211045289513885
+        },
+        "val": {
+            "rmse": 8.760376508421878,
+            "score": -8.760376508421878
+        },
+        "test": {
+            "rmse": 8.98179933817684,
+            "score": -8.98179933817684
+        }
+    }
+}

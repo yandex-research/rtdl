@@ -1,0 +1,62 @@
+{
+    "dataset": "data/california_housing",
+    "algorithm": "tabnet",
+    "config": {
+        "data": {
+            "normalization": "quantile_normal",
+            "path": "data/california_housing",
+            "y_policy": "mean_std"
+        },
+        "model": {
+            "batch_momentum": 0.95,
+            "feature_dim": 16,
+            "num_decision_steps": 6,
+            "relaxation_factor": 1.807512988908164,
+            "virtual_batch_size": 256
+        },
+        "seed": 5,
+        "training": {
+            "batch_size": 2048,
+            "display_steps": 100,
+            "epochs": 50000,
+            "grad_thresh": 2000.0,
+            "patience": 16,
+            "schedule": {
+                "decay_rate": 0.6361650749600978,
+                "decay_steps": 2000,
+                "learning_rate": 0.006979425070772642
+            },
+            "sparsity_loss_weight": 0.06453642455940262
+        }
+    },
+    "environment": {
+        "devices": {
+            "CUDA_VISIBLE_DEVICES": "1",
+            "torch.version.cuda": "10.2",
+            "torch.backends.cudnn.version()": 7605,
+            "torch.cuda.nccl.version()": 2708,
+            "driver": "440.33.01",
+            "1": {
+                "name": "GeForce RTX 2080 Ti",
+                "total_memory": 11552096256
+            }
+        }
+    },
+    "batch_size": 2048,
+    "epoch_size": 6,
+    "best_epoch": 148,
+    "metrics": {
+        "train": {
+            "rmse": 0.45630115589035125,
+            "score": -0.45630115589035125
+        },
+        "val": {
+            "rmse": 0.5009593311852909,
+            "score": -0.5009593311852909
+        },
+        "test": {
+            "rmse": 0.5055932617447287,
+            "score": -0.5055932617447287
+        }
+    }
+}

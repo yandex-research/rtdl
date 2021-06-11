@@ -1,0 +1,149 @@
+{
+    "config": {
+        "base_config": {
+            "data": {
+                "normalization": "quantile_normal",
+                "path": "data/yahoo",
+                "y_policy": "mean_std"
+            },
+            "model": {
+                "stacked": false
+            },
+            "seed": 0,
+            "training": {
+                "batch_size": 1024,
+                "eval_batch_size": 8192,
+                "n_epochs": 1000000000,
+                "optimizer": "adamw",
+                "patience": 16
+            }
+        },
+        "optimization": {
+            "options": {
+                "n_trials": 100
+            },
+            "sampler": {
+                "seed": 0
+            },
+            "space": {
+                "model": {
+                    "cross_dropout": [
+                        "?uniform",
+                        0.0,
+                        0.0,
+                        0.5
+                    ],
+                    "d": [
+                        "int",
+                        64,
+                        1024
+                    ],
+                    "hidden_dropout": [
+                        "uniform",
+                        0.0,
+                        0.5
+                    ],
+                    "n_cross_layers": [
+                        "int",
+                        1,
+                        16
+                    ],
+                    "n_hidden_layers": [
+                        "int",
+                        1,
+                        16
+                    ]
+                },
+                "training": {
+                    "lr": [
+                        "loguniform",
+                        1e-05,
+                        0.01
+                    ],
+                    "weight_decay": [
+                        "?loguniform",
+                        0.0,
+                        1e-06,
+                        0.001
+                    ]
+                }
+            }
+        },
+        "program": "bin/dcn2.py"
+    },
+    "environment": {
+        "devices": {
+            "CUDA_VISIBLE_DEVICES": "0",
+            "torch.version.cuda": "10.1",
+            "torch.backends.cudnn.version()": 7603,
+            "torch.cuda.nccl.version()": 2708,
+            "driver": "418.67",
+            "0": {
+                "name": "Tesla V100-PCIE-32GB",
+                "total_memory": 34058272768
+            }
+        }
+    },
+    "best_stats": {
+        "dataset": "yahoo",
+        "algorithm": "dcn2",
+        "config": {
+            "data": {
+                "normalization": "quantile_normal",
+                "path": "data/yahoo",
+                "y_policy": "mean_std"
+            },
+            "model": {
+                "cross_dropout": 0.1869181048809803,
+                "d": 935,
+                "hidden_dropout": 0.04668340203299311,
+                "n_cross_layers": 7,
+                "n_hidden_layers": 1,
+                "stacked": false
+            },
+            "seed": 0,
+            "training": {
+                "batch_size": 1024,
+                "eval_batch_size": 8192,
+                "lr": 6.190167332232086e-05,
+                "n_epochs": 1000000000,
+                "optimizer": "adamw",
+                "patience": 16,
+                "weight_decay": 0.0
+            }
+        },
+        "environment": {
+            "devices": {
+                "CUDA_VISIBLE_DEVICES": "0",
+                "torch.version.cuda": "10.1",
+                "torch.backends.cudnn.version()": 7603,
+                "torch.cuda.nccl.version()": 2708,
+                "driver": "418.67",
+                "0": {
+                    "name": "Tesla V100-PCIE-32GB",
+                    "total_memory": 34058272768
+                }
+            }
+        },
+        "epoch_size": 463,
+        "n_parameters": 7657651,
+        "best_epoch": 45,
+        "metrics": {
+            "train": {
+                "rmse": 0.12985883159926417,
+                "score": -0.12985883159926417
+            },
+            "val": {
+                "rmse": 0.7790330224597145,
+                "score": -0.7790330224597145
+            },
+            "test": {
+                "rmse": 0.7654622681297504,
+                "score": -0.7654622681297504
+            }
+        },
+        "time": "0:05:42",
+        "trial_id": 94
+    },
+    "time": "10:06:40"
+}

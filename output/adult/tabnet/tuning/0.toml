@@ -1,0 +1,40 @@
+program = 'bin/tabnet_refactor.py'
+
+[base_config]
+seed = 0
+
+    [base_config.data]
+    normalization = 'quantile_normal'
+    path = 'data/adult'
+    cat_policy = 'indices'
+
+    [base_config.model]
+    batch_momentum = 0.95
+    virtual_batch_size = 256
+
+    [base_config.training]
+    batch_size = 2048
+    display_steps = 100
+    epochs = 50000
+    grad_thresh = 2000.0
+    patience = 16
+
+[optimization.options]
+n_trials = 100
+
+[optimization.sampler]
+seed = 0
+
+[optimization.space.model]
+feature_dim = [ 'categorical', [ 8, 16, 32, 64, 128 ] ]
+num_decision_steps = [ 'int', 3, 10 ]
+relaxation_factor = [ 'uniform', 1, 2 ]
+d_embedding = ['int', 64, 512]
+
+[optimization.space.training]
+sparsity_loss_weight = [ 'loguniform', 1e-06, 0.1 ]
+
+    [optimization.space.training.schedule]
+    decay_rate = [ 'uniform', 0.4, 0.95 ]
+    decay_steps = [ 'categorical', [ 100, 500, 2000 ] ]
+    learning_rate = [ 'uniform', 0.001, 0.01 ]

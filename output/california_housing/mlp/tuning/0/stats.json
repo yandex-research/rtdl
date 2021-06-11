@@ -1,0 +1,132 @@
+{
+    "config": {
+        "base_config": {
+            "data": {
+                "normalization": "quantile_normal",
+                "path": "data/california_housing",
+                "y_policy": "mean_std"
+            },
+            "model": {},
+            "seed": 0,
+            "training": {
+                "batch_size": 256,
+                "eval_batch_size": 8192,
+                "n_epochs": 1000000000,
+                "optimizer": "adamw",
+                "patience": 16
+            }
+        },
+        "optimization": {
+            "options": {
+                "n_trials": 100
+            },
+            "sampler": {
+                "seed": 0
+            },
+            "space": {
+                "model": {
+                    "d_layers": [
+                        "$mlp_d_layers",
+                        1,
+                        8,
+                        1,
+                        512
+                    ],
+                    "dropout": [
+                        "?uniform",
+                        0.0,
+                        0.0,
+                        0.5
+                    ]
+                },
+                "training": {
+                    "lr": [
+                        "loguniform",
+                        1e-05,
+                        0.01
+                    ],
+                    "weight_decay": [
+                        "?loguniform",
+                        0.0,
+                        1e-06,
+                        0.001
+                    ]
+                }
+            }
+        },
+        "program": "bin/mlp.py"
+    },
+    "environment": {
+        "devices": {
+            "CUDA_VISIBLE_DEVICES": "0",
+            "torch.version.cuda": "10.1",
+            "torch.backends.cudnn.version()": 7603,
+            "torch.cuda.nccl.version()": 2708,
+            "driver": "418.67",
+            "0": {
+                "name": "Tesla V100-PCIE-32GB",
+                "total_memory": 34058272768
+            }
+        }
+    },
+    "best_stats": {
+        "dataset": "california_housing",
+        "algorithm": "mlp",
+        "config": {
+            "data": {
+                "normalization": "quantile_normal",
+                "path": "data/california_housing",
+                "y_policy": "mean_std"
+            },
+            "model": {
+                "d_layers": [
+                    512,
+                    174
+                ],
+                "dropout": 0.2913731727023163
+            },
+            "seed": 0,
+            "training": {
+                "batch_size": 256,
+                "eval_batch_size": 8192,
+                "lr": 0.0009160931436269555,
+                "n_epochs": 1000000000,
+                "optimizer": "adamw",
+                "patience": 16,
+                "weight_decay": 0.0
+            }
+        },
+        "environment": {
+            "devices": {
+                "CUDA_VISIBLE_DEVICES": "0",
+                "torch.version.cuda": "10.1",
+                "torch.backends.cudnn.version()": 7603,
+                "torch.cuda.nccl.version()": 2708,
+                "driver": "418.67",
+                "0": {
+                    "name": "Tesla V100-PCIE-32GB",
+                    "total_memory": 34058272768
+                }
+            }
+        },
+        "epoch_size": 52,
+        "n_parameters": 94045,
+        "best_epoch": 185,
+        "metrics": {
+            "train": {
+                "rmse": 0.38773740195562656,
+                "score": -0.38773740195562656
+            },
+            "val": {
+                "rmse": 0.49362253719984944,
+                "score": -0.49362253719984944
+            },
+            "test": {
+                "rmse": 0.4893889736910766,
+                "score": -0.4893889736910766
+            }
+        },
+        "time": "00h 00m 31s",
+        "trial_id": 93
+    }
+}

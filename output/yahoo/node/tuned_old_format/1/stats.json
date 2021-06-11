@@ -1,0 +1,133 @@
+{
+    "dataset": "yahoo",
+    "algorithm": "node",
+    "config": {
+        "data": {
+            "normalization": "quantile_normal",
+            "path": "data/yahoo",
+            "y_policy": "mean_std"
+        },
+        "model": {
+            "bin_function": "entmoid15",
+            "choice_function": "entmax15",
+            "depth": 6,
+            "layer_dim": 1024,
+            "num_layers": 2,
+            "tree_dim": 3
+        },
+        "seed": 1,
+        "swa": {
+            "lr_factor": 3.0,
+            "n_checkpoints": 5,
+            "patience": 5,
+            "update_bn_n_epochs": 1
+        },
+        "training": {
+            "eval_batch_size": 8192,
+            "lr": 0.001,
+            "lr_n_decays": 0,
+            "n_epochs": 1000000000,
+            "optimizer": "adam",
+            "patience": 16,
+            "weight_decay": 0.0
+        }
+    },
+    "environment": {
+        "devices": {
+            "CUDA_VISIBLE_DEVICES": "0,1",
+            "torch.version.cuda": "10.1",
+            "torch.backends.cudnn.version()": 7603,
+            "torch.cuda.nccl.version()": 2708,
+            "driver": "418.67",
+            "0": {
+                "name": "Tesla V100-PCIE-32GB",
+                "total_memory": 34058272768
+            },
+            "1": {
+                "name": "Tesla V100-PCIE-32GB",
+                "total_memory": 34058272768
+            }
+        }
+    },
+    "batch_size": 1024,
+    "epoch_size": 463,
+    "chunk_sizes": {},
+    "eval_batch_sizes": {},
+    "n_parameters": 27881472,
+    "best_epoch_0": 13,
+    "metrics_0": {
+        "val": {
+            "rmse": 0.7747093820995544,
+            "score": -0.7747093820995544
+        },
+        "test": {
+            "rmse": 0.7611523428583894,
+            "score": -0.7611523428583894
+        }
+    },
+    "time_0": "01h 00m 57s",
+    "best_epoch_1": 31,
+    "metrics_1": {
+        "val": {
+            "rmse": 0.7764677373369686,
+            "score": -0.7764677373369686
+        },
+        "test": {
+            "rmse": 0.7628829584210527,
+            "score": -0.7628829584210527
+        }
+    },
+    "time_1": "01h 14m 58s",
+    "best_epoch_2": 38,
+    "metrics_2": {
+        "val": {
+            "rmse": 0.7804546523141991,
+            "score": -0.7804546523141991
+        },
+        "test": {
+            "rmse": 0.7658531401351901,
+            "score": -0.7658531401351901
+        }
+    },
+    "time_2": "01h 28m 52s",
+    "best_epoch_3": 45,
+    "metrics_3": {
+        "val": {
+            "rmse": 0.78048495801521,
+            "score": -0.78048495801521
+        },
+        "test": {
+            "rmse": 0.7662358042328634,
+            "score": -0.7662358042328634
+        }
+    },
+    "time_3": "01h 42m 54s",
+    "best_epoch_4": 52,
+    "metrics_4": {
+        "val": {
+            "rmse": 0.7851536327862031,
+            "score": -0.7851536327862031
+        },
+        "test": {
+            "rmse": 0.7702797578644108,
+            "score": -0.7702797578644108
+        }
+    },
+    "time_4": "01h 57m 01s",
+    "n_swa_checkpoints": 1,
+    "metrics": {
+        "train": {
+            "rmse": 0.7205104743655295,
+            "score": -0.7205104743655295
+        },
+        "val": {
+            "rmse": 0.7747093820995544,
+            "score": -0.7747093820995544
+        },
+        "test": {
+            "rmse": 0.7611523428583894,
+            "score": -0.7611523428583894
+        }
+    },
+    "time_final": "01h 57m 34s"
+}

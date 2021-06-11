@@ -1,0 +1,37 @@
+program = 'bin/autoint.py'
+
+[base_config]
+seed = 0
+
+    [base_config.data]
+    normalization = 'quantile_normal'
+    path = 'data/jannis'
+
+    [base_config.model]
+    activation = 'relu'
+    initialization = 'kaiming'
+    n_heads = 2
+    prenormalization = false
+
+    [base_config.training]
+    batch_size = 512
+    eval_batch_size = 8192
+    n_epochs = 1000000000
+    optimizer = 'adamw'
+    patience = 16
+
+[optimization.options]
+n_trials = 100
+
+[optimization.sampler]
+seed = 0
+
+[optimization.space.model]
+attention_dropout = [ 'uniform', 0.0, 0.5 ]
+d_token = [ '$d_token', 8, 64 ]
+n_layers = [ 'int', 1, 6 ]
+residual_dropout = [ '?uniform', 0.0, 0.0, 0.2 ]
+
+[optimization.space.training]
+lr = [ 'loguniform', 1e-05, 0.001 ]
+weight_decay = [ 'loguniform', 1e-06, 0.001 ]
