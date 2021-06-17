@@ -78,7 +78,7 @@ def test_ft_transformer(n_blocks, d_out, last_layer_query_idx):
         cat_cardinalities=[2, 3],
         n_blocks=n_blocks,
         last_layer_query_idx=last_layer_query_idx,
-        kv_compression=0.5,
+        kv_compression_ratio=0.5,
         kv_compression_sharing='headwise',
         d_out=d_out,
     )

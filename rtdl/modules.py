@@ -600,24 +600,24 @@ class Transformer(nn.Module):
         first_prenormalization: bool,
         last_layer_query_idx: Union[None, List[int], slice],
         n_tokens: Optional[int],
-        kv_compression: Optional[float],
+        kv_compression_ratio: Optional[float],
         kv_compression_sharing: Optional[str],
         head_activation: Optional[ModuleType],
         d_out: Optional[int],
     ) -> None:
         super().__init__()
-        _all_or_none([n_tokens, kv_compression, kv_compression_sharing])
+        _all_or_none([n_tokens, kv_compression_ratio, kv_compression_sharing])
         _all_or_none([head_activation, d_out])
         assert kv_compression_sharing in [None, 'headwise', 'key-value', 'layerwise']
 
         def make_kv_compression():
-            assert kv_compression and n_tokens
+            assert kv_compression_ratio and n_tokens
             # https://github.com/pytorch/fairseq/blob/1bba712622b8ae4efb3eb793a8a40da386fe11d0/examples/linformer/linformer_src/modules/multihead_linear_attention.py#L83
-            return nn.Linear(n_tokens, int(n_tokens * kv_compression), bias=False)
+            return nn.Linear(n_tokens, int(n_tokens * kv_compression_ratio), bias=False)
 
         self.shared_kv_compression = (
             make_kv_compression()
-            if kv_compression and kv_compression_sharing == 'layerwise'
+            if kv_compression_ratio and kv_compression_sharing == 'layerwise'
             else None
         )
 
@@ -653,7 +653,7 @@ class Transformer(nn.Module):
                     normalization, d_token
                 )
             layer['ffn_normalization'] = _make_nn_module(normalization, d_token)
-            if kv_compression and self.shared_kv_compression is None:
+            if kv_compression_ratio and self.shared_kv_compression is None:
                 layer['key_compression'] = make_kv_compression()
                 if kv_compression_sharing == 'headwise':
                     layer['value_compression'] = make_kv_compression()
@@ -755,7 +755,7 @@ class FTTransformer(nn.Module):
             'first_prenormalization': False,
             'last_layer_query_idx': None,
             'n_tokens': None,
-            'kv_compression': None,
+            'kv_compression_ratio': None,
             'kv_compression_sharing': None,
             'head_activation': 'ReLU',
         }
@@ -801,7 +801,7 @@ class FTTransformer(nn.Module):
         )
         if transformer_config['d_out'] is None:
             transformer_config['head_activation'] = None
-        if transformer_config['kv_compression'] is not None:
+        if transformer_config['kv_compression_ratio'] is not None:
             transformer_config['n_tokens'] = feature_tokenizer.n_tokens + 1
         return FTTransformer(
             feature_tokenizer,
@@ -821,7 +821,7 @@ class FTTransformer(nn.Module):
         ffn_dropout: int,
         residual_dropout: float,
         last_layer_query_idx: Union[None, List[int], slice] = None,
-        kv_compression: Optional[float] = None,
+        kv_compression_ratio: Optional[float] = None,
         kv_compression_sharing: Optional[str] = None,
         d_out: Optional[int],
     ) -> 'FTTransformer':
@@ -833,7 +833,7 @@ class FTTransformer(nn.Module):
             'ffn_dropout',
             'residual_dropout',
             'last_layer_query_idx',
-            'kv_compression',
+            'kv_compression_ratio',
             'kv_compression_sharing',
             'd_out',
         ]:
@@ -848,14 +848,14 @@ class FTTransformer(nn.Module):
         cat_cardinalities: Optional[List[int]],
         n_blocks: int = 3,
         last_layer_query_idx: Union[None, List[int], slice] = None,
-        kv_compression: Optional[float] = None,
+        kv_compression_ratio: Optional[float] = None,
         kv_compression_sharing: Optional[str] = None,
         d_out: Optional[int],
     ) -> 'FTTransformer':
         transformer_config = cls.get_default_transformer_config(n_blocks=n_blocks)
         for arg_name in [
             'last_layer_query_idx',
-            'kv_compression',
+            'kv_compression_ratio',
             'kv_compression_sharing',
             'd_out',
         ]:
