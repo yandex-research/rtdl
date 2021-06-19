@@ -1,10 +1,13 @@
 import enum
 import math
+import time
+import warnings
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union, cast
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import torch.optim as optim
 from torch import Tensor
 
 from . import functional as rtdlF
@@ -533,6 +536,8 @@ class MultiheadAttention(nn.Module):
 
 
 class Transformer(nn.Module):
+    WARNINGS = {'first_prenormalization': True}
+
     class FFN(nn.Module):
         def __init__(
             self,
@@ -577,7 +582,7 @@ class Transformer(nn.Module):
             self.linear = nn.Linear(d_in, d_out, bias)
 
         def forward(self, x: Tensor) -> Tensor:
-            x = x[:, -1].squeeze()
+            x = x[:, -1]
             x = self.normalization(x)
             x = self.activation(x)
             x = self.linear(x)
@@ -609,6 +614,18 @@ class Transformer(nn.Module):
         _all_or_none([n_tokens, kv_compression_ratio, kv_compression_sharing])
         _all_or_none([head_activation, d_out])
         assert kv_compression_sharing in [None, 'headwise', 'key-value', 'layerwise']
+        if not prenormalization:
+            assert not first_prenormalization
+        if first_prenormalization and self.WARNINGS['first_prenormalization']:
+            warnings.warn(
+                'first_prenormalization is set to True. Are you sure about this? '
+                'For example, the vanilla FTTransformer with '
+                'first_prenormalization=True performs SIGNIFICANTLY worse. '
+                'You can turn off this warning by tweaking the '
+                'rtdl.Transformer.WARNINGS dictionary.',
+                UserWarning,
+            )
+            time.sleep(3)
 
         def make_kv_compression():
             assert kv_compression_ratio and n_tokens
@@ -861,6 +878,34 @@ class FTTransformer(nn.Module):
         ]:
             transformer_config[arg_name] = locals()[arg_name]
         return cls._make(n_num_features, cat_cardinalities, transformer_config)
+
+    def optimization_param_groups(self) -> List[Dict[str, Any]]:
+        no_wd_names = ['feature_tokenizer', 'normalization', '.bias']
+        assert isinstance(getattr(self, no_wd_names[0], None), FeatureTokenizer)
+        assert (
+            sum(1 for name, _ in self.named_modules() if no_wd_names[1] in name)
+            == len(self.transformer.blocks) * 2
+            - int('attention_normalization' not in self.transformer.blocks[0])  # type: ignore
+            + 1
+        )
+
+        def needs_wd(name):
+            return all(x not in name for x in no_wd_names)
+
+        return [
+            {'params': [v for k, v in self.named_parameters() if needs_wd(k)]},
+            {
+                'params': [v for k, v in self.named_parameters() if not needs_wd(k)],
+                'weight_decay': 0.0,
+            },
+        ]
+
+    def make_default_optimizer(self) -> optim.AdamW:
+        return optim.AdamW(
+            self.optimization_param_groups(),
+            lr=1e-4,
+            weight_decay=1e-5,
+        )
 
     def forward(self, x_num: Optional[Tensor], x_cat: Optional[Tensor]) -> Tensor:
         x = self.feature_tokenizer(x_num, x_cat)
