@@ -2,10 +2,17 @@
 This repository contains:
 - the official implementation of the paper "Revisiting Deep Learning Models for Tabular Data"
 - `rtdl` (**R**evisiting **T**abular **D**eep **L**earning):
-  - a PyTorch-based package that provides a user-friendly API for the main models (FT-Transformer, ResNet, MLP) used in the paper.
-  - can serve as a source of baselines for researchers and can be used by practitioners looking for Deep Learning models for tabular data
-  - follow releases by hitting "Watch" / "Custom" / "Releases" in the right upper corner of the GitHub interface
-  - see the [website](https://yandex-research.github.io/rtdl) for more details
+  - It is a PyTorch-based package that provides a user-friendly API for the main models (FT-Transformer, ResNet, MLP) used in the paper
+  - It can be used by practitioners looking for Deep Learning models for tabular data
+  - It can serve as a source of baselines for researchers (**excluding FT-Transformer**, see the warning below)
+  - You can follow releases by hitting "Watch" / "Custom" / "Releases" in the right upper corner of the GitHub interface
+  - See the [website](https://yandex-research.github.io/rtdl) for more details
+  - See the [discussion](https://github.com/yandex-research/rtdl/discussions/1)
+
+**Warning**: if you are a *researcher* (not a practitioner) and plan to use the
+FT-Transformer model as a baseline in your paper, please, use the original implementation
+from [ft_transformer.py](bin/ft_transformer.py). We will remove this limitation soon
+(i.e. `rtdl` will become the recommended way to use FT-Transformer in papers).
 
 The rest of this document is dedicated to the implementation of the paper.
 

@@ -27,6 +27,32 @@ def _all_or_none(values):
     assert all(x is None for x in values) or all(x is not None for x in values)
 
 
+class ReGLU(nn.Module):
+    """The ReGLU activation function from [shazeer2020glu].
+
+    References:
+
+        [shazeer2020glu] Noam Shazeer, "GLU Variants Improve Transformer", 2020
+    """
+
+    def forward(self, x: Tensor) -> Tensor:
+        """Perform the forward pass."""
+        return rtdlF.reglu(x)
+
+
+class GEGLU(nn.Module):
+    """The GEGLU activation function from [shazeer2020glu].
+
+    References:
+
+        [shazeer2020glu] Noam Shazeer, "GLU Variants Improve Transformer", 2020
+    """
+
+    def forward(self, x: Tensor) -> Tensor:
+        """Perform the forward pass."""
+        return rtdlF.geglu(x)
+
+
 class _TokenInitialization(enum.Enum):
     UNIFORM = 'uniform'
     NORMAL = 'normal'
@@ -51,6 +77,8 @@ class _TokenInitialization(enum.Enum):
 
 
 class NumericalFeatureTokenizer(nn.Module):
+    """Transforms continuous (scalar) features to tokens (embeddings)."""
+
     def __init__(
         self,
         n_features: int,
@@ -58,6 +86,7 @@ class NumericalFeatureTokenizer(nn.Module):
         bias: bool,
         initialization: str,
     ) -> None:
+        """Initialize self."""
         super().__init__()
         initialization_ = _TokenInitialization.from_str(initialization)
         self.weight = nn.Parameter(Tensor(n_features, d_token))
@@ -68,13 +97,16 @@ class NumericalFeatureTokenizer(nn.Module):
 
     @property
     def n_tokens(self) -> int:
+        """The number of tokens."""
         return len(self.weight)
 
     @property
     def d_token(self) -> int:
+        """The size of one token."""
         return self.weight.shape[1]
 
     def forward(self, x: Tensor) -> Tensor:
+        """Perform the forward pass."""
         x = self.weight[None] * x[..., None]
         if self.bias is not None:
             x = x + self.bias[None]
@@ -82,6 +114,8 @@ class NumericalFeatureTokenizer(nn.Module):
 
 
 class CategoricalFeatureTokenizer(nn.Module):
+    """Transforms categorical features to tokens (embeddings)."""
+
     category_offsets: Tensor
 
     def __init__(
@@ -91,6 +125,7 @@ class CategoricalFeatureTokenizer(nn.Module):
         bias: bool,
         initialization: str,
     ) -> None:
+        """Initialize self."""
         super().__init__()
         assert cardinalities
         assert d_token > 0
@@ -106,13 +141,16 @@ class CategoricalFeatureTokenizer(nn.Module):
 
     @property
     def n_tokens(self) -> int:
+        """The number of tokens."""
         return len(self.category_offsets)
 
     @property
     def d_token(self) -> int:
+        """The size of one token."""
         return self.embeddings.embedding_dim
 
     def forward(self, x: Tensor) -> Tensor:
+        """Perform the forward pass."""
         x = self.embeddings(x + self.category_offsets[None])
         if self.bias is not None:
             x = x + self.bias[None]
@@ -120,7 +158,10 @@ class CategoricalFeatureTokenizer(nn.Module):
 
 
 class FlatEmbedding(nn.Module):
+    """Flattens and concatenates outputs of several modules."""
+
     def __init__(self, *modules: Optional[nn.Module]) -> None:
+        """Initialize self."""
         super().__init__()
         assert modules
         self.modules_ = nn.ModuleList(
@@ -128,6 +169,7 @@ class FlatEmbedding(nn.Module):
         )
 
     def forward(self, *inputs) -> Tensor:
+        """Perform the forward pass."""
         assert len(self.modules_) == len(inputs)
         return torch.cat(
             [torch.flatten(m(x), 1, -1) for m, x in zip(self.modules_, inputs)],
@@ -136,12 +178,15 @@ class FlatEmbedding(nn.Module):
 
 
 class FeatureTokenizer(nn.Module):
+    """Combines `NumericalFeatureTokenizer` and `CategoricalFeatureTokenizer`."""
+
     def __init__(
         self,
         n_num_features: int,
         cat_cardinalities: Optional[List[int]],
         d_token: int,
     ) -> None:
+        """Initialize self."""
         super().__init__()
         assert n_num_features >= 0
         assert n_num_features or cat_cardinalities
@@ -166,6 +211,7 @@ class FeatureTokenizer(nn.Module):
 
     @property
     def n_tokens(self) -> int:
+        """The number of tokens."""
         return sum(
             x.n_tokens
             for x in [self.num_tokenizer, self.cat_tokenizer]
@@ -174,6 +220,7 @@ class FeatureTokenizer(nn.Module):
 
     @property
     def d_token(self) -> int:
+        """The size of one token."""
         return (
             self.cat_tokenizer.d_token  # type: ignore
             if self.num_tokenizer is None
@@ -181,6 +228,7 @@ class FeatureTokenizer(nn.Module):
         )
 
     def forward(self, x_num: Optional[Tensor], x_cat: Optional[Tensor]) -> Tensor:
+        """Perform the forward pass."""
         assert x_num is not None or x_cat is not None
         _all_or_none([self.num_tokenizer, x_num])
         _all_or_none([self.cat_tokenizer, x_cat])
@@ -193,15 +241,19 @@ class FeatureTokenizer(nn.Module):
 
 
 class AppendCLSToken(nn.Module):
+    """Appends the [CLS] token for BERT-like inference."""
+
     def __init__(self, d_token: int, initialization: str) -> None:
+        """Initialize self."""
         super().__init__()
         initialization_ = _TokenInitialization.from_str(initialization)
-        self.token = nn.Parameter(Tensor(d_token))
-        initialization_.apply(self.token, d_token)
+        self.weight = nn.Parameter(Tensor(d_token))
+        initialization_.apply(self.weight, d_token)
 
     def forward(self, x: Tensor) -> Tensor:
+        """Perform the forward pass."""
         assert x.ndim == 3
-        return torch.cat([x, self.token.view(1, 1, -1).repeat(len(x), 1, 1)], dim=1)
+        return torch.cat([x, self.weight.view(1, 1, -1).repeat(len(x), 1, 1)], dim=1)
 
 
 def _make_nn_module(module_type: ModuleType, *args) -> nn.Module:
@@ -219,7 +271,16 @@ def _make_nn_module(module_type: ModuleType, *args) -> nn.Module:
 
 
 class MLP(nn.Module):
+    """The variation of Multilayer Perceptron used in [gorishniy2021revisiting].
+
+    References:
+
+        [gorishniy2021revisiting] Yury Gorishniy, Ivan Rubachev, Valentin Khrulkov, Artem Babenko, "Revisiting Deep Learning Models for Tabular Data", 2021
+    """
+
     class Block(nn.Module):
+        """The main building block of `MLP`."""
+
         def __init__(
             self,
             *,
@@ -229,13 +290,20 @@ class MLP(nn.Module):
             activation: ModuleType,
             dropout: float,
         ) -> None:
+            """Initialize self."""
             super().__init__()
             self.linear = nn.Linear(d_in, d_out, bias)
             self.activation = _make_nn_module(activation)
             self.dropout = nn.Dropout(dropout)
 
         def forward(self, x: Tensor) -> Tensor:
+            """Perform the forward pass."""
             return self.dropout(self.activation(self.linear(x)))
+
+    class Head(nn.Linear):
+        """The final module of `MLP`."""
+
+        pass
 
     def __init__(
         self,
@@ -244,8 +312,15 @@ class MLP(nn.Module):
         d_layers: List[int],
         dropouts: Union[float, List[float]],
         activation: Union[str, Callable[[], nn.Module]],
-        d_out: Optional[int],
+        d_out: int,
     ) -> None:
+        """Initialize self.
+
+        Warning:
+
+            The `make_baseline` method is the recommended constructor. Use `__init__`
+            only if you are sure that you need it.
+        """
         super().__init__()
         assert d_layers or d_out
         if isinstance(dropouts, float):
@@ -264,11 +339,7 @@ class MLP(nn.Module):
                 for i, (d, dropout) in enumerate(zip(d_layers, dropouts))
             ]
         )
-        self.head = (
-            None
-            if d_out is None
-            else nn.Linear(d_layers[-1] if d_layers else d_in, d_out)
-        )
+        self.head = MLP.Head(d_layers[-1] if d_layers else d_in, d_out)
 
     @classmethod
     def make_baseline(
@@ -281,6 +352,11 @@ class MLP(nn.Module):
         dropout: float,
         d_out: int,
     ) -> 'MLP':
+        """Create a "baseline" `MLP`.
+
+        It is a user-friendly alternative to `__init__`. This variation of MLP is also
+        convenient for tuning; it was used in the original paper.
+        """
         assert isinstance(dropout, float)
         for (d, n) in [(d_first, 1), (d_last, 2), (d_intermidiate, 3)]:
             assert (n_blocks >= n) ^ (d is None)
@@ -300,12 +376,23 @@ class MLP(nn.Module):
         )
 
     def forward(self, x: Tensor) -> Tensor:
+        """Perform the forward pass."""
         x = self.blocks(x)
-        return x if self.head is None else self.head(x)
+        x = self.head(x)
+        return x
 
 
 class ResNet(nn.Module):
+    """The ResNet model from [gorishniy2021revisiting].
+
+    References:
+
+        [gorishniy2021revisiting] Yury Gorishniy, Ivan Rubachev, Valentin Khrulkov, Artem Babenko, "Revisiting Deep Learning Models for Tabular Data", 2021
+    """
+
     class Block(nn.Module):
+        """The main building block of `ResNet`."""
+
         def __init__(
             self,
             *,
@@ -319,6 +406,7 @@ class ResNet(nn.Module):
             activation: ModuleType,
             skip_connection: bool,
         ) -> None:
+            """Initialize self."""
             super().__init__()
             self.normalization = _make_nn_module(normalization, d)
             self.linear_first = nn.Linear(d, d_intermidiate, bias_first)
@@ -329,6 +417,7 @@ class ResNet(nn.Module):
             self.skip_connection = skip_connection
 
         def forward(self, x: Tensor) -> Tensor:
+            """Perform the forward pass."""
             x_input = x
             x = self.normalization(x)
             x = self.linear_first(x)
@@ -341,6 +430,8 @@ class ResNet(nn.Module):
             return x
 
     class Head(nn.Module):
+        """The final module of `ResNet`."""
+
         def __init__(
             self,
             *,
@@ -350,12 +441,14 @@ class ResNet(nn.Module):
             normalization: ModuleType,
             activation: ModuleType,
         ) -> None:
+            """Initialize self."""
             super().__init__()
             self.normalization = _make_nn_module(normalization, d_in)
             self.activation = _make_nn_module(activation)
             self.linear = nn.Linear(d_in, d_out, bias)
 
         def forward(self, x: Tensor) -> Tensor:
+            """Perform the forward pass."""
             if self.normalization is not None:
                 x = self.normalization(x)
             x = self.activation(x)
@@ -367,17 +460,24 @@ class ResNet(nn.Module):
         *,
         d_in: int,
         n_blocks: int,
-        d: Optional[int],
+        d: int,
         d_intermidiate: int,
         dropout_first: float,
         dropout_second: float,
         normalization: ModuleType,
         activation: ModuleType,
-        d_out: Optional[int],
+        d_out: int,
     ) -> None:
+        """Initialize self.
+
+        Warning:
+
+            The `make_baseline` method is the recommended constructor. Use `__init__`
+            only if you are sure that you need it.
+        """
         super().__init__()
 
-        self.first_layer = None if d is None else nn.Linear(d_in, d)
+        self.first_layer = nn.Linear(d_in, d)
         if d is None:
             d = d_in
         self.blocks = nn.Sequential(
@@ -396,16 +496,12 @@ class ResNet(nn.Module):
                 for _ in range(n_blocks)
             ]
         )
-        self.head = (
-            None
-            if d_out is None
-            else ResNet.Head(
-                d_in=d,
-                d_out=d_out,
-                bias=True,
-                normalization=normalization,
-                activation=activation,
-            )
+        self.head = ResNet.Head(
+            d_in=d,
+            d_out=d_out,
+            bias=True,
+            normalization=normalization,
+            activation=activation,
         )
 
     @classmethod
@@ -418,8 +514,13 @@ class ResNet(nn.Module):
         dropout_first: float,
         dropout_second: float,
         n_blocks: int,
-        d_out: Optional[int],
+        d_out: int,
     ) -> 'ResNet':
+        """Create a "baseline" `ResNet`.
+
+        It is a user-friendly alternative to `__init__`. This variation of ResNet was
+        used in the original paper.
+        """
         return cls(
             d_in=d_in,
             n_blocks=n_blocks,
@@ -433,25 +534,16 @@ class ResNet(nn.Module):
         )
 
     def forward(self, x: Tensor) -> Tensor:
-        if self.first_layer is not None:
-            x = self.first_layer(x)
+        """Perform the forward pass."""
+        x = self.first_layer(x)
         x = self.blocks(x)
-        if self.head is not None:
-            x = self.head(x)
+        x = self.head(x)
         return x
 
 
-class ReGLU(nn.Module):
-    def forward(self, x: Tensor) -> Tensor:
-        return rtdlF.reglu(x)
-
-
-class GEGLU(nn.Module):
-    def forward(self, x: Tensor) -> Tensor:
-        return rtdlF.geglu(x)
-
-
 class MultiheadAttention(nn.Module):
+    """The vanilla Multihead Attention."""
+
     def __init__(
         self,
         *,
@@ -461,6 +553,7 @@ class MultiheadAttention(nn.Module):
         bias: bool,
         initialization: str,
     ) -> None:
+        """Initialize self."""
         super().__init__()
         if n_heads > 1:
             assert d_token % n_heads == 0
@@ -478,9 +571,10 @@ class MultiheadAttention(nn.Module):
             # the second condition checks if W_v plays the role of W_out; the latter one
             # is initialized with Kaiming in torch
             if initialization == 'xavier' and (
-                self.W_out is not None or m is not self.W_v
+                m is not self.W_v or self.W_out is not None
             ):
-                # gain is needed since W_qkv is represented with 3 separate layers
+                # gain is needed since W_qkv is represented with 3 separate layers (it
+                # implies different fan_out)
                 nn.init.xavier_uniform_(m.weight, gain=1 / math.sqrt(2))
             nn.init.zeros_(m.bias)
         if self.W_out is not None:
@@ -502,6 +596,7 @@ class MultiheadAttention(nn.Module):
         key_compression: Optional[nn.Linear],
         value_compression: Optional[nn.Linear],
     ) -> Tuple[Tensor, Dict[str, Tensor]]:
+        """Perform the forward pass."""
         _all_or_none([key_compression, value_compression])
         q, k, v = self.W_q(x_q), self.W_k(x_kv), self.W_v(x_kv)
         for tensor in [q, k, v]:
@@ -536,9 +631,15 @@ class MultiheadAttention(nn.Module):
 
 
 class Transformer(nn.Module):
-    WARNINGS = {'first_prenormalization': True}
+    """The vanilla Transformer with extra features.
+
+    This module is the backbone of `FTTransformer`."""
+
+    WARNINGS = {'first_prenormalization': True, 'prenormalization': True}
 
     class FFN(nn.Module):
+        """The Feed-Forward Network module used in every Transformer block."""
+
         def __init__(
             self,
             *,
@@ -549,6 +650,7 @@ class Transformer(nn.Module):
             dropout: float,
             activation: ModuleType,
         ):
+            """Initialize self."""
             super().__init__()
             self.linear_first = nn.Linear(
                 d_token,
@@ -560,6 +662,7 @@ class Transformer(nn.Module):
             self.linear_second = nn.Linear(d_intermidiate, d_token, bias_second)
 
         def forward(self, x: Tensor) -> Tensor:
+            """Perform the forward pass."""
             x = self.linear_first(x)
             x = self.activation(x)
             x = self.dropout(x)
@@ -567,6 +670,8 @@ class Transformer(nn.Module):
             return x
 
     class Head(nn.Module):
+        """The final module of the `Transformer` that performs BERT-like inference."""
+
         def __init__(
             self,
             *,
@@ -576,12 +681,14 @@ class Transformer(nn.Module):
             normalization: ModuleType,
             d_out: int,
         ):
+            """Initialize self."""
             super().__init__()
             self.normalization = _make_nn_module(normalization, d_in)
             self.activation = _make_nn_module(activation)
             self.linear = nn.Linear(d_in, d_out, bias)
 
         def forward(self, x: Tensor) -> Tensor:
+            """Perform the forward pass."""
             x = x[:, -1]
             x = self.normalization(x)
             x = self.activation(x)
@@ -607,14 +714,22 @@ class Transformer(nn.Module):
         n_tokens: Optional[int],
         kv_compression_ratio: Optional[float],
         kv_compression_sharing: Optional[str],
-        head_activation: Optional[ModuleType],
-        d_out: Optional[int],
+        head_activation: ModuleType,
+        d_out: int,
     ) -> None:
+        """Initialize self."""
         super().__init__()
         _all_or_none([n_tokens, kv_compression_ratio, kv_compression_sharing])
-        _all_or_none([head_activation, d_out])
         assert kv_compression_sharing in [None, 'headwise', 'key-value', 'layerwise']
         if not prenormalization:
+            if self.WARNINGS['prenormalization']:
+                warnings.warn(
+                    'prenormalization is set to False. Are you sure about this? '
+                    'The training may become less stable. '
+                    'You can turn off this warning by tweaking the '
+                    'rtdl.Transformer.WARNINGS dictionary.',
+                    UserWarning,
+                )
             assert not first_prenormalization
         if first_prenormalization and self.WARNINGS['first_prenormalization']:
             warnings.warn(
@@ -652,7 +767,7 @@ class Transformer(nn.Module):
                         bias=True,
                         initialization=attention_initialization,
                     ),
-                    'ffn': self.FFN(
+                    'ffn': Transformer.FFN(
                         d_token=d_token,
                         d_intermidiate=ffn_d_intermidiate,
                         bias_first=True,
@@ -678,16 +793,12 @@ class Transformer(nn.Module):
                     assert kv_compression_sharing == 'key-value'
             self.blocks.append(layer)
 
-        self.head = (
-            None
-            if d_out is None
-            else self.Head(
-                d_in=d_token,
-                d_out=d_out,
-                bias=True,
-                activation=head_activation,  # type: ignore
-                normalization=normalization if prenormalization else 'Identity',
-            )
+        self.head = Transformer.Head(
+            d_in=d_token,
+            d_out=d_out,
+            bias=True,
+            activation=head_activation,  # type: ignore
+            normalization=normalization if prenormalization else 'Identity',
         )
 
     def _get_kv_compressions(self, layer):
@@ -719,6 +830,7 @@ class Transformer(nn.Module):
         return x
 
     def forward(self, x: Tensor) -> Tensor:
+        """Perform the forward pass."""
         assert x.ndim == 3
         for layer_idx, layer in enumerate(self.blocks):
             layer = cast(nn.ModuleDict, layer)
@@ -741,15 +853,28 @@ class Transformer(nn.Module):
             x = self._end_residual(layer, 'ffn', x, x_residual)
             x = layer['output'](x)
 
-        if self.head is not None:
-            x = self.head(x)
+        x = self.head(x)
         return x
 
 
 class FTTransformer(nn.Module):
+    """The FT-Transformer model from [gorishniy2021revisiting].
+
+    References:
+
+        [gorishniy2021revisiting] Yury Gorishniy, Ivan Rubachev, Valentin Khrulkov, Artem Babenko, "Revisiting Deep Learning Models for Tabular Data", 2021
+    """
+
     def __init__(
         self, feature_tokenizer: FeatureTokenizer, transformer: Transformer
     ) -> None:
+        """Initialize self.
+
+        Warning:
+
+            The `make_default` and `make_baseline` methods are the recommended
+            constructors. Use `__init__` only if you are sure that you need it.
+        """
         super().__init__()
         if transformer.prenormalization:
             assert 'attention_normalization' not in transformer.blocks[0]  # type: ignore
@@ -763,6 +888,7 @@ class FTTransformer(nn.Module):
     def get_baseline_transformer_subconfig(
         cls: Type['FTTransformer'],
     ) -> Dict[str, Any]:
+        """Get the baseline subset of parameters for the backbone."""
         return {
             'attention_n_heads': 8,
             'attention_initialization': 'kaiming',
@@ -781,6 +907,7 @@ class FTTransformer(nn.Module):
     def get_default_transformer_config(
         cls: Type['FTTransformer'], *, n_blocks: int = 3
     ) -> Dict[str, Any]:
+        """Get the default parameters for the backbone."""
         assert 1 <= n_blocks <= 6
         grid = {
             'd_token': [96, 128, 192, 256, 320, 384],
@@ -840,8 +967,13 @@ class FTTransformer(nn.Module):
         last_layer_query_idx: Union[None, List[int], slice] = None,
         kv_compression_ratio: Optional[float] = None,
         kv_compression_sharing: Optional[str] = None,
-        d_out: Optional[int],
+        d_out: int,
     ) -> 'FTTransformer':
+        """Create a "baseline" `FTTransformer`.
+
+        It is a user-friendly alternative to `__init__`. This variation of
+        FT-Transformer was used in the original paper.
+        """
         transformer_config = cls.get_baseline_transformer_subconfig()
         for arg_name in [
             'n_blocks',
@@ -867,8 +999,24 @@ class FTTransformer(nn.Module):
         last_layer_query_idx: Union[None, List[int], slice] = None,
         kv_compression_ratio: Optional[float] = None,
         kv_compression_sharing: Optional[str] = None,
-        d_out: Optional[int],
+        d_out: int,
     ) -> 'FTTransformer':
+        """Create the default `FTTransformer`.
+
+        With :code:`n_blocks=3` (default) it is the FT-Transformer variation that
+        referred to as "default FT-Transformer" in the original paper.
+
+        Note:
+
+            The second component of the default FT-Transformer is the default optimizer,
+            which can be created with the `make_default_optimizer` method.
+
+        Note:
+
+            According to the original paper, the main selling point of the default
+            FT-Transformer is the high effectiveness in the ensembling mode.
+        """
+        # TODO: add a warning with the advice abount ensembling?
         transformer_config = cls.get_default_transformer_config(n_blocks=n_blocks)
         for arg_name in [
             'last_layer_query_idx',
@@ -880,6 +1028,14 @@ class FTTransformer(nn.Module):
         return cls._make(n_num_features, cat_cardinalities, transformer_config)
 
     def optimization_param_groups(self) -> List[Dict[str, Any]]:
+        """The replacement for :code:`.parameters()` when creating optimizers.
+
+        Example::
+
+            optimizer = AdamW(
+                model.optimization_param_groups(), lr=1e-4, weight_decay=1e-5
+            )
+        """
         no_wd_names = ['feature_tokenizer', 'normalization', '.bias']
         assert isinstance(getattr(self, no_wd_names[0], None), FeatureTokenizer)
         assert (
@@ -901,6 +1057,7 @@ class FTTransformer(nn.Module):
         ]
 
     def make_default_optimizer(self) -> optim.AdamW:
+        """Make the optimizer for the default FT-Transformer."""
         return optim.AdamW(
             self.optimization_param_groups(),
             lr=1e-4,
@@ -908,6 +1065,7 @@ class FTTransformer(nn.Module):
         )
 
     def forward(self, x_num: Optional[Tensor], x_cat: Optional[Tensor]) -> Tensor:
+        """Perform the forward pass."""
         x = self.feature_tokenizer(x_num, x_cat)
         x = self.append_cls_token(x)
         x = self.transformer(x)

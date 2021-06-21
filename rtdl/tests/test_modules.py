@@ -30,7 +30,7 @@ def test_flat_embeddings():
 
 
 @mark.parametrize('n_blocks', range(5))
-@mark.parametrize('d_out', [None, 1, 2])
+@mark.parametrize('d_out', [1, 2])
 def test_mlp(n_blocks, d_out):
     if not n_blocks and not d_out:
         return
@@ -52,7 +52,7 @@ def test_mlp(n_blocks, d_out):
 
 
 @mark.parametrize('n_blocks', [1, 2])
-@mark.parametrize('d_out', [None, 1, 2])
+@mark.parametrize('d_out', [1, 2])
 def test_resnet(n_blocks, d_out):
     d = 4
     model = rtdl.ResNet.make_baseline(
@@ -69,7 +69,7 @@ def test_resnet(n_blocks, d_out):
 
 
 @mark.parametrize('n_blocks', range(1, 7))
-@mark.parametrize('d_out', [None, 1, 2])
+@mark.parametrize('d_out', [1, 2])
 @mark.parametrize('last_layer_query_idx', [None, [-1]])
 def test_ft_transformer(n_blocks, d_out, last_layer_query_idx):
     n_num_features = 4

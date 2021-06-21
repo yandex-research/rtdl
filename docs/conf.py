@@ -32,8 +32,10 @@ extensions = [
     'sphinxcontrib.spelling',
 ]
 
+# autoclass_content = 'both'
 autodoc_member_order = 'bysource'
 autodoc_typehints = 'description'
+# autodoc_inherit_docstrings = False
 
 autosummary_generate = True
 
@@ -42,8 +44,6 @@ import numpy as np
 import torch
 import rtdl
 from rtdl import *
-from rtdl.models import *
-from rtdl.data import *
 '''
 
 intersphinx_mapping = {
@@ -71,7 +71,8 @@ html_theme_options = {
     # https://squidfunk.github.io/mkdocs-material/setup/changing-the-colors/#primary-color
     # Nice colors: white, blue, red, deep purple (indigo in mkdocs)
     'color_primary': 'deep purple',
-    'globaltoc_depth': 1,
+    'globaltoc_collapse': False,
+    'globaltoc_depth': 2,
     # search here for logo icons: https://www.compart.com/en/unicode
     'logo_icon': '&#127968;',
     'nav_links': [],
