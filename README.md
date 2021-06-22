@@ -18,8 +18,10 @@ The rest of this document is dedicated to the implementation of the paper.
 
 ---
 
-- [1. Overview](#1-overview)
-- [2. The main results](#2-the-main-results)
+*Note that the paper reports results based on **thousands** of experiments, so there can be rough edges in the implementation. Feel free to open [issues](https://github.com/yandex-research/rtdl/issues) and ask questions in [discussions](https://github.com/yandex-research/rtdl/discussions).*
+
+- [1. The main results](#1-the-main-results)
+- [2. Overview](#2-overview)
 - [3. Setup the environment](#3-setup-the-environment)
   - [3.1. PyTorch environment](#31-pytorch-environment)
   - [3.2. TensorFlow environment](#32-tensorflow-environment)
@@ -37,9 +39,11 @@ The rest of this document is dedicated to the implementation of the paper.
   - [5.3. Conclusion](#53-conclusion)
 - [6. How to cite](#6-how-to-cite)
 
-## 1. Overview
-*Note that the paper reports results based on **thousands** of experiments, so there can be rough edges in the implementation. Feel free to open issues and ask questions.*
+## 1. The main results
+The main table, where all models are sorted by the test performance for all datasets,
+can be found in [this notebook](bin/report.ipynb).
 
+## 2. Overview
 The code is organized as follows:
 - `bin`:
   - training code for all the models
@@ -53,9 +57,6 @@ The code is organized as follows:
 - `lib` contains common tools used by programs in `bin`
 - `output` contains configuration files (inputs for programs in `bin`) and results
 - the remaining files and directories are mostly related to the `rtdl` package
-
-## 2. The main results
-TL;DR: see the main table in [this notebook](bin/report.ipynb).
 
 The results are represented with numerous JSON files that are scatterd all over
 the `output` directory. The notebook `bin/report.ipynb` summarizes them into a report
