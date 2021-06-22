@@ -70,7 +70,7 @@ html_theme_options = {
     # Full list of colors (not all of them are available in sphinx-material, see theme.conf above):
     # https://squidfunk.github.io/mkdocs-material/setup/changing-the-colors/#primary-color
     # Nice colors: white, blue, red, deep purple (indigo in mkdocs)
-    'color_primary': 'deep purple',
+    'color_primary': 'red',
     'globaltoc_collapse': False,
     'globaltoc_depth': 2,
     # search here for logo icons: https://www.compart.com/en/unicode
