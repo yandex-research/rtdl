@@ -73,7 +73,6 @@ export REPO_DIR=<ABSOLUTE path to the desired repository directory>
 git clone <repository url> $REPO_DIR
 cd $REPO_DIR
 
-# rtdl ~ Revisiting Tabular Deep Learning
 conda create -n rtdl python=3.8.8
 conda activate rtdl
 
@@ -205,8 +204,10 @@ For example, see `output/epsilon/ft_transformer`.
 ### 5.1. How to run scripts
 You should run Python scripts from the root of the repository. Most programs expect a
 configuration file as the only argument. The output will be a directory with the same
-name as a config, but without the extention. Configs are written in
-[TOML](https://toml.io). If you want to use CUDA, you must explicitly set the
+name as the config, but without the extention. Configs are written in
+[TOML](https://toml.io). The lists of possible arguments for the programs are not
+provided and should be inferred from scripts (usually, the config is represented with
+the `args` variable in scripts). If you want to use CUDA, you must explicitly set the
 `CUDA_VISIBLE_DEVICES` environment variable. For example:
 ```bash
 # The result will be at "path/to/my_experiment"
@@ -241,7 +242,7 @@ from program to program. It can contain:
 Predictions for train, validation and test sets are usually also saved.
 
 ### 5.3. Conclusion
-Now, you know everything (hopefully) you need to reproduce all the results and extend
+Now, you know everything you need to reproduce all the results and extend
 this repository for your needs. The [tutorial](#4-tutorial-how-to-reproduce-results) also
 should be more clear now. Feel free to open issues and ask questions.
 
