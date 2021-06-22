@@ -55,7 +55,7 @@ The code is organized as follows:
 - the remaining files and directories are mostly related to the `rtdl` package
 
 ## 2. The main results
-TL;DR: see `bin/report.ipynb`.
+TL;DR: see the main table in [this notebook](bin/report.ipynb).
 
 The results are represented with numerous JSON files that are scatterd all over
 the `output` directory. The notebook `bin/report.ipynb` summarizes them into a report

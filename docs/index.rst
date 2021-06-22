@@ -11,7 +11,7 @@ of the paper "Revisiting Deep Learning Models for Tabular Data":
 .. warning:: If you are a *researcher* (not a practitioner) and plan to use the
    FT-Transformer model as a baseline in your paper, please, use the original implementation
    from `ft_transformer.py <https://github.com/yandex-research/rtdl/blob/main/bin/ft_transformer.py>`_.
-   We will remove this limitation soon (i.e. `rtdl` will become the recommended way to
+   We will remove this limitation soon (i.e. :code:`rtdl` will become the recommended way to
    use FT-Transformer in papers).
 
 Users can share their experince here: https://github.com/yandex-research/rtdl/discussions/1
