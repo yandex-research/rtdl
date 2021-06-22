@@ -29,11 +29,7 @@ Documentation
 For practitioners:
 
 - see the reference in the left sidebar
-- Colab example:
-
-  - visit https://colab.research.google.com/github
-  - enter :code:`https://github.com/yandex-research/rtdl/tree/main/examples/rtdl.ipynb`
-  - launch the corresponding notebook
+- Colab example: https://colab.research.google.com/github/yandex-research/rtdl/blob/main/examples/rtdl.ipynb
 
 For researchers, it is the same as for practitioners, plus "read the source code".
 
