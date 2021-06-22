@@ -40,8 +40,8 @@ The rest of this document is dedicated to the implementation of the paper.
 - [6. How to cite](#6-how-to-cite)
 
 ## 1. The main results
-The main table, where all models are sorted by the test performance for all datasets,
-can be found in [this notebook](bin/report.ipynb).
+The main table, where all models are sorted by their final (test) performance on all datasets,
+can be found in the last cell of [this notebook](bin/report.ipynb).
 
 ## 2. Overview
 The code is organized as follows:
