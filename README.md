@@ -1,6 +1,6 @@
 # Revisiting Tabular Deep Learning<!-- omit in toc -->
 This repository contains:
-- the official implementation of the paper "Revisiting Deep Learning Models for Tabular Data"
+- the official implementation of the paper "Revisiting Deep Learning Models for Tabular Data" ([link](https://arxiv.org/abs/2106.11959))
 - `rtdl` (**R**evisiting **T**abular **D**eep **L**earning):
   - It is a PyTorch-based package that provides a user-friendly API for the main models (FT-Transformer, ResNet, MLP) used in the paper
   - It can be used by practitioners looking for Deep Learning models for tabular data
@@ -253,7 +253,7 @@ should be more clear now. Feel free to open issues and ask questions.
     title={Revisiting Deep Learning Models for Tabular Data},
     author={Yury Gorishniy and Ivan Rubachev and Valentin Khrulkov and Artem Babenko},
     journal={arXiv},
-    volume={TODO},
+    volume={2106.11959},
     year={2021},
 }
 ```
