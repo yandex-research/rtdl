@@ -55,7 +55,7 @@ The code is organized as follows:
     - `analysis_gbdt_vs_nn.py` runs the experiments
     - `create_synthetic_data_plots.py` builds plots
 - `lib` contains common tools used by programs in `bin`
-- `output` contains configuration files (inputs for programs in `bin`) and results
+- `output` contains configuration files (inputs for programs in `bin`) and results (metrics, tuned configurations, etc.)
 - the remaining files and directories are mostly related to the `rtdl` package
 
 The results are represented with numerous JSON files that are scatterd all over
