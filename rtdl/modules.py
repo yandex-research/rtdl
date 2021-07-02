@@ -396,7 +396,7 @@ class ResNet(nn.Module):
         def __init__(
             self,
             *,
-            d: int,
+            d_main: int,
             d_intermidiate: int,
             bias_first: bool,
             bias_second: bool,
@@ -408,11 +408,11 @@ class ResNet(nn.Module):
         ) -> None:
             """Initialize self."""
             super().__init__()
-            self.normalization = _make_nn_module(normalization, d)
-            self.linear_first = nn.Linear(d, d_intermidiate, bias_first)
+            self.normalization = _make_nn_module(normalization, d_main)
+            self.linear_first = nn.Linear(d_main, d_intermidiate, bias_first)
             self.activation = _make_nn_module(activation)
             self.dropout_first = nn.Dropout(dropout_first)
-            self.linear_second = nn.Linear(d_intermidiate, d, bias_second)
+            self.linear_second = nn.Linear(d_intermidiate, d_main, bias_second)
             self.dropout_second = nn.Dropout(dropout_second)
             self.skip_connection = skip_connection
 
@@ -460,7 +460,7 @@ class ResNet(nn.Module):
         *,
         d_in: int,
         n_blocks: int,
-        d: int,
+        d_main: int,
         d_intermidiate: int,
         dropout_first: float,
         dropout_second: float,
@@ -477,13 +477,13 @@ class ResNet(nn.Module):
         """
         super().__init__()
 
-        self.first_layer = nn.Linear(d_in, d)
-        if d is None:
-            d = d_in
+        self.first_layer = nn.Linear(d_in, d_main)
+        if d_main is None:
+            d_main = d_in
         self.blocks = nn.Sequential(
             *[
                 ResNet.Block(
-                    d=d,
+                    d_main=d_main,
                     d_intermidiate=d_intermidiate,
                     bias_first=True,
                     bias_second=True,
@@ -497,7 +497,7 @@ class ResNet(nn.Module):
             ]
         )
         self.head = ResNet.Head(
-            d_in=d,
+            d_in=d_main,
             d_out=d_out,
             bias=True,
             normalization=normalization,
@@ -509,7 +509,7 @@ class ResNet(nn.Module):
         cls: Type['ResNet'],
         *,
         d_in: int,
-        d: int,
+        d_main: int,
         d_intermidiate: int,
         dropout_first: float,
         dropout_second: float,
@@ -524,7 +524,7 @@ class ResNet(nn.Module):
         return cls(
             d_in=d_in,
             n_blocks=n_blocks,
-            d=d,
+            d_main=d_main,
             d_intermidiate=d_intermidiate,
             dropout_first=dropout_first,
             dropout_second=dropout_second,

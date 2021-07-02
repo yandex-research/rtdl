@@ -57,7 +57,7 @@ def test_resnet(n_blocks, d_out):
     d = 4
     model = rtdl.ResNet.make_baseline(
         d_in=d,
-        d=d,
+        d_main=d,
         d_intermidiate=d * 3,
         dropout_first=0.1,
         dropout_second=0.2,

@@ -257,7 +257,7 @@ def test_resnet(seed):
     rtdl_backbone = rtdl.ResNet(
         d_in=d_in,
         n_blocks=n_layers,
-        d=d,
+        d_main=d,
         d_intermidiate=int(d * d_hidden_factor),
         dropout_first=hidden_dropout,
         dropout_second=residual_dropout,
