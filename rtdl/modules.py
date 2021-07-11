@@ -131,7 +131,8 @@ class CategoricalFeatureTokenizer(nn.Module):
         assert d_token > 0
         initialization_ = _TokenInitialization.from_str(initialization)
 
-        self.category_offsets = torch.tensor([0] + cardinalities[:-1]).cumsum(0)
+        category_offsets = torch.tensor([0] + cardinalities[:-1]).cumsum(0)
+        self.register_buffer('category_offsets', category_offsets, persistent=False)
         self.embeddings = nn.Embedding(sum(cardinalities), d_token)
         self.bias = nn.Parameter(Tensor(len(cardinalities), d_token)) if bias else None
 
