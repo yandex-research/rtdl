@@ -179,9 +179,7 @@ def backup_output(output_dir: Path) -> None:
 
     global _LAST_SNAPSHOT_TIME
     if _LAST_SNAPSHOT_TIME is None or time.time() - _LAST_SNAPSHOT_TIME > 10 * 60:
-        import nirvana_dl.snapshot
-
-        nirvana_dl.snapshot.dump_snapshot()
+        pass
         _LAST_SNAPSHOT_TIME = time.time()
         print('The snapshot was saved!')
 

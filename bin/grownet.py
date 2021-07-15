@@ -284,10 +284,9 @@ if not D.is_multiclass:
 
 train_size = len(X_num[lib.TRAIN])
 
-args["model"]["feat_d"] = (
-    X_num[lib.TRAIN].shape[1] + 0
-    if X_cat is None
-    else X_cat[lib.TRAIN].shape[1] * args["model"].get("d_embedding", 0)
+args['model'].setdefault('d_embedding', None)
+args["model"]["feat_d"] = X_num[lib.TRAIN].shape[1] + (
+    0 if X_cat is None else X_cat[lib.TRAIN].shape[1] * args["model"]["d_embedding"]
 )
 
 batch_size, epoch_size = (
@@ -308,7 +307,7 @@ net_ensemble = DynamicNet(
     c0,
     float(args["model"]["boost_rate"]),
     categories=lib.get_categories(X_cat),
-    d_embedding=args["model"].get("d_embedding", None),
+    d_embedding=args["model"]["d_embedding"],
 )
 if device.type != 'cpu':
     net_ensemble.to_cuda()
@@ -369,7 +368,7 @@ for s in range(args["model"]["num_nets"]):
         for batch_idx in tqdm(loader, leave=False):
             x_num, x_cat = (
                 X_num[lib.TRAIN][batch_idx],
-                None if X_cat is None else X_cat[lib.TRAIN][batch_idx],
+                (None if X_cat is None else X_cat[lib.TRAIN][batch_idx]),
             )
             y = Y_device[lib.TRAIN][batch_idx].unsqueeze(1)
 
@@ -424,7 +423,7 @@ for s in range(args["model"]["num_nets"]):
             for batch_idx in tqdm(loader, leave=False):
                 x_num, x_cat = (
                     X_num[lib.TRAIN][batch_idx],
-                    None if X_cat is None else X_cat[lib.TRAIN][batch_idx],
+                    (None if X_cat is None else X_cat[lib.TRAIN][batch_idx]),
                 )
                 y = Y_device[lib.TRAIN][batch_idx].unsqueeze(1)
 

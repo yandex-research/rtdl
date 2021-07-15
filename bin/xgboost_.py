@@ -1,3 +1,4 @@
+from copy import deepcopy
 from pathlib import Path
 
 import numpy as np
@@ -31,25 +32,25 @@ Y, y_info = D.build_y(args['data'].get('y_policy'))
 lib.dump_pickle(y_info, output / 'y_info.pickle')
 
 
+fit_kwargs = deepcopy(args["fit"])
+# XGBoost does not automatically use the best model, so early stopping must be used
+assert 'early_stopping_rounds' in fit_kwargs
+fit_kwargs['eval_set'] = [(X[lib.VAL], Y[lib.VAL])]
 if D.is_regression:
     model = XGBRegressor(**args["model"])
     predict = model.predict
 else:
-    model = XGBClassifier(**args["model"])
-    predict = (
-        model.predict_proba
-        if D.is_multiclass
-        else lambda x: model.predict_proba(x)[:, 1]
-    )
+    model = XGBClassifier(**args["model"], disable_default_eval_metric=True)
+    if D.is_multiclass:
+        predict = model.predict_proba
+        fit_kwargs['eval_metric'] = 'merror'
+    else:
+        predict = lambda x: model.predict_proba(x)[:, 1]  # type: ignore[code]  # noqa
+        fit_kwargs['eval_metric'] = 'error'
 
 # Fit model
 
-model.fit(
-    X[lib.TRAIN],
-    Y[lib.TRAIN],
-    **args["fit"],
-    eval_set=[(X[lib.VAL], Y[lib.VAL])],
-)
+model.fit(X[lib.TRAIN], Y[lib.TRAIN], **fit_kwargs)
 
 # Save model and metrics
 

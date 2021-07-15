@@ -62,9 +62,7 @@ if D.is_regression:
     model = CatBoostRegressor(**model_kwargs)
     predict = model.predict
 else:
-    model = CatBoostClassifier(
-        **model_kwargs, eval_metric='AUC' if D.is_binclass else 'Accuracy'
-    )
+    model = CatBoostClassifier(**model_kwargs, eval_metric='Accuracy')
     predict = (
         model.predict_proba
         if D.is_multiclass

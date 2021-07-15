@@ -1,0 +1,56 @@
+{
+    "dataset": "year",
+    "algorithm": "grownet",
+    "config": {
+        "data": {
+            "normalization": "quantile_normal",
+            "path": "data/year",
+            "y_policy": "mean_std"
+        },
+        "model": {
+            "boost_rate": 1.0,
+            "correct_epoch": 1,
+            "epochs_per_stage": 1,
+            "hidden_d": 128,
+            "num_nets": 40,
+            "sparse": false
+        },
+        "patience": 16,
+        "seed": 0,
+        "training": {
+            "eval_batch_size": 8192,
+            "lr": 0.0001,
+            "lr_scaler": 3,
+            "weight_decay": 0.001
+        }
+    },
+    "environment": {
+        "devices": {
+            "CUDA_VISIBLE_DEVICES": "0",
+            "torch.version.cuda": "10.1",
+            "torch.backends.cudnn.version()": 7603,
+            "torch.cuda.nccl.version()": 2708,
+            "driver": "418.67",
+            "0": {
+                "name": "Tesla V100-PCIE-32GB",
+                "total_memory": 34058272768
+            }
+        }
+    },
+    "batch_size": 1024,
+    "epoch_size": 363,
+    "metrics": {
+        "train": {
+            "rmse": 8.27090768260189,
+            "score": -8.27090768260189
+        },
+        "val": {
+            "rmse": 8.874339341451858,
+            "score": -8.874339341451858
+        },
+        "test": {
+            "rmse": 9.065212101057455,
+            "score": -9.065212101057455
+        }
+    }
+}

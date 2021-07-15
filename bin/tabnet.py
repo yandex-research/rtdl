@@ -502,9 +502,8 @@ print(columns)
 model = TabNet(
     num_classes=D.info['n_classes'] if D.is_multiclass else 1,
     columns=columns,
-    num_features=X_num['train'].shape[1] + 0
-    if X_cat is None
-    else args["model"]["d_embedding"] * X_cat['train'].shape[1],
+    num_features=X_num['train'].shape[1]
+    + (0 if X_cat is None else args["model"]["d_embedding"] * X_cat['train'].shape[1]),
     **args["model"],
 )
 
