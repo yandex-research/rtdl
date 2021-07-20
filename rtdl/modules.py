@@ -323,7 +323,6 @@ class MLP(nn.Module):
             only if you are sure that you need it.
         """
         super().__init__()
-        assert d_layers or d_out
         if isinstance(dropouts, float):
             dropouts = [dropouts] * len(d_layers)
         assert len(d_layers) == len(dropouts)
@@ -346,10 +345,7 @@ class MLP(nn.Module):
     def make_baseline(
         cls: Type['MLP'],
         d_in: int,
-        d_first: Optional[int],
-        d_intermidiate: Optional[int],
-        d_last: Optional[int],
-        n_blocks: int,
+        d_layers: List[int],
         dropout: float,
         d_out: int,
     ) -> 'MLP':
@@ -359,15 +355,11 @@ class MLP(nn.Module):
         convenient for tuning; it was used in the original paper.
         """
         assert isinstance(dropout, float)
-        for (d, n) in [(d_first, 1), (d_last, 2), (d_intermidiate, 3)]:
-            assert (n_blocks >= n) ^ (d is None)
-        d_layers = []
-        if n_blocks >= 1:
-            d_layers.append(d_first)
-        if n_blocks >= 3:
-            d_layers.extend([d_intermidiate] * (n_blocks - 2))
-        if n_blocks >= 2:
-            d_layers.append(d_last)
+        if len(d_layers) > 2:
+            assert len(set(d_layers[1:-1])) == 1, (
+                'if d_layers contains more than two elements, then'
+                ' all elements except for the first and the last ones must be equal.'
+            )
         return MLP(
             d_in=d_in,
             d_layers=d_layers,  # type: ignore

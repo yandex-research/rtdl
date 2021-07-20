@@ -1,5 +1,5 @@
 import torch
-from pytest import mark
+from pytest import mark, raises
 
 import rtdl
 
@@ -29,6 +29,11 @@ def test_flat_embeddings():
     )
 
 
+def test_bad_mlp():
+    with raises(AssertionError):
+        rtdl.MLP.make_baseline(1, [1, 2, 3, 4], 0.0, 1)
+
+
 @mark.parametrize('n_blocks', range(5))
 @mark.parametrize('d_out', [1, 2])
 def test_mlp(n_blocks, d_out):
@@ -36,15 +41,14 @@ def test_mlp(n_blocks, d_out):
         return
     d = 4
     d_last = d + 1
-    model = rtdl.MLP.make_baseline(
-        d_in=d,
-        d_first=d if n_blocks > 0 else None,
-        d_intermidiate=d + (d_out if d_out else 0) if n_blocks > 2 else None,
-        d_last=d_last if n_blocks > 1 else None,
-        n_blocks=n_blocks,
-        dropout=0.1,
-        d_out=d_out,
-    )
+    d_layers = []
+    if n_blocks:
+        d_layers.append(d)
+    if n_blocks > 2:
+        d_layers.extend([d + d_out] * (n_blocks - 2))
+    if n_blocks > 1:
+        d_layers.append(d_last)
+    model = rtdl.MLP.make_baseline(d_in=d, d_layers=d_layers, dropout=0.1, d_out=d_out)
     n = 2
     assert model(torch.randn(n, d)).shape == (
         (n, d_out) if d_out else (n, d_last) if n_blocks > 1 else (n, d)
