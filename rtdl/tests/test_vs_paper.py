@@ -1,4 +1,4 @@
-# Tests in this file validate that the models from `rtdl` are LITERALLY THE SAME as
+# Tests in this file validate that the models in `rtdl` are LITERALLY THE SAME as
 # the ones used in the paper (https://github.com/yandex-research/rtdl/tree/main/bin)
 # The testing approach:
 # (1) copy weights from the correct model to the RTDL model

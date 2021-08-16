@@ -725,6 +725,10 @@ class Transformer(nn.Module):
     ) -> None:
         """Initialize self."""
         super().__init__()
+        if not prenormalization:
+            assert (
+                not first_prenormalization
+            ), 'If `prenormalization` is False, then `first_prenormalization` must be False'
         _all_or_none([n_tokens, kv_compression_ratio, kv_compression_sharing])
         assert kv_compression_sharing in [None, 'headwise', 'key-value', 'layerwise']
         if not prenormalization:
@@ -737,7 +741,11 @@ class Transformer(nn.Module):
                     UserWarning,
                 )
             assert not first_prenormalization
-        if first_prenormalization and self.WARNINGS['first_prenormalization']:
+        if (
+            prenormalization
+            and first_prenormalization
+            and self.WARNINGS['first_prenormalization']
+        ):
             warnings.warn(
                 'first_prenormalization is set to True. Are you sure about this? '
                 'For example, the vanilla FTTransformer with '
@@ -968,7 +976,7 @@ class FTTransformer(nn.Module):
         n_blocks: int,
         attention_dropout: float,
         ffn_d_intermidiate: int,
-        ffn_dropout: int,
+        ffn_dropout: float,
         residual_dropout: float,
         last_layer_query_idx: Union[None, List[int], slice] = None,
         kv_compression_ratio: Optional[float] = None,
@@ -983,6 +991,7 @@ class FTTransformer(nn.Module):
         transformer_config = cls.get_baseline_transformer_subconfig()
         for arg_name in [
             'n_blocks',
+            'd_token',
             'attention_dropout',
             'ffn_d_intermidiate',
             'ffn_dropout',
@@ -1009,7 +1018,7 @@ class FTTransformer(nn.Module):
     ) -> 'FTTransformer':
         """Create the default `FTTransformer`.
 
-        With :code:`n_blocks=3` (default) it is the FT-Transformer variation that
+        With :code:`n_blocks=3` (default) it is the FT-Transformer variation that is
         referred to as "default FT-Transformer" in the original paper.
 
         Note:
