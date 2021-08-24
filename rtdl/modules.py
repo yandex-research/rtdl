@@ -711,7 +711,7 @@ class Transformer(nn.Module):
         attention_initialization: str,
         attention_normalization: str,
         ffn_d_intermidiate: int,
-        ffn_dropout: int,
+        ffn_dropout: float,
         ffn_activation: str,
         ffn_normalization: str,
         residual_dropout: float,
