@@ -403,7 +403,7 @@ class ResNet(nn.Module):
             self,
             *,
             d_main: int,
-            d_intermidiate: int,
+            d_hidden: int,
             bias_first: bool,
             bias_second: bool,
             dropout_first: float,
@@ -415,10 +415,10 @@ class ResNet(nn.Module):
             """Initialize self."""
             super().__init__()
             self.normalization = _make_nn_module(normalization, d_main)
-            self.linear_first = nn.Linear(d_main, d_intermidiate, bias_first)
+            self.linear_first = nn.Linear(d_main, d_hidden, bias_first)
             self.activation = _make_nn_module(activation)
             self.dropout_first = nn.Dropout(dropout_first)
-            self.linear_second = nn.Linear(d_intermidiate, d_main, bias_second)
+            self.linear_second = nn.Linear(d_hidden, d_main, bias_second)
             self.dropout_second = nn.Dropout(dropout_second)
             self.skip_connection = skip_connection
 
@@ -467,7 +467,7 @@ class ResNet(nn.Module):
         d_in: int,
         n_blocks: int,
         d_main: int,
-        d_intermidiate: int,
+        d_hidden: int,
         dropout_first: float,
         dropout_second: float,
         normalization: ModuleType,
@@ -490,7 +490,7 @@ class ResNet(nn.Module):
             *[
                 ResNet.Block(
                     d_main=d_main,
-                    d_intermidiate=d_intermidiate,
+                    d_hidden=d_hidden,
                     bias_first=True,
                     bias_second=True,
                     dropout_first=dropout_first,
@@ -516,7 +516,7 @@ class ResNet(nn.Module):
         *,
         d_in: int,
         d_main: int,
-        d_intermidiate: int,
+        d_hidden: int,
         dropout_first: float,
         dropout_second: float,
         n_blocks: int,
@@ -531,7 +531,7 @@ class ResNet(nn.Module):
             d_in=d_in,
             n_blocks=n_blocks,
             d_main=d_main,
-            d_intermidiate=d_intermidiate,
+            d_hidden=d_hidden,
             dropout_first=dropout_first,
             dropout_second=dropout_second,
             normalization='BatchNorm1d',
@@ -650,7 +650,7 @@ class Transformer(nn.Module):
             self,
             *,
             d_token: int,
-            d_intermidiate: int,
+            d_hidden: int,
             bias_first: bool,
             bias_second: bool,
             dropout: float,
@@ -660,12 +660,12 @@ class Transformer(nn.Module):
             super().__init__()
             self.linear_first = nn.Linear(
                 d_token,
-                d_intermidiate * (2 if _is_glu_activation(activation) else 1),
+                d_hidden * (2 if _is_glu_activation(activation) else 1),
                 bias_first,
             )
             self.activation = _make_nn_module(activation)
             self.dropout = nn.Dropout(dropout)
-            self.linear_second = nn.Linear(d_intermidiate, d_token, bias_second)
+            self.linear_second = nn.Linear(d_hidden, d_token, bias_second)
 
         def forward(self, x: Tensor) -> Tensor:
             """Perform the forward pass."""
@@ -710,7 +710,7 @@ class Transformer(nn.Module):
         attention_dropout: float,
         attention_initialization: str,
         attention_normalization: str,
-        ffn_d_intermidiate: int,
+        ffn_d_hidden: int,
         ffn_dropout: float,
         ffn_activation: str,
         ffn_normalization: str,
@@ -785,7 +785,7 @@ class Transformer(nn.Module):
                     ),
                     'ffn': Transformer.FFN(
                         d_token=d_token,
-                        d_intermidiate=ffn_d_intermidiate,
+                        d_hidden=ffn_d_hidden,
                         bias_first=True,
                         bias_second=True,
                         dropout=ffn_dropout,
@@ -936,15 +936,13 @@ class FTTransformer(nn.Module):
         baseline_subconfig = cls.get_baseline_transformer_subconfig()
         # (4 / 3) for xGLU activations results in almost the same parameter count
         # as (2.0) for element-wise activations (e.g. ReLU; see the "else" branch)
-        ffn_d_intermidiate_factor = (
+        ffn_d_hidden_factor = (
             (4 / 3) if _is_glu_activation(baseline_subconfig['ffn_activation']) else 2.0
         )
         return {
             'n_blocks': n_blocks,
             'residual_dropout': 0.0,
-            'ffn_d_intermidiate': int(
-                arch_subconfig['d_token'] * ffn_d_intermidiate_factor
-            ),
+            'ffn_d_hidden': int(arch_subconfig['d_token'] * ffn_d_hidden_factor),
             **arch_subconfig,
             **baseline_subconfig,
         }
@@ -979,7 +977,7 @@ class FTTransformer(nn.Module):
         d_token: int,
         n_blocks: int,
         attention_dropout: float,
-        ffn_d_intermidiate: int,
+        ffn_d_hidden: int,
         ffn_dropout: float,
         residual_dropout: float,
         last_layer_query_idx: Union[None, List[int], slice] = None,
@@ -997,7 +995,7 @@ class FTTransformer(nn.Module):
             'n_blocks',
             'd_token',
             'attention_dropout',
-            'ffn_d_intermidiate',
+            'ffn_d_hidden',
             'ffn_dropout',
             'residual_dropout',
             'last_layer_query_idx',
