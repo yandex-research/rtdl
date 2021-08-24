@@ -241,8 +241,19 @@ class FeatureTokenizer(nn.Module):
         return x[0] if len(x) == 1 else torch.cat(x, dim=1)
 
 
-class AppendCLSToken(nn.Module):
-    """Appends the [CLS] token for BERT-like inference."""
+class CLSToken(nn.Module):
+    """[CLS]-token for BERT-like inference.
+
+    Note:
+
+        When used as a module like :code:`cls_token(x)`, the [CLS]-token is appended
+        **to the end** of each item in the batch. If you need [CLS]-token to be the
+        first one, you have two options:
+
+            1. perform the call manually: :code:`torch.cat([cls_token.repeat_as(x), x])`
+            2. :code:`class MyCLSToken(rtdl.CLSToken)` and use the snippet above as the
+               implementation of the `forward` method.
+    """
 
     def __init__(self, d_token: int, initialization: str) -> None:
         """Initialize self."""
@@ -251,10 +262,26 @@ class AppendCLSToken(nn.Module):
         self.weight = nn.Parameter(Tensor(d_token))
         initialization_.apply(self.weight, d_token)
 
-    def forward(self, x: Tensor) -> Tensor:
-        """Perform the forward pass."""
+    def repeat_as(self, x: Tensor) -> Tensor:
+        """Repeat self to match the given batch of token-based objects.
+
+        Args:
+            x: tensor of a shape `(batch_size, n_tokens, d_token)`.
+
+        Returns:
+            tensor of a shape `(len(x), 1, d_token)`
+        """
         assert x.ndim == 3
-        return torch.cat([x, self.weight.view(1, 1, -1).repeat(len(x), 1, 1)], dim=1)
+        assert len(self.weight) == x.shape[-1]
+        return self.weight.view(1, 1, -1).repeat(len(x), 1, 1)
+
+    def forward(self, x: Tensor) -> Tensor:
+        """Append self **to the end** of each item in the batch.
+
+        See the documentation for `CLSToken` to see how to append the [CLS]-token to the
+        beginning of each item.
+        """
+        return torch.cat([x, self.repeat_as(x)], dim=1)
 
 
 def _make_nn_module(module_type: ModuleType, *args) -> nn.Module:
@@ -895,7 +922,7 @@ class FTTransformer(nn.Module):
         if transformer.prenormalization:
             assert 'attention_normalization' not in transformer.blocks[0]  # type: ignore
         self.feature_tokenizer = feature_tokenizer
-        self.append_cls_token = AppendCLSToken(
+        self.cls_token = CLSToken(
             feature_tokenizer.d_token, feature_tokenizer.initialization
         )
         self.transformer = transformer
@@ -1084,6 +1111,6 @@ class FTTransformer(nn.Module):
     def forward(self, x_num: Optional[Tensor], x_cat: Optional[Tensor]) -> Tensor:
         """Perform the forward pass."""
         x = self.feature_tokenizer(x_num, x_cat)
-        x = self.append_cls_token(x)
+        x = self.cls_token(x)
         x = self.transformer(x)
         return x

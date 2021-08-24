@@ -31,7 +31,7 @@ Tokens and Embeddings
     CategoricalFeatureTokenizer
     FlatEmbedding
     FeatureTokenizer
-    AppendCLSToken
+    CLSToken
 
 Attention
 ---------

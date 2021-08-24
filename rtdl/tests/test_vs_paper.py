@@ -676,7 +676,7 @@ def test_ft_transformer(seed, kv_compression_ratio):
     rtdl_model.feature_tokenizer.cat_tokenizer.bias.copy_(
         correct_model.tokenizer.bias[-len(categories) :]
     )
-    rtdl_model.append_cls_token.weight.copy_(correct_model.tokenizer.weight[-1])
+    rtdl_model.cls_token.weight.copy_(correct_model.tokenizer.weight[-1])
     for correct_layer, block in zip(
         correct_model.layers, rtdl_model.transformer.blocks
     ):
