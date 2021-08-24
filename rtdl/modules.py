@@ -709,11 +709,12 @@ class Transformer(nn.Module):
         attention_n_heads: int,
         attention_dropout: float,
         attention_initialization: str,
+        attention_normalization: str,
         ffn_d_intermidiate: int,
         ffn_dropout: int,
         ffn_activation: str,
+        ffn_normalization: str,
         residual_dropout: float,
-        normalization: ModuleType,
         prenormalization: bool,
         first_prenormalization: bool,
         last_layer_query_idx: Union[None, List[int], slice],
@@ -721,6 +722,7 @@ class Transformer(nn.Module):
         kv_compression_ratio: Optional[float],
         kv_compression_sharing: Optional[str],
         head_activation: ModuleType,
+        head_normalization: ModuleType,
         d_out: int,
     ) -> None:
         """Initialize self."""
@@ -796,9 +798,9 @@ class Transformer(nn.Module):
             )
             if layer_idx or not prenormalization or first_prenormalization:
                 layer['attention_normalization'] = _make_nn_module(
-                    normalization, d_token
+                    attention_normalization, d_token
                 )
-            layer['ffn_normalization'] = _make_nn_module(normalization, d_token)
+            layer['ffn_normalization'] = _make_nn_module(ffn_normalization, d_token)
             if kv_compression_ratio and self.shared_kv_compression is None:
                 layer['key_compression'] = make_kv_compression()
                 if kv_compression_sharing == 'headwise':
@@ -812,7 +814,7 @@ class Transformer(nn.Module):
             d_out=d_out,
             bias=True,
             activation=head_activation,  # type: ignore
-            normalization=normalization if prenormalization else 'Identity',
+            normalization=head_normalization if prenormalization else 'Identity',
         )
 
     def _get_kv_compressions(self, layer):
@@ -907,7 +909,8 @@ class FTTransformer(nn.Module):
             'attention_n_heads': 8,
             'attention_initialization': 'kaiming',
             'ffn_activation': 'ReGLU',
-            'normalization': 'LayerNorm',
+            'attention_normalization': 'LayerNorm',
+            'ffn_normalization': 'LayerNorm',
             'prenormalization': True,
             'first_prenormalization': False,
             'last_layer_query_idx': None,
@@ -915,6 +918,7 @@ class FTTransformer(nn.Module):
             'kv_compression_ratio': None,
             'kv_compression_sharing': None,
             'head_activation': 'ReLU',
+            'head_normalization': 'LayerNorm',
         }
 
     @classmethod
