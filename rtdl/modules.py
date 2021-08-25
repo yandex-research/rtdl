@@ -258,7 +258,7 @@ class CLSToken(nn.Module):
         x = torch.randn(batch_size, n_tokens, d_token)
         x = cls_token(x)
         assert x.shape == (batch_size, n_tokens + 1, d_token)
-        assert (x[:, -1:, :] == cls_token.repeat_as(x)).all()
+        assert (x[:, -1, :] == cls_token.expand(len(x))).all()
     """
 
     def __init__(self, d_token: int, initialization: str) -> None:
@@ -268,22 +268,32 @@ class CLSToken(nn.Module):
         self.weight = nn.Parameter(Tensor(d_token))
         initialization_.apply(self.weight, d_token)
 
-    def repeat_as(self, x: Tensor) -> Tensor:
-        """Repeat self to match the given batch of token-based objects.
+    def expand(self, *leading_dimensions: int) -> Tensor:
+        """Expand (repeat) the underlying [CLS]-token to a tensor with the given leading dimensions.
+
+        A possible use case is building a batch of [CLS]-tokens. See `CLSToken` for
+        examples of usage.
+
+        Note:
+
+            Under the hood, the `torch.Tensor.expand` method is applied to the
+            underlying :code:`weight` parameter, so gradients will be propagated as
+            expected.
 
         Args:
-            x: tensor of a shape `(batch_size, n_tokens, d_token)`.
+            leading_dimensions: the additional new dimensions
 
         Returns:
-            tensor of a shape `(len(x), 1, d_token)`
+            tensor of the shape :code:`(*leading_dimensions, len(self.weight))`
         """
-        assert x.ndim == 3
-        assert len(self.weight) == x.shape[-1]
-        return self.weight.view(1, 1, -1).repeat(len(x), 1, 1)
+        if not leading_dimensions:
+            return self.weight
+        new_dims = (1,) * (len(leading_dimensions) - 1)
+        return self.weight.view(*new_dims, -1).expand(*leading_dimensions, -1)
 
     def forward(self, x: Tensor) -> Tensor:
         """Append self **to the end** of each item in the batch (see `CLSToken`)."""
-        return torch.cat([x, self.repeat_as(x)], dim=1)
+        return torch.cat([x, self.expand(len(x), 1)], dim=1)
 
 
 def _make_nn_module(module_type: ModuleType, *args) -> nn.Module:
