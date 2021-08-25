@@ -244,15 +244,21 @@ class FeatureTokenizer(nn.Module):
 class CLSToken(nn.Module):
     """[CLS]-token for BERT-like inference.
 
-    Note:
+    .. rubric:: Tutorial
 
-        When used as a module like :code:`cls_token(x)`, the [CLS]-token is appended
-        **to the end** of each item in the batch. If you need [CLS]-token to be the
-        first one, you have two options:
+    When used as a module, the [CLS]-token is appended **to the end** of each item in
+    the batch:
 
-            1. perform the call manually: :code:`torch.cat([cls_token.repeat_as(x), x])`
-            2. :code:`class MyCLSToken(rtdl.CLSToken)` and use the snippet above as the
-               implementation of the `forward` method.
+    .. testcode::
+
+        batch_size = 2
+        n_tokens = 3
+        d_token = 4
+        cls_token = CLSToken(d_token, 'uniform')
+        x = torch.randn(batch_size, n_tokens, d_token)
+        x = cls_token(x)
+        assert x.shape == (batch_size, n_tokens + 1, d_token)
+        assert (x[:, -1:, :] == cls_token.repeat_as(x)).all()
     """
 
     def __init__(self, d_token: int, initialization: str) -> None:
@@ -276,11 +282,7 @@ class CLSToken(nn.Module):
         return self.weight.view(1, 1, -1).repeat(len(x), 1, 1)
 
     def forward(self, x: Tensor) -> Tensor:
-        """Append self **to the end** of each item in the batch.
-
-        See the documentation for `CLSToken` to see how to append the [CLS]-token to the
-        beginning of each item.
-        """
+        """Append self **to the end** of each item in the batch (see `CLSToken`)."""
         return torch.cat([x, self.repeat_as(x)], dim=1)
 
 
