@@ -396,10 +396,10 @@ class MLP(nn.Module):
         Args:
             d_in: the input dimension
             d_layers: the dimensions of the hidden layers. If there are more than two
-                hidden layers, then the all of them except for the first and the last
-                ones must have the dimension. Correct examples: :code:`[]`, :code:`[8]`,
-                :code:`[8, 16]`, :code:`[2, 2, 2, 2]`, :code:`[1, 2, 2, 4]`. Incorrect
-                examples: :code:`[1, 2, 3, 4]`.
+                hidden layers, then all of them except for the first and the last
+                ones must have the same dimension. Valid examples: :code:`[]`,
+                :code:`[8]`, :code:`[8, 16]`, :code:`[2, 2, 2, 2]`,
+                :code:`[1, 2, 2, 4]`. Invalid examples: :code:`[1, 2, 3, 4]`.
             dropout: the dropout rate for all hidden layers
             d_out: the output dimension
 
