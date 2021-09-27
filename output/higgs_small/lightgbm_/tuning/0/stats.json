@@ -1,0 +1,189 @@
+{
+    "config": {
+        "base_config": {
+            "data": {
+                "path": "data/higgs_small",
+                "y_policy": "mean_std"
+            },
+            "fit": {
+                "early_stopping_rounds": 50,
+                "verbose": true
+            },
+            "model": {
+                "n_estimators": 2000,
+                "n_jobs": 1
+            },
+            "seed": 0
+        },
+        "optimization": {
+            "options": {
+                "n_trials": 100
+            },
+            "sampler": {
+                "seed": 0
+            },
+            "space": {
+                "model": {
+                    "colsample_bytree": [
+                        "uniform",
+                        0.5,
+                        1.0
+                    ],
+                    "learning_rate": [
+                        "loguniform",
+                        0.001,
+                        1.0
+                    ],
+                    "min_child_samples": [
+                        "int",
+                        2,
+                        100
+                    ],
+                    "min_child_weight": [
+                        "loguniform",
+                        1e-05,
+                        0.1
+                    ],
+                    "num_leaves": [
+                        "int",
+                        10,
+                        100
+                    ],
+                    "reg_lambda": [
+                        "?loguniform",
+                        0.0,
+                        1e-05,
+                        1.0
+                    ],
+                    "subsample": [
+                        "uniform",
+                        0.5,
+                        1.0
+                    ]
+                }
+            }
+        },
+        "program": "bin/lightgbm_.py"
+    },
+    "environment": {},
+    "best_stats": {
+        "config": {
+            "data": {
+                "path": "data/higgs_small",
+                "y_policy": "mean_std"
+            },
+            "fit": {
+                "early_stopping_rounds": 50,
+                "verbose": true
+            },
+            "model": {
+                "colsample_bytree": 0.7999440674588046,
+                "learning_rate": 0.04183849804413404,
+                "min_child_samples": 81,
+                "min_child_weight": 0.00676057460469568,
+                "n_estimators": 2000,
+                "n_jobs": 1,
+                "num_leaves": 94,
+                "reg_lambda": 0.006637134146517112,
+                "subsample": 0.6165566522563218
+            },
+            "seed": 0
+        },
+        "environment": {},
+        "dataset": "higgs_small",
+        "algorithm": "lightgbm_",
+        "metrics": {
+            "train": {
+                "0": {
+                    "precision": 0.8235052111903456,
+                    "recall": 0.8119802582651613,
+                    "f1-score": 0.8177021276595745,
+                    "support": 29582
+                },
+                "1": {
+                    "precision": 0.8343854216293473,
+                    "recall": 0.8447995176364185,
+                    "f1-score": 0.8395601761692182,
+                    "support": 33170
+                },
+                "accuracy": 0.8293281489036206,
+                "macro avg": {
+                    "precision": 0.8289453164098464,
+                    "recall": 0.8283898879507898,
+                    "f1-score": 0.8286311519143963,
+                    "support": 62752
+                },
+                "weighted avg": {
+                    "precision": 0.829256367811038,
+                    "recall": 0.8293281489036206,
+                    "f1-score": 0.8292560457668043,
+                    "support": 62752
+                },
+                "roc_auc": 0.911454783703483,
+                "score": 0.8293281489036206
+            },
+            "val": {
+                "0": {
+                    "precision": 0.7181756296800544,
+                    "recall": 0.71322336398053,
+                    "f1-score": 0.7156909300590191,
+                    "support": 7396
+                },
+                "1": {
+                    "precision": 0.7457749011147069,
+                    "recall": 0.7503617945007236,
+                    "f1-score": 0.7480613165013527,
+                    "support": 8292
+                },
+                "accuracy": 0.7328531361550229,
+                "macro avg": {
+                    "precision": 0.7319752653973807,
+                    "recall": 0.7317925792406268,
+                    "f1-score": 0.7318761232801858,
+                    "support": 15688
+                },
+                "weighted avg": {
+                    "precision": 0.7327634138932199,
+                    "recall": 0.7328531361550229,
+                    "f1-score": 0.732800519833358,
+                    "support": 15688
+                },
+                "roc_auc": 0.8101398566962442,
+                "score": 0.7328531361550229
+            },
+            "test": {
+                "0": {
+                    "precision": 0.7091563898286587,
+                    "recall": 0.7028664142779881,
+                    "f1-score": 0.7059973924380704,
+                    "support": 9245
+                },
+                "1": {
+                    "precision": 0.7370536996266871,
+                    "recall": 0.7428847081524361,
+                    "f1-score": 0.7399577167019029,
+                    "support": 10365
+                },
+                "accuracy": 0.7240183579806221,
+                "macro avg": {
+                    "precision": 0.7231050447276729,
+                    "recall": 0.7228755612152121,
+                    "f1-score": 0.7229775545699866,
+                    "support": 19610
+                },
+                "weighted avg": {
+                    "precision": 0.7239017042629556,
+                    "recall": 0.7240183579806221,
+                    "f1-score": 0.7239473547529416,
+                    "support": 19610
+                },
+                "roc_auc": 0.8046407896525338,
+                "score": 0.7240183579806221
+            }
+        },
+        "time": "0:00:09",
+        "trial_id": 67,
+        "tuning_time": "0:09:28"
+    },
+    "time": "0:13:52"
+}

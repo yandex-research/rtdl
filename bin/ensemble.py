@@ -57,7 +57,11 @@ for seeds in [range(0, 5), range(5, 10), range(10, 15)]:
         single_predictions = predictions[part]  # type: ignore[code]
         if D.is_binclass:
             single_predictions = expit(single_predictions)
-        elif D.is_multiclass and args.algorithm not in ('catboost', 'xgboost'):
+        elif D.is_multiclass and args.algorithm not in (
+            'catboost',
+            'xgboost',
+            'lightgbm_',
+        ):
             single_predictions = softmax(single_predictions, -1)
         else:
             assert D.is_regression
