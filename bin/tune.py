@@ -118,7 +118,13 @@ def objective(trial: optuna.trial.Trial) -> float:
         )
         stats = lib.load_json(out / 'stats.json')
         stats['algorithm'] = stats['algorithm'].rsplit('___', 1)[0]
-        trial_stats.append({**stats, 'trial_id': trial.number})
+        trial_stats.append(
+            {
+                **stats,
+                'trial_id': trial.number,
+                'tuning_time': lib.format_seconds(timer()),
+            }
+        )
         lib.dump_json(trial_stats, output / 'trial_stats.json', indent=4)
         lib.backup_output(output)
         print(f'Time: {lib.format_seconds(timer())}')
@@ -157,7 +163,10 @@ if checkpoint_path.exists():
         checkpoint['timer'],
     )
     zero.set_random_state(checkpoint['random_state'])
-    args['optimization']['options']['n_trials'] -= len(study.trials)
+    if 'n_trials' in args['optimization']['options']:
+        args['optimization']['options']['n_trials'] -= len(study.trials)
+    if 'timeout' in args['optimization']['options']:
+        args['optimization']['options']['timeout'] -= timer()
     stats.setdefault('continuations', []).append(len(study.trials))
     print(f'Loading checkpoint ({len(study.trials)})')
 else:
