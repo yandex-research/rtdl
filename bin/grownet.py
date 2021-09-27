@@ -397,9 +397,7 @@ for s in range(args["model"]["num_nets"]):
             m.zero_grad()
             loss.backward()
             opt.step()
-            break
 
-        break
     net_ensemble.add(m)
     print(f"Time to train one model: {zero.format_seconds(timer())}")
 
