@@ -37,7 +37,7 @@ def normalize(
         )
     elif normalization == 'quantile_uniform':
         normalizer = sklearn.preprocessing.QuantileTransformer(**qt_kwargs)
-    elif normalization == 'quantile_normal':
+    elif normalization == 'quantile':
         normalizer = sklearn.preprocessing.QuantileTransformer(
             output_distribution='normal', **qt_kwargs
         )
@@ -47,7 +47,7 @@ def normalize(
 
     # Source: https://github.com/anonICLR2020/node/blob/a625d22879cbee53499ad28df653b599bb30fad1/lib/data.py#L75  # noqa
     X_train = X['train']
-    if normalization in ['quantile_normal', 'quantile_uniform'] and noise:
+    if normalization in ['quantile', 'quantile_uniform'] and noise:
         X_train = X_train
         stds = np.std(X_train, axis=0, keepdims=True)
         noise_std = noise / np.maximum(stds, noise)  # type: ignore[code]
