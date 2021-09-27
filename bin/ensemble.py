@@ -22,6 +22,7 @@ args = parser.parse_args()
 PARTS = ['val', 'test'] if args.algorithm == 'node' else ['train', 'val', 'test']
 SRC = env.PROJECT_DIR / args.experiment
 DST = SRC.with_name(SRC.name + '_ensemble')
+algorithm_is_gbdt = args.algorithm in ('catboost', 'xgboost', 'lightgbm_')
 
 for seeds in [range(0, 5), range(5, 10), range(10, 15)]:
     if any(not (SRC / str(seed) / 'DONE').exists() for seed in seeds):
@@ -55,13 +56,9 @@ for seeds in [range(0, 5), range(5, 10), range(10, 15)]:
     stats['config']['count'] = len(seeds)
     for part in PARTS:
         single_predictions = predictions[part]  # type: ignore[code]
-        if D.is_binclass:
+        if D.is_binclass and not algorithm_is_gbdt:
             single_predictions = expit(single_predictions)
-        elif D.is_multiclass and args.algorithm not in (
-            'catboost',
-            'xgboost',
-            'lightgbm_',
-        ):
+        elif D.is_multiclass and not algorithm_is_gbdt:
             single_predictions = softmax(single_predictions, -1)
         else:
             assert D.is_regression
