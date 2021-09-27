@@ -118,7 +118,7 @@ if __name__ == "__main__":
         normalization=args['data'].get('normalization'),
         num_nan_policy='mean',
         cat_nan_policy='new',
-        cat_policy=args['data'].get('cat_policy', 'counter'),
+        cat_policy=args['data'].get('cat_policy', 'indices'),
         cat_min_frequency=args['data'].get('cat_min_frequency', 0.0),
         seed=args['seed'],
     )
