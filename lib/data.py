@@ -58,7 +58,7 @@ def normalize(
 
 @dc.dataclass
 class Dataset:
-    N: ArrayDict
+    N: ty.Optional[ArrayDict]
     C: ty.Optional[ArrayDict]
     y: ArrayDict
     info: ty.Dict[str, ty.Any]
@@ -75,7 +75,7 @@ class Dataset:
             }
 
         return Dataset(
-            load('N'),
+            load('N') if dir_.joinpath('N_train.npy').exists() else None,
             load('C') if dir_.joinpath('C_train.npy').exists() else None,
             load('y'),
             util.load_json(dir_ / 'info.json'),
@@ -95,8 +95,21 @@ class Dataset:
         return self.info['task_type'] == util.REGRESSION
 
     @property
+    def n_num_features(self) -> int:
+        return self.info['n_num_features']
+
+    @property
+    def n_cat_features(self) -> int:
+        return self.info['n_cat_features']
+
+    @property
     def n_features(self) -> int:
-        return self.info['n_num_features'] + self.info['n_cat_features']
+        return self.n_num_features + self.n_cat_features
+
+    def size(self, part: str) -> int:
+        X = self.N if self.N is not None else self.C
+        assert X is not None
+        return len(X[part])
 
     def build_X(
         self,
@@ -123,26 +136,31 @@ class Dataset:
             with open(cache_path, 'rb') as f:
                 return pickle.load(f)
 
-        N = deepcopy(self.N)
-
-        num_nan_masks = {k: np.isnan(v) for k, v in N.items()}
-        if any(x.any() for x in num_nan_masks.values()):  # type: ignore[code]
-            if num_nan_policy == 'mean':
-                num_new_values = np.nanmean(self.N['train'], axis=0)
-            else:
-                util.raise_unknown('numerical NaN policy', num_nan_policy)
-            for k, v in N.items():
-                num_nan_indices = np.where(num_nan_masks[k])
-                v[num_nan_indices] = np.take(num_new_values, num_nan_indices[1])
-        if normalization:
-            N = normalize(N, normalization, seed, inplace=True)
-
         def save_result(x):
             if cache_path:
                 with open(cache_path, 'wb') as f:
                     pickle.dump(x, f)
 
+        if self.N:
+            N = deepcopy(self.N)
+
+            num_nan_masks = {k: np.isnan(v) for k, v in N.items()}
+            if any(x.any() for x in num_nan_masks.values()):  # type: ignore[code]
+                if num_nan_policy == 'mean':
+                    num_new_values = np.nanmean(self.N['train'], axis=0)
+                else:
+                    util.raise_unknown('numerical NaN policy', num_nan_policy)
+                for k, v in N.items():
+                    num_nan_indices = np.where(num_nan_masks[k])
+                    v[num_nan_indices] = np.take(num_new_values, num_nan_indices[1])
+            if normalization:
+                N = normalize(N, normalization, seed)
+
+        else:
+            N = None
+
         if cat_policy == 'drop' or not self.C:
+            assert N is not None
             save_result(N)
             return N
 
@@ -205,7 +223,7 @@ class Dataset:
             )
             ohe.fit(C['train'])
             C = {k: ohe.transform(v) for k, v in C.items()}
-            result = {x: np.hstack((N[x], C[x])) for x in N}
+            result = C if N is None else {x: np.hstack((N[x], C[x])) for x in N}
         elif cat_policy == 'counter':
             assert seed is not None
             loo = LeaveOneOutEncoder(sigma=0.1, random_state=seed, return_df=False)
@@ -215,7 +233,7 @@ class Dataset:
                 C = {k: v.values for k, v in C.items()}  # type: ignore[code]
             if normalization:
                 C = normalize(C, normalization, seed, inplace=True)  # type: ignore[code]
-            result = {x: np.hstack((N[x], C[x])) for x in N}
+            result = C if N is None else {x: np.hstack((N[x], C[x])) for x in N}
         else:
             util.raise_unknown('categorical policy', cat_policy)
         save_result(result)

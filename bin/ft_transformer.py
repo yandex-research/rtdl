@@ -53,11 +53,11 @@ class Tokenizer(nn.Module):
         )
 
     def forward(self, x_num: Tensor, x_cat: ty.Optional[Tensor]) -> Tensor:
+        x_some = x_num if x_cat is None else x_cat
+        assert x_some is not None
         x_num = torch.cat(
-            [
-                torch.ones(len(x_num), 1, device=x_num.device),
-                x_num,
-            ],
+            [torch.ones(len(x_some), 1, device=x_some.device)]  # [CLS]
+            + ([] if x_num is None else [x_num]),
             dim=1,
         )
         x = self.weight[None] * x_num[:, :, None]
@@ -69,7 +69,7 @@ class Tokenizer(nn.Module):
         if self.bias is not None:
             bias = torch.cat(
                 [
-                    torch.zeros(1, self.bias.shape[1], device=x_num.device),
+                    torch.zeros(1, self.bias.shape[1], device=x.device),
                     self.bias,
                 ]
             )
@@ -348,7 +348,7 @@ if __name__ == "__main__":
     if not D.is_multiclass:
         Y_device = {k: v.float() for k, v in Y_device.items()}
 
-    train_size = len(X_num[lib.TRAIN])
+    train_size = D.size(lib.TRAIN)
     batch_size = args['training']['batch_size']
     epoch_size = stats['epoch_size'] = math.ceil(train_size / batch_size)
     eval_batch_size = args['training']['eval_batch_size']
@@ -362,7 +362,7 @@ if __name__ == "__main__":
         else F.mse_loss
     )
     model = Transformer(
-        d_numerical=X_num[lib.TRAIN].shape[1],
+        d_numerical=(D.n_num_features if X_cat is not None else D.n_features),
         categories=lib.get_categories(X_cat),
         d_out=D.info['n_classes'] if D.is_multiclass else 1,
         **args['model'],
@@ -413,7 +413,10 @@ if __name__ == "__main__":
         )
 
     def apply_model(part, idx):
-        return model(X_num[part][idx], None if X_cat is None else X_cat[part][idx])
+        return model(
+            None if X_num is None else X_num[part][idx],
+            None if X_cat is None else X_cat[part][idx],
+        )
 
     @torch.no_grad()
     def evaluate(parts):
@@ -429,7 +432,7 @@ if __name__ == "__main__":
                             [
                                 apply_model(part, idx)
                                 for idx in lib.IndexLoader(
-                                    len(X_num[part]), eval_batch_size, False, device
+                                    D.size(part), eval_batch_size, False, device
                                 )
                             ]
                         )

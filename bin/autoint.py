@@ -37,9 +37,13 @@ class Tokenizer(nn.Module):
         super().__init__()
         assert n_latent_tokens == 0
         self.n_latent_tokens = n_latent_tokens
-        self.weight = nn.Parameter(Tensor(d_numerical + n_latent_tokens, d_token))
-        # The initialization is inspired by nn.Linear
-        nn_init.kaiming_uniform_(self.weight, a=math.sqrt(5))
+        if d_numerical:
+            self.weight = nn.Parameter(Tensor(d_numerical + n_latent_tokens, d_token))
+            # The initialization is inspired by nn.Linear
+            nn_init.kaiming_uniform_(self.weight, a=math.sqrt(5))
+        else:
+            self.weight = None
+            assert categories is not None
         if categories is None:
             self.category_offsets = None
             self.category_embeddings = None
@@ -52,11 +56,13 @@ class Tokenizer(nn.Module):
 
     @property
     def n_tokens(self) -> int:
-        return len(self.weight) + (
+        return (0 if self.weight is None else len(self.weight)) + (
             0 if self.category_offsets is None else len(self.category_offsets)
         )
 
-    def forward(self, x_num: Tensor, x_cat: ty.Optional[Tensor]) -> Tensor:
+    def forward(self, x_num: ty.Optional[Tensor], x_cat: ty.Optional[Tensor]) -> Tensor:
+        if x_num is None:
+            return self.category_embeddings(x_cat + self.category_offsets[None])  # type: ignore[code]
         x_num = torch.cat(
             [
                 torch.ones(len(x_num), self.n_latent_tokens, device=x_num.device),
@@ -64,10 +70,10 @@ class Tokenizer(nn.Module):
             ],
             dim=1,
         )
-        x = self.weight[None] * x_num[:, :, None]
+        x = self.weight[None] * x_num[:, :, None]  # type: ignore[code]
         if x_cat is not None:
             x = torch.cat(
-                [x, self.category_embeddings(x_cat + self.category_offsets[None])],
+                [x, self.category_embeddings(x_cat + self.category_offsets[None])],  # type: ignore[code]
                 dim=1,
             )
         return x
@@ -241,7 +247,7 @@ class AutoInt(nn.Module):
             x = layer[f'norm{norm_idx}'](x)
         return x
 
-    def forward(self, x_num: Tensor, x_cat: ty.Optional[Tensor]) -> Tensor:
+    def forward(self, x_num: ty.Optional[Tensor], x_cat: ty.Optional[Tensor]) -> Tensor:
         x = self.tokenizer(x_num, x_cat)
 
         for layer in self.layers:
@@ -306,7 +312,7 @@ del X
 if not D.is_multiclass:
     Y_device = {k: v.float() for k, v in Y_device.items()}
 
-train_size = len(X_num[lib.TRAIN])
+train_size = D.size(lib.TRAIN)
 batch_size = args['training']['batch_size']
 epoch_size = stats['epoch_size'] = math.ceil(train_size / batch_size)
 eval_batch_size = args['training']['eval_batch_size']
@@ -320,7 +326,7 @@ loss_fn = (
     else F.mse_loss
 )
 model = AutoInt(
-    d_numerical=X_num[lib.TRAIN].shape[1],
+    d_numerical=D.n_num_features + (D.n_cat_features if X_cat is None else 0),
     categories=lib.get_categories(X_cat),
     d_out=D.info['n_classes'] if D.is_multiclass else 1,
     **args['model'],
@@ -375,7 +381,10 @@ def print_epoch_info():
 
 
 def apply_model(part, idx):
-    return model(X_num[part][idx], None if X_cat is None else X_cat[part][idx])
+    return model(
+        None if X_num is None else X_num[part][idx],
+        None if X_cat is None else X_cat[part][idx],
+    )
 
 
 @torch.no_grad()
@@ -392,7 +401,7 @@ def evaluate(parts):
                         [
                             apply_model(part, idx)
                             for idx in lib.IndexLoader(
-                                len(X_num[part]), eval_batch_size, False, device
+                                D.size(part), eval_batch_size, False, device
                             )
                         ]
                     )

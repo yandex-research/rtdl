@@ -1,4 +1,5 @@
 # %%
+import gc
 import itertools
 import math
 import typing as ty
@@ -110,7 +111,7 @@ X_num, X_cat = X
 if not D.is_multiclass:
     Y_device = {k: v.float() for k, v in Y_device.items()}
 
-train_size = len(X_num[lib.TRAIN])
+train_size = D.size(lib.TRAIN)
 batch_size, epoch_size = (
     stats['batch_size'],
     stats['epoch_size'],
@@ -127,9 +128,10 @@ loss_fn = (
     if D.is_multiclass
     else F.mse_loss
 )
+
 args['model'].setdefault('d_embedding', None)
 model = NODE(
-    d_in=X_num[lib.TRAIN].shape[1],
+    d_in=D.n_num_features,
     d_out=D.info['n_classes'] if D.is_multiclass else 1,
     categories=lib.get_categories(X_cat),
     **args['model'],
@@ -178,6 +180,23 @@ def step(batch_idx):
     return logits, targets
 
 
+def _predict(part):
+    result = []
+    for idx in lib.IndexLoader(
+        D.size(part),
+        args['training']['eval_batch_size'],
+        False,
+        device,
+    ):
+        result.append(
+            model(
+                None if X_num is None else X_num[part][idx],
+                None if X_cat is None else X_cat[part][idx],
+            )
+        )
+    return torch.cat(result).cpu()
+
+
 @torch.no_grad()
 def predict(m, part):
     global eval_batch_size
@@ -186,20 +205,12 @@ def predict(m, part):
     while eval_batch_size:
         try:
             zero.set_random_state(random_state)
-            return torch.cat(
-                [
-                    model(X_num[part][idx], None if X_cat is None else X_cat[part][idx])
-                    for idx in lib.IndexLoader(
-                        len(X_num[part]),
-                        args['training']['eval_batch_size'],
-                        False,
-                        device,
-                    )
-                ]
-            ).cpu()
+            return _predict(part)
         except RuntimeError as err:
             if not lib.is_oom_exception(err):
                 raise
+            zero.free_memory()
+            gc.collect()
             eval_batch_size //= 2
             print('New eval batch size:', eval_batch_size)
             stats['eval_batch_sizes'][stream.epoch] = eval_batch_size
@@ -278,7 +289,8 @@ with torch.no_grad():
         while True:
             try:
                 zero.set_randomness(args['seed'])
-                step(torch.randperm(train_size)[:size])
+                x = step(torch.randperm(train_size)[:size])
+                del x
             except RuntimeError as err:
                 if not lib.is_oom_exception(err):
                     raise
@@ -298,6 +310,8 @@ for epoch in stream.epochs(args['training']['n_epochs']):
             chunk_size = new_chunk_size
             print('New chunk size:', chunk_size)
             stats['chunk_sizes'][stream.iteration] = chunk_size
+    zero.free_memory()
+    gc.collect()
     epoch_losses = torch.stack(epoch_losses).tolist()
     training_log[lib.TRAIN].extend(epoch_losses)
     print(f'[{lib.TRAIN}] loss = {round(sum(epoch_losses) / len(epoch_losses), 3)}')

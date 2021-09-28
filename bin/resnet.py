@@ -72,11 +72,16 @@ class ResNet(nn.Module):
         self.head = nn.Linear(d, d_out)
 
     def forward(self, x_num: Tensor, x_cat: ty.Optional[Tensor]) -> Tensor:
+        x = []
+        if x_num is not None:
+            x.append(x_num)
         if x_cat is not None:
-            x_cat = self.category_embeddings(x_cat + self.category_offsets[None])
-            x = torch.cat([x_num, x_cat.view(x_cat.size(0), -1)], dim=-1)
-        else:
-            x = x_num
+            x.append(
+                self.category_embeddings(x_cat + self.category_offsets[None]).view(
+                    x_cat.size(0), -1
+                )
+            )
+        x = torch.cat(x, dim=-1)
 
         x = self.first_layer(x)
         for layer in self.layers:
@@ -142,7 +147,7 @@ if __name__ == "__main__":
     if not D.is_multiclass:
         Y_device = {k: v.float() for k, v in Y_device.items()}
 
-    train_size = len(X_num[lib.TRAIN])
+    train_size = D.size(lib.TRAIN)
     batch_size = args['training']['batch_size']
     epoch_size = stats['epoch_size'] = math.ceil(train_size / batch_size)
 
@@ -156,7 +161,7 @@ if __name__ == "__main__":
     args["model"]["d_embedding"] = args["model"].get("d_embedding", None)
 
     model = ResNet(
-        d_numerical=X_num[lib.TRAIN].shape[1],
+        d_numerical=D.n_num_features + (D.n_cat_features if X_cat is None else 0),
         categories=lib.get_categories(X_cat),
         d_out=D.info['n_classes'] if D.is_multiclass else 1,
         **args['model'],
@@ -199,11 +204,11 @@ if __name__ == "__main__":
                 torch.cat(
                     [
                         model(
-                            X_num[part][idx],
+                            None if X_num is None else X_num[part][idx],
                             None if X_cat is None else X_cat[part][idx],
                         )
                         for idx in lib.IndexLoader(
-                            len(X_num[part]),
+                            D.size(part),
                             args['training']['eval_batch_size'],
                             False,
                             device,
@@ -257,7 +262,7 @@ if __name__ == "__main__":
             optimizer.zero_grad()
             loss = loss_fn(
                 model(
-                    X_num[lib.TRAIN][batch_idx],
+                    None if X_num is None else X_num[lib.TRAIN][batch_idx],
                     None if X_cat is None else X_cat[lib.TRAIN][batch_idx],
                 ),
                 Y_device[lib.TRAIN][batch_idx],

@@ -282,11 +282,13 @@ X_num, X_cat = X
 if not D.is_multiclass:
     Y_device = {k: v.float() for k, v in Y_device.items()}
 
-train_size = len(X_num[lib.TRAIN])
+train_size = D.size(lib.TRAIN)
 
 args['model'].setdefault('d_embedding', None)
-args["model"]["feat_d"] = X_num[lib.TRAIN].shape[1] + (
-    0 if X_cat is None else X_cat[lib.TRAIN].shape[1] * args["model"]["d_embedding"]
+args["model"]["feat_d"] = D.n_num_features + (
+    D.n_cat_features
+    if X_cat is None
+    else X_cat[lib.TRAIN].shape[1] * args["model"]["d_embedding"]
 )
 
 batch_size, epoch_size = (
@@ -319,7 +321,7 @@ progress = zero.ProgressTracker(args["patience"])
 @torch.no_grad()
 def predict(part):
     loader = lib.IndexLoader(
-        len(X_num[part]), args['training']['eval_batch_size'], False, device
+        D.size(part), args['training']['eval_batch_size'], False, device
     )
     preds = []
     for idx in loader:
@@ -350,6 +352,8 @@ def evaluate(parts):
     return metrics, predictions
 
 
+main_timer = zero.Timer()
+main_timer.run()
 for s in range(args["model"]["num_nets"]):
     m = MLP_2HL.get_model(s, argparse.Namespace(**args["model"])).to(device)
     opt = torch.optim.Adam(
@@ -476,6 +480,7 @@ if device.type != 'cpu':
     net_ensemble.to_cuda()
 
 stats['metrics'], predictions = evaluate(lib.PARTS)
+stats['time'] = lib.format_seconds(main_timer())
 lib.dump_stats(stats, output, final=True)
 for k, v in predictions.items():
     np.save(output / f'p_{k}.npy', v)

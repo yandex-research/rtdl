@@ -38,20 +38,27 @@ lib.dump_pickle(y_info, output / 'y_info.pickle')
 model_kwargs = args['model']
 
 if args['data'].get('cat_policy') == 'indices':
+    assert isinstance(X, tuple)
     N, C = X
     n_num_features = D.info['n_num_features']
     n_features = D.n_features
-
-    X = {
-        k: pd.concat(
-            [
-                pd.DataFrame(N[k], columns=range(n_num_features)),
-                pd.DataFrame(C[k], columns=range(n_num_features, n_features)),
-            ],
-            axis=1,
-        )
-        for k in N.keys()
-    }
+    if N is None:
+        assert C is not None
+        X = {x: pd.DataFrame(C[x], columns=range(n_features)) for x in C}
+    elif C is None:
+        assert N is not None
+        X = {x: pd.DataFrame(N[x], columns=range(n_features)) for x in N}
+    else:
+        X = {
+            k: pd.concat(
+                [
+                    pd.DataFrame(N[k], columns=range(n_num_features)),
+                    pd.DataFrame(C[k], columns=range(n_num_features, n_features)),
+                ],
+                axis=1,
+            )
+            for k in N.keys()
+        }
 
     model_kwargs['cat_features'] = list(range(n_num_features, n_features))
 
@@ -69,6 +76,8 @@ else:
         else lambda x: model.predict_proba(x)[:, 1]  # type: ignore[code]
     )
 
+timer = zero.Timer()
+timer.run()
 model.fit(
     X[lib.TRAIN],
     Y[lib.TRAIN],
@@ -87,5 +96,6 @@ for part in X:
         D.info['task_type'], Y[part], p, 'probs', y_info
     )
     np.save(output / f'p_{part}.npy', p)
+stats['time'] = lib.format_seconds(timer())
 lib.dump_stats(stats, output, True)
 lib.backup_output(output)

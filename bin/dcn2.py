@@ -65,11 +65,16 @@ class DCNv2(nn.Module):
         self.stacked = stacked
 
     def forward(self, x_num, x_cat):
+        x = []
+        if x_num is not None:
+            x.append(x_num)
         if x_cat is not None:
-            x_cat = self.category_embeddings(x_cat + self.category_offsets[None])
-            x = torch.cat([x_num, x_cat.view(x_cat.size(0), -1)], dim=-1)
-        else:
-            x = x_num
+            x.append(
+                self.category_embeddings(x_cat + self.category_offsets[None]).view(
+                    x_cat.size(0), -1
+                )
+            )
+        x = torch.cat(x, dim=-1)
 
         x = self.first_linear(x)
 
@@ -126,7 +131,7 @@ X_num, X_cat = X
 if not D.is_multiclass:
     Y_device = {k: v.float() for k, v in Y_device.items()}
 
-train_size = len(X_num[lib.TRAIN])
+train_size = D.size(lib.TRAIN)
 batch_size = args['training']['batch_size']
 epoch_size = stats['epoch_size'] = math.ceil(train_size / batch_size)
 
@@ -139,7 +144,7 @@ loss_fn = (
 )
 args['model'].setdefault('d_embedding', None)
 model = DCNv2(
-    d_in=X_num[lib.TRAIN].shape[1],
+    d_in=D.n_num_features,
     d_out=D.info['n_classes'] if D.is_multiclass else 1,
     categories=lib.get_categories(X_cat),
     **args['model'],
@@ -184,9 +189,12 @@ def evaluate(parts):
         predictions[part] = (
             torch.cat(
                 [
-                    model(X_num[part][idx], None if X_cat is None else X_cat[part][idx])
+                    model(
+                        None if X_num is None else X_num[part][idx],
+                        None if X_cat is None else X_cat[part][idx],
+                    )
                     for idx in lib.IndexLoader(
-                        len(X_num[part]),
+                        D.size(part),
                         args['training']['eval_batch_size'],
                         False,
                         device,
@@ -249,7 +257,7 @@ for epoch in stream.epochs(args['training']['n_epochs']):
         optimizer.zero_grad()
         loss = loss_fn(
             model(
-                X_num[lib.TRAIN][batch_idx],
+                None if X_num is None else X_num[lib.TRAIN][batch_idx],
                 None if X_cat is None else X_cat[lib.TRAIN][batch_idx],
             ),
             Y_device[lib.TRAIN][batch_idx],

@@ -581,6 +581,7 @@ with tf.Session() as sess:
         np.save(output / f'p_{k}.npy', v)
 
     saver.save(sess, str(output / "best.ckpt"))
+    stats['time'] = zero.format_seconds(timer())
     lib.dump_stats(stats, output, final=True)
 
 print(f"Total time: {zero.format_seconds(timer())}")

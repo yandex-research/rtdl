@@ -27,6 +27,7 @@ X = D.build_X(
     cat_min_frequency=args['data'].get('cat_min_frequency', 0.0),
     seed=args['seed'],
 )
+assert isinstance(X, dict)
 zero.set_randomness(args['seed'])
 Y, y_info = D.build_y(args['data'].get('y_policy'))
 lib.dump_pickle(y_info, output / 'y_info.pickle')
@@ -49,7 +50,8 @@ else:
         fit_kwargs['eval_metric'] = 'error'
 
 # Fit model
-
+timer = zero.Timer()
+timer.run()
 model.fit(X[lib.TRAIN], Y[lib.TRAIN], **fit_kwargs)
 
 # Save model and metrics
@@ -64,5 +66,6 @@ for part in X:
         D.info['task_type'], Y[part], p, 'probs', y_info
     )
     np.save(output / f'p_{part}.npy', p)
+stats['time'] = lib.format_seconds(timer())
 lib.dump_stats(stats, output, True)
 lib.backup_output(output)

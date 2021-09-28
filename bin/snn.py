@@ -67,11 +67,16 @@ class SNN(nn.Module):
         return self.head.id_in  # type: ignore[code]
 
     def encode(self, x_num, x_cat):
+        x = []
+        if x_num is not None:
+            x.append(x_num)
         if x_cat is not None:
-            x_cat = self.category_embeddings(x_cat + self.category_offsets[None])
-            x = torch.cat([x_num, x_cat.view(x_cat.size(0), -1)], dim=-1)
-        else:
-            x = x_num
+            x.append(
+                self.category_embeddings(x_cat + self.category_offsets[None]).view(
+                    x_cat.size(0), -1
+                )
+            )
+        x = torch.cat(x, dim=-1)
 
         layers = self.layers or []
         for i, m in enumerate(layers):
@@ -133,7 +138,7 @@ X_num, X_cat = X
 if not D.is_multiclass:
     Y_device = {k: v.float() for k, v in Y_device.items()}
 
-train_size = len(X_num[lib.TRAIN])
+train_size = D.size(lib.TRAIN)
 batch_size, epoch_size = (
     stats['batch_size'],
     stats['epoch_size'],
@@ -148,7 +153,7 @@ loss_fn = (
 )
 args['model'].setdefault('d_embedding', None)
 model = SNN(
-    d_in=X_num[lib.TRAIN].shape[1],
+    d_in=D.n_num_features,
     d_out=D.info['n_classes'] if D.is_multiclass else 1,
     categories=lib.get_categories(X_cat),
     **args['model'],
@@ -183,18 +188,17 @@ def print_epoch_info():
     )
 
 
-def step(batch_idx):
-    return model(X[lib.TRAIN][batch_idx]), Y_device[lib.TRAIN][batch_idx]
-
-
 @torch.no_grad()
 def predict(m, part):
     m.eval()
     return torch.cat(
         [
-            model(X_num[part][idx], None if X_cat is None else X_cat[part][idx])
+            model(
+                None if X_num is None else X_num[part][idx],
+                None if X_cat is None else X_cat[part][idx],
+            )
             for idx in lib.IndexLoader(
-                len(X_num[part]), args['training']['eval_batch_size'], False, device
+                D.size(part), args['training']['eval_batch_size'], False, device
             )
         ]
     ).cpu()
@@ -209,9 +213,12 @@ def evaluate(parts):
         predictions[part] = (
             torch.cat(
                 [
-                    model(X_num[part][idx], None if X_cat is None else X_cat[part][idx])
+                    model(
+                        None if X_num is None else X_num[part][idx],
+                        None if X_cat is None else X_cat[part][idx],
+                    )
                     for idx in lib.IndexLoader(
-                        len(X_num[part]),
+                        D.size(part),
                         args['training']['eval_batch_size'],
                         False,
                         device,
@@ -229,12 +236,7 @@ def evaluate(parts):
                 'logits',
                 y_info,
             )
-        except ValueError as err:
-            # This happens when too deep models are applied on the Covertype dataset
-            assert (
-                'Target scores need to be probabilities for multiclass roc_auc'
-                in str(err)
-            )
+        except ValueError:
             metrics[part] = {'score': -999999999.0}
     for part, part_metrics in metrics.items():
         print(f'[{part:<5}]', lib.make_summary(part_metrics))
@@ -275,7 +277,7 @@ for epoch in stream.epochs(args['training']['n_epochs']):
         optimizer.zero_grad()
         loss = loss_fn(
             model(
-                X_num[lib.TRAIN][batch_idx],
+                None if X_num is None else X_num[lib.TRAIN][batch_idx],
                 None if X_cat is None else X_cat[lib.TRAIN][batch_idx],
             ),
             Y_device[lib.TRAIN][batch_idx],
