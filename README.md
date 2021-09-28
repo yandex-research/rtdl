@@ -188,11 +188,12 @@ Your results will be located at `output/california_housing/mlp/tuned_reproduced_
 
 ### 4.5. "Visualize" results
 Use `bin/report.ipynb`:
-- find the cell with the list of results; the list includes many lines of this kind:
-  `('algorithm/experiment', N_SEEDS, ENSEMBLES_3_5, 'PrettyAlgorithmName', datasets)`
+- find the cell "All Neural Networks"; the next cell contains many lines of this kind:
+  `('algorithm/experiment', 'PrettyAlgorithmName', datasets)`
 - uncomment the line relevant to the tutorial; it should look like this:
-  `('mlp/tuned_reproduced', N_SEEDS, ENSEMBLES_3_5, 'MLP | reproduced', [CALIFORNIA]),`
-- run the notebook from scratch
+  `('mlp/tuned_reproduced', 'MLP | reproduced', [CALIFORNIA]),`
+- run the updated cell
+- in order to do the same for the ensembles, take inspiration from other cells, where ensembles are used
 
 ### 4.6. What about other models and datasets?
 Similar steps can be performed for all models and datasets. The tuning process is
