@@ -18,40 +18,26 @@ ArrayDict = ty.Dict[str, np.ndarray]
 
 
 def normalize(
-    X: ArrayDict, normalization: str, seed: int, noise: float = 1e-3, inplace=False
+    X: ArrayDict, normalization: str, seed: int, noise: float = 1e-3
 ) -> ArrayDict:
-    util.set_seeds(seed)
-    if normalization == 'log1p':
-        return {k: np.log1p(np.abs(v)) * np.sign(v) for k, v in X.items()}  # type: ignore[code]
-
-    qt_kwargs = {
-        'n_quantiles': max(min(X['train'].shape[0] // 30, 1000), 10),
-        'copy': not inplace,
-        'subsample': 1e9,
-    }
+    X_train = X['train'].copy()
     if normalization == 'standard':
-        normalizer = sklearn.preprocessing.StandardScaler(copy=not inplace)
-    elif normalization == 'robust':
-        normalizer = sklearn.preprocessing.RobustScaler(
-            copy=not inplace, quantile_range=(10.0, 90.0)
-        )
-    elif normalization == 'quantile_uniform':
-        normalizer = sklearn.preprocessing.QuantileTransformer(**qt_kwargs)
+        normalizer = sklearn.preprocessing.StandardScaler()
     elif normalization == 'quantile':
         normalizer = sklearn.preprocessing.QuantileTransformer(
-            output_distribution='normal', **qt_kwargs
+            output_distribution='normal',
+            n_quantiles=max(min(X['train'].shape[0] // 30, 1000), 10),
+            subsample=1e9,
+            random_state=seed,
         )
+        if noise:
+            stds = np.std(X_train, axis=0, keepdims=True)
+            noise_std = noise / np.maximum(stds, noise)  # type: ignore[code]
+            X_train += noise_std * np.random.default_rng(seed).standard_normal(
+                X_train.shape
+            )
     else:
-        util.raise_unknown('normalization type', normalization)
-    del qt_kwargs
-
-    # Source: https://github.com/anonICLR2020/node/blob/a625d22879cbee53499ad28df653b599bb30fad1/lib/data.py#L75  # noqa
-    X_train = X['train']
-    if normalization in ['quantile', 'quantile_uniform'] and noise:
-        X_train = X_train
-        stds = np.std(X_train, axis=0, keepdims=True)
-        noise_std = noise / np.maximum(stds, noise)  # type: ignore[code]
-        X_train += noise_std * np.random.randn(*X_train.shape)
+        util.raise_unknown('normalization', normalization)
     normalizer.fit(X_train)
     return {k: normalizer.transform(v) for k, v in X.items()}  # type: ignore[code]
 
