@@ -131,7 +131,7 @@ loss_fn = (
 
 args['model'].setdefault('d_embedding', None)
 model = NODE(
-    d_in=D.n_num_features,
+    d_in=0 if X_num is None else X_num['train'].shape[1],
     d_out=D.info['n_classes'] if D.is_multiclass else 1,
     categories=lib.get_categories(X_cat),
     **args['model'],

@@ -285,10 +285,8 @@ if not D.is_multiclass:
 train_size = D.size(lib.TRAIN)
 
 args['model'].setdefault('d_embedding', None)
-args["model"]["feat_d"] = D.n_num_features + (
-    D.n_cat_features
-    if X_cat is None
-    else X_cat[lib.TRAIN].shape[1] * args["model"]["d_embedding"]
+args["model"]["feat_d"] = (0 if X_num is None else X_num['train'].shape[1]) + (
+    0 if X_cat is None else X_cat[lib.TRAIN].shape[1] * args["model"]["d_embedding"]
 )
 
 batch_size, epoch_size = (

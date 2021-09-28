@@ -362,7 +362,7 @@ if __name__ == "__main__":
         else F.mse_loss
     )
     model = Transformer(
-        d_numerical=(D.n_num_features if X_cat is not None else D.n_features),
+        d_numerical=0 if X_num is None else X_num['train'].shape[1],
         categories=lib.get_categories(X_cat),
         d_out=D.info['n_classes'] if D.is_multiclass else 1,
         **args['model'],

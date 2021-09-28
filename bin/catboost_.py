@@ -40,8 +40,9 @@ model_kwargs = args['model']
 if args['data'].get('cat_policy') == 'indices':
     assert isinstance(X, tuple)
     N, C = X
-    n_num_features = D.info['n_num_features']
-    n_features = D.n_features
+    n_num_features = 0 if N is None else N[lib.TRAIN].shape[1]
+    n_cat_features = 0 if C is None else C[lib.TRAIN].shape[1]
+    n_features = n_num_features + n_cat_features
     if N is None:
         assert C is not None
         X = {x: pd.DataFrame(C[x], columns=range(n_features)) for x in C}

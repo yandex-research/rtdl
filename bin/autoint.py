@@ -326,7 +326,7 @@ loss_fn = (
     else F.mse_loss
 )
 model = AutoInt(
-    d_numerical=D.n_num_features + (D.n_cat_features if X_cat is None else 0),
+    d_numerical=0 if X_num is None else X_num['train'].shape[1],
     categories=lib.get_categories(X_cat),
     d_out=D.info['n_classes'] if D.is_multiclass else 1,
     **args['model'],
