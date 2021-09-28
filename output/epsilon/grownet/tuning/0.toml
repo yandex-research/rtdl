@@ -1,0 +1,34 @@
+program = 'bin/grownet.py'
+
+[base_config]
+seed = 0
+patience = 16
+
+    [base_config.data]
+    path = 'data/epsilon'
+
+    [base_config.model]
+    boost_rate = 1.0
+    sparse = false
+    num_nets = 40
+
+    [base_config.training]
+    eval_batch_size = 8192
+    lr_scaler = 3
+    n_epochs = 1000000000
+
+
+[optimization.options]
+n_trials = 100
+
+[optimization.sampler]
+seed = 0
+
+[optimization.space.model]
+hidden_d = [ 'int', 32, 512 ]
+correct_epoch = ['int', 1, 2]
+epochs_per_stage = ['int', 1, 2]
+
+[optimization.space.training]
+lr = [ 'loguniform', 1e-05, 0.01 ]
+weight_decay = [ '?loguniform', 0.0, 1e-06, 0.001 ]
