@@ -33,7 +33,7 @@ def normalize(
         if noise:
             stds = np.std(X_train, axis=0, keepdims=True)
             noise_std = noise / np.maximum(stds, noise)  # type: ignore[code]
-            X_train += noise_std * np.random.default_rng(seed).standard_normal(
+            X_train += noise_std * np.random.default_rng(seed).standard_normal(  # type: ignore[code]
                 X_train.shape
             )
     else:
