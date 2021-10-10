@@ -8,34 +8,6 @@ def get_devices():
     return ['cpu', 'cuda'] if torch.cuda.is_available() else ['cpu']
 
 
-@pytest.mark.parametrize('device', get_devices())
-def test_flat_embeddings(device):
-    d_cat_token = 3
-    cardinalities = [2, 3]
-    n = 2
-    d_num = 4
-    assert (
-        rtdl.FlatEmbedding(
-            None,
-            rtdl.CategoricalFeatureTokenizer(
-                cardinalities, d_cat_token, True, 'uniform'
-            ),
-            rtdl.CategoricalFeatureTokenizer(
-                cardinalities, d_cat_token, True, 'uniform'
-            ),
-            None,
-        )
-        .to(device)(
-            torch.randn(n, d_num, device=device),
-            torch.tensor([[0, 2], [1, 1]], device=device),
-            torch.tensor([[0, 2], [1, 1]], device=device),
-            torch.randn(n, d_num, device=device),
-        )
-        .shape
-        == (n, 2 * (d_num + d_cat_token * len(cardinalities)))
-    )
-
-
 def test_bad_mlp():
     with pytest.raises(AssertionError):
         rtdl.MLP.make_baseline(1, [1, 2, 3, 4], 0.0, 1)

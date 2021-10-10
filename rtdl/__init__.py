@@ -9,7 +9,6 @@ from .modules import (  # noqa
     CategoricalFeatureTokenizer,
     CLSToken,
     FeatureTokenizer,
-    FlatEmbedding,
     FTTransformer,
     MultiheadAttention,
     NumericalFeatureTokenizer,

@@ -29,7 +29,6 @@ Tokens and Embeddings
 
     NumericalFeatureTokenizer
     CategoricalFeatureTokenizer
-    FlatEmbedding
     FeatureTokenizer
     CLSToken
 

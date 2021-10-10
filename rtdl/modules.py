@@ -158,26 +158,6 @@ class CategoricalFeatureTokenizer(nn.Module):
         return x
 
 
-class FlatEmbedding(nn.Module):
-    """Flattens and concatenates outputs of several modules."""
-
-    def __init__(self, *modules: Optional[nn.Module]) -> None:
-        """Initialize self."""
-        super().__init__()
-        assert modules
-        self.modules_ = nn.ModuleList(
-            [nn.Identity() if x is None else x for x in modules]
-        )
-
-    def forward(self, *inputs) -> Tensor:
-        """Perform the forward pass."""
-        assert len(self.modules_) == len(inputs)
-        return torch.cat(
-            [torch.flatten(m(x), 1, -1) for m, x in zip(self.modules_, inputs)],
-            dim=1,
-        )
-
-
 class FeatureTokenizer(nn.Module):
     """Combines `NumericalFeatureTokenizer` and `CategoricalFeatureTokenizer`."""
 

@@ -18,13 +18,15 @@ import rtdl
 
 
 class Model(nn.Module):
-    def __init__(self, embedding: rtdl.FlatEmbedding, model: nn.Module):
+    def __init__(self, cat_input_module: nn.Module, model: nn.Module):
         super().__init__()
-        self.embedding = embedding
+        self.cat_input_module = cat_input_module
         self.model = model
 
     def forward(self, x_num, x_cat):
-        return self.model(self.embedding(x_num, x_cat))
+        return self.model(
+            torch.cat([x_num, self.cat_input_module(x_cat).flatten(1, -1)], dim=1)
+        )
 
 
 def set_seeds(seed):
@@ -125,7 +127,7 @@ def test_mlp(seed):
         copy_layer(block.linear, correct_layer)
     copy_layer(rtdl_backbone.head, correct_model.head)
 
-    rtdl_model = Model(rtdl.FlatEmbedding(None, rtdl_tokenizer), rtdl_backbone)
+    rtdl_model = Model(rtdl_tokenizer, rtdl_backbone)
     x_num = torch.randn(n, d_num)
     x_cat = torch.cat([torch.randint(x, (n, 1)) for x in categories], dim=1)
     set_seeds(seed)
@@ -276,7 +278,7 @@ def test_resnet(seed):
     copy_layer(rtdl_backbone.head.normalization, correct_model.last_normalization)
     copy_layer(rtdl_backbone.head.linear, correct_model.head)
 
-    rtdl_model = Model(rtdl.FlatEmbedding(None, rtdl_tokenizer), rtdl_backbone)
+    rtdl_model = Model(rtdl_tokenizer, rtdl_backbone)
     x_num = torch.randn(n, d_num)
     x_cat = torch.cat([torch.randint(x, (n, 1)) for x in categories], dim=1)
     set_seeds(seed)
