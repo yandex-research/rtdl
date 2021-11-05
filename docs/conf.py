@@ -30,14 +30,12 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinx.ext.viewcode',
     'sphinxcontrib.spelling',
+    'sphinx_copybutton',
 ]
 
-# autoclass_content = 'both'
+autoclass_content = 'both'
 autodoc_member_order = 'bysource'
 autodoc_typehints = 'description'
-# autodoc_inherit_docstrings = False
-
-autosummary_generate = True
 
 doctest_global_setup = '''
 import numpy as np
@@ -61,19 +59,13 @@ spelling_show_suggestions = True
 import sphinx_material  # noqa
 
 html_static_path = ['_static']
-# html_favicon = 'images/favicon.ico'
-# html_logo = 'images/logo.svg'
 html_theme = 'sphinx_material'
+html_css_files = ['custom.css']
 html_theme_options = {
-    # Full list of options: https://github.com/bashtage/sphinx-material/blob/master/sphinx_material/sphinx_material/theme.conf
     'base_url': 'https://yandex-research.github.io/rtdl',
-    # Full list of colors (not all of them are available in sphinx-material, see theme.conf above):
-    # https://squidfunk.github.io/mkdocs-material/setup/changing-the-colors/#primary-color
-    # Nice colors: white, blue, red, deep purple (indigo in mkdocs)
     'color_primary': 'red',
     'globaltoc_collapse': False,
     'globaltoc_depth': 2,
-    # search here for logo icons: https://www.compart.com/en/unicode
     'logo_icon': '&#127968;',
     'nav_links': [],
     'nav_title': project + ' ' + version,
