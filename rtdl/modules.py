@@ -291,7 +291,7 @@ def _make_nn_module(module_type: ModuleType, *args) -> nn.Module:
 
 
 class MLP(nn.Module):
-    """The variation of Multilayer Perceptron used in [gorishniy2021revisiting].
+    """The MLP model used in [gorishniy2021revisiting].
 
     References:
 
@@ -408,7 +408,7 @@ class MLP(nn.Module):
 
 
 class ResNet(nn.Module):
-    """The ResNet model from [gorishniy2021revisiting].
+    """The ResNet model used in [gorishniy2021revisiting].
 
     References:
 
@@ -893,7 +893,7 @@ class Transformer(nn.Module):
 
 
 class FTTransformer(nn.Module):
-    """The FT-Transformer model from [gorishniy2021revisiting].
+    """The FT-Transformer model proposed in [gorishniy2021revisiting].
 
     References:
 
