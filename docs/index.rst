@@ -14,7 +14,7 @@ of the paper "Revisiting Deep Learning Models for Tabular Data":
    We will remove this limitation soon (i.e. :code:`rtdl` will become the recommended way to
    use FT-Transformer in papers).
 
-Users can share their experince here: https://github.com/yandex-research/rtdl/discussions/1
+Users can share their experience here: https://github.com/yandex-research/rtdl/discussions/1
 
 Installation
 ------------

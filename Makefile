@@ -1,4 +1,4 @@
-.PHONY: default clean coverage _docs docs dtest format lint pages pre-commit test typecheck
+.PHONY: default clean coverage _docs docs dtest format lint pages pre-commit spelling test typecheck
 
 PYTEST_CMD = pytest rtdl
 VIEW_HTML_CMD = open
@@ -33,6 +33,9 @@ _docs: docs
 dtest:
 	make -C $(DOCS_DIR) doctest
 
+spelling:
+	make -C $(DOCS_DIR) docs SPHINXOPTS="-W -b spelling"
+
 lint:
 	python -m pre_commit_hooks.debug_statement_hook **/*.py
 	for x in "bin" "lib" "rtdl"; \
@@ -43,7 +46,7 @@ lint:
 	done;
 
 # the order is important: clean must be first, docs must precede dtest
-pre-commit: clean lint test docs dtest typecheck
+pre-commit: clean lint test docs dtest spelling typecheck
 
 test:
 	PYTHONPATH='.' $(PYTEST_CMD) $(ARGV)
