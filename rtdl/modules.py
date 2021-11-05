@@ -7,7 +7,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union, cast
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torch.optim as optim
+import torch.optim
 from torch import Tensor
 
 from . import functional as rtdlF
@@ -1092,9 +1092,9 @@ class FTTransformer(nn.Module):
             },
         ]
 
-    def make_default_optimizer(self) -> optim.AdamW:
+    def make_default_optimizer(self) -> torch.optim.AdamW:
         """Make the optimizer for the default FT-Transformer."""
-        return optim.AdamW(
+        return torch.optim.AdamW(
             self.optimization_param_groups(),
             lr=1e-4,
             weight_decay=1e-5,
