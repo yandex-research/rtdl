@@ -737,7 +737,7 @@ class ResNet(nn.Module):
             d_main: the input size (or, equivalently, the output size) of each Block
             d_hidden: the output size of the first linear layer in each Block
             dropout_first: the dropout rate of the first dropout layer in each Block.
-                Usually, positive values work good.
+                Usually, positive values work well.
             dropout_second: the dropout rate of the second dropout layer in each Block.
 
         References:
@@ -1314,7 +1314,7 @@ class FTTransformer(nn.Module):
             d_token: the token size for each feature. Must be a multiple of :code:`n_heads=8`.
             n_blocks: the number of Transformer blocks
             attention_dropout: the dropout for attention blocks (see `MultiheadAttention`).
-                Usually, positive values work good.
+                Usually, positive values work well.
             ffn_d_hidden: the *input* size for the *second* linear layer in `Transformer.FFN`.
                 Note that it can be different from the output size of the first linear
                 layer, since activations such as ReGLU or GEGLU change the size of input.
@@ -1322,7 +1322,7 @@ class FTTransformer(nn.Module):
                 is always true for the baseline and default configurations), then the
                 output size of the first linear layer will be set to :code:`20`.
             ffn_dropout: the dropout rate after the first linear layer in `Transformer.FFN`.
-                Usually, positive values work good.
+                Usually, positive values work well.
             residual_dropout: the dropout rate for the output of each residual branch of
                 all Transformer blocks. Zero is a reasonable default choice.
             last_layer_query_idx: indices of tokens that should be processed by the last
@@ -1340,7 +1340,7 @@ class FTTransformer(nn.Module):
             kv_compression_sharing: weight sharing policy for :code:`kv_compression_ratio`.
                 Must be one of :code:`[None, 'headwise', 'key-value', 'layerwise']`.
                 See [wang2020linformer] to learn more about sharing policies. Usually,
-                :code:`headwise` and :code:`key-value` work good. If
+                :code:`headwise` and :code:`key-value` work well. If
                 :code:`kv_compression_ratio` is `None`, then this parameter also must be
                 `None`. Otherwise, it must not be `None` (compression parameters must be
                 shared in some way).
