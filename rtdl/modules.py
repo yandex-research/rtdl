@@ -110,11 +110,20 @@ class NumericalFeatureTokenizer(nn.Module):
             assert tokens.shape == (n_objects, n_features, d_token)
     """
 
-    def __init__(self, n_features: int, d_token: int, initialization: str) -> None:
+    def __init__(
+        self,
+        n_features: int,
+        d_token: int,
+        initialization: str,
+        bias: bool = True,
+    ) -> None:
         """
         Args:
             n_features: the number of continuous (scalar) features
             d_token: the size of one token
+            bias: if `False`, then the transformation will include only multiplication.
+                **Warning**: :code:`bias=False` leads to significantly worse results.
+                This argument will be remove in future releases.
             initialization: initialization policy for parameters. Must be one of
                 :code:`['uniform', 'normal']`. Let :code:`s = d ** -0.5`. Then, the
                 corresponding distributions are :code:`Uniform(-s, s)` and :code:`Normal(0, s)`.
@@ -123,12 +132,19 @@ class NumericalFeatureTokenizer(nn.Module):
         References:
             * [gorishniy2021revisiting] Yury Gorishniy, Ivan Rubachev, Valentin Khrulkov, Artem Babenko, "Revisiting Deep Learning Models for Tabular Data", 2021
         """
+        if not bias:
+            warnings.warn(
+                'bias=False leads to significantly worse results. This argument will '
+                'be removed in future releases.',
+                UserWarning,
+            )
         super().__init__()
         initialization_ = _TokenInitialization.from_str(initialization)
         self.weight = nn.Parameter(Tensor(n_features, d_token))
-        self.bias = nn.Parameter(Tensor(n_features, d_token))
+        self.bias = nn.Parameter(Tensor(n_features, d_token)) if bias else None
         for parameter in [self.weight, self.bias]:
-            initialization_.apply(parameter, d_token)
+            if parameter is not None:
+                initialization_.apply(parameter, d_token)
 
     @property
     def n_tokens(self) -> int:
@@ -142,7 +158,8 @@ class NumericalFeatureTokenizer(nn.Module):
 
     def forward(self, x: Tensor) -> Tensor:
         x = self.weight[None] * x[..., None]
-        x = x + self.bias[None]
+        if self.bias is not None:
+            x = x + self.bias[None]
         return x
 
 
