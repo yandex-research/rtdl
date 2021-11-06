@@ -926,7 +926,7 @@ class Transformer(nn.Module):
             if self.WARNINGS['prenormalization']:
                 warnings.warn(
                     'prenormalization is set to False. Are you sure about this? '
-                    'The training may become less stable. '
+                    'The training can become less stable. '
                     'You can turn off this warning by tweaking the '
                     'rtdl.Transformer.WARNINGS dictionary.',
                     UserWarning,
@@ -1073,8 +1073,7 @@ class FTTransformer(nn.Module):
     ) -> None:
         """
         Warning:
-            The `make_default` and `make_baseline` methods are the recommended
-            constructors. Use `__init__` only if you are sure that you need it.
+            `make_default` and `make_baseline` are the recommended constructors.
         """
         super().__init__()
         if transformer.prenormalization:
