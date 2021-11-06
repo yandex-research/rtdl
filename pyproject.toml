@@ -1,10 +1,23 @@
 [build-system]
-requires = ["flit_core >=2,<4"]
+requires = ["flit_core >=3.2,<4"]
 build-backend = "flit_core.buildapi"
 
-[tool.flit.metadata]
-author = "Yandex Research"
-author-email = "strausmg@gmail.com"
+[project]
+name = "rtdl"
+requires-python = ">=3.7"
+license = {file = "LICENSE"}
+authors = [
+    {name = "Yandex Research", email = "strausmg@gmail.com"}
+]
+keywords = [
+    "artificial intelligence",
+    "deep learning",
+    "library",
+    "python",
+    "pytorch",
+    "research",
+    "torch",
+]
 classifiers = [
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
@@ -13,26 +26,27 @@ classifiers = [
     "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Scientific/Engineering :: Mathematics",
     "Topic :: Software Development :: Libraries :: Python Modules"
 ]
-dist-name = "rtdl"
-home-page = "https://github.com/yandex-research/rtdl"
-keywords = "deep learning, artificial intelligence, research, library, python, pytorch, torch"
-module = "rtdl"
-requires = [
+dependencies = [
     "numpy >=1.18,<2",
     "torch >= 1.7,<2",
 ]
-requires-python = ">=3.7"
+urls = {Documentation = "https://yandex-research.github.io/rtdl", Code = "https://github.com/yandex-research/rtdl"}
+dynamic = ["version", "description"]
+
+[tool.flit.module]
+name = "rtdl"
+
+[tool.flit.sdist]
+exclude = ["bin", "lib", "output", "requirements.txt"]
 
 [tool.black]
 exclude = "node"
 skip_string_normalization = true
-
-[tool.flit.sdist]
-exclude = ["bin", "lib", "output", "requirements.txt"]
 
 [tool.isort]
 skip = ["node"]
