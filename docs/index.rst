@@ -26,16 +26,8 @@ Installation
 Documentation
 -------------
 
-For practitioners:
-
-- see the reference in the left sidebar
+- See the API reference in the left sidebar
 - Colab example: https://colab.research.google.com/github/yandex-research/rtdl/blob/main/examples/rtdl.ipynb
-
-For researchers, it is the same as for practitioners, plus "read the source code".
-
-Overall, as of now, the documentation is not very detailed (it will be improved in
-future releases). However, the source code is relatively user-friendly, so you can try
-to read it when something is not clear from signatures and examples.
 
 .. toctree::
    :caption: API REFERENCE
