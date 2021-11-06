@@ -1205,7 +1205,7 @@ class FTTransformer(nn.Module):
     ) -> None:
         """
         Note:
-            `make_default` and `make_baseline` are the recommended constructors.
+            `make_baseline` and `make_default` are the recommended constructors.
         """
         super().__init__()
         if transformer.prenormalization:
