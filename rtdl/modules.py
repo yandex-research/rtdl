@@ -413,6 +413,20 @@ def _make_nn_module(module_type: ModuleType, *args) -> nn.Module:
 class MLP(nn.Module):
     """The MLP model used in [gorishniy2021revisiting].
 
+    The pseudo-code representing the architecture is as follows:
+
+    .. code-block:: text
+
+             MLP: (input) --> MLPBlock --> ... --> MLPBlock --> Linear --> (output)
+        MLPBlock: (input) --> Linear --> ReLU --> Dropout --> (output)
+
+    Examples:
+        .. testcode::
+
+            x = torch.randn(4, 2)
+            mlp = MLP.make_baseline(x.shape[1], [3, 5], 0.1, 1)
+            assert mlp(x).shape == (len(x), 1)
+
     References:
 
         [gorishniy2021revisiting] Yury Gorishniy, Ivan Rubachev, Valentin Khrulkov, Artem Babenko, "Revisiting Deep Learning Models for Tabular Data", 2021
@@ -430,20 +444,13 @@ class MLP(nn.Module):
             activation: ModuleType,
             dropout: float,
         ) -> None:
-            """Initialize self."""
             super().__init__()
             self.linear = nn.Linear(d_in, d_out, bias)
             self.activation = _make_nn_module(activation)
             self.dropout = nn.Dropout(dropout)
 
         def forward(self, x: Tensor) -> Tensor:
-            """Perform the forward pass."""
             return self.dropout(self.activation(self.linear(x)))
-
-    class Head(nn.Linear):
-        """The final module of `MLP`."""
-
-        pass
 
     def __init__(
         self,
@@ -454,12 +461,25 @@ class MLP(nn.Module):
         activation: Union[str, Callable[[], nn.Module]],
         d_out: int,
     ) -> None:
-        """Initialize self.
-
+        """
         Warning:
+            The `make_baseline` method is the recommended constructor. Use
+            :code:`__init__` only if you are sure that you need it.
 
-            The `make_baseline` method is the recommended constructor. Use `__init__`
-            only if you are sure that you need it.
+        Args:
+            d_in: the input size
+            d_layers: the list of linear layer dimensions. The size of the list is
+                treated as the number of blocks.
+            dropouts: dropout rates for all blocks. The size of the list must be equal
+                to the size of :code:`d_layers`. If float, then the same rate is set for
+                all dropout layers.
+            activation: the activation function for all blocks. Can be a class name from
+                `torch.nn` or a callable. Examples: :code:`'ReLU'`,
+                :code:`torch.nn.GELU`, :code:`MyActivation`.
+            d_out: the output size
+        Raises:
+            AssertionError: if :code:`d_layers` and :code:`dropouts` are of different
+                sizes.
         """
         super().__init__()
         if isinstance(dropouts, float):
@@ -478,7 +498,7 @@ class MLP(nn.Module):
                 for i, (d, dropout) in enumerate(zip(d_layers, dropouts))
             ]
         )
-        self.head = MLP.Head(d_layers[-1] if d_layers else d_in, d_out)
+        self.head = nn.Linear(d_layers[-1] if d_layers else d_in, d_out)
 
     @classmethod
     def make_baseline(
@@ -490,21 +510,25 @@ class MLP(nn.Module):
     ) -> 'MLP':
         """Create a "baseline" `MLP`.
 
-        It is a user-friendly alternative to `__init__`. This variation of MLP was used
-        in the original paper.
+        It is a user-friendly alternative to :code:`__init__`. This variation of MLP was
+        used in [gorishniy2021revisiting].
 
         Args:
-            d_in: the input dimension
-            d_layers: the dimensions of the hidden layers. If there are more than two
-                hidden layers, then all of them except for the first and the last
-                ones must have the same dimension. Valid examples: :code:`[]`,
-                :code:`[8]`, :code:`[8, 16]`, :code:`[2, 2, 2, 2]`,
-                :code:`[1, 2, 2, 4]`. Invalid examples: :code:`[1, 2, 3, 4]`.
+            d_in: the input size
+            d_layers: the dimensions of the linear layers. If there are more than two
+                layers, then all of them except for the first and the last ones must
+                have the same dimension. Valid examples: :code:`[]`, :code:`[8]`,
+                :code:`[8, 16]`, :code:`[2, 2, 2, 2]`, :code:`[1, 2, 2, 4]`. Invalid
+                example: :code:`[1, 2, 3, 4]`.
             dropout: the dropout rate for all hidden layers
-            d_out: the output dimension
+            d_out: the output size
 
         Returns:
             MLP
+
+        References:
+
+            [gorishniy2021revisiting] Yury Gorishniy, Ivan Rubachev, Valentin Khrulkov, Artem Babenko, "Revisiting Deep Learning Models for Tabular Data", 2021
         """
         assert isinstance(dropout, float)
         if len(d_layers) > 2:
