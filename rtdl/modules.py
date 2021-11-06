@@ -430,19 +430,19 @@ def _make_nn_module(module_type: ModuleType, *args) -> nn.Module:
 class MLP(nn.Module):
     """The MLP model used in [gorishniy2021revisiting].
 
-    The pseudo-code representing the architecture is as follows:
+    The following pseudo-code describes the architecture:
 
     .. code-block:: text
 
-             MLP: (input) --> MLPBlock --> ... --> MLPBlock --> Linear --> (output)
-        MLPBlock: (input) --> Linear --> ReLU --> Dropout --> (output)
+          MLP: (in) -> Block -> ... -> Block -> Linear -> (out)
+        Block: (in) -> Linear -> Activation -> Dropout -> (out)
 
     Examples:
         .. testcode::
 
             x = torch.randn(4, 2)
-            mlp = MLP.make_baseline(x.shape[1], [3, 5], 0.1, 1)
-            assert mlp(x).shape == (len(x), 1)
+            module = MLP.make_baseline(x.shape[1], [3, 5], 0.1, 1)
+            assert module(x).shape == (len(x), 1)
 
     References:
         [gorishniy2021revisiting] Yury Gorishniy, Ivan Rubachev, Valentin Khrulkov, Artem Babenko, "Revisiting Deep Learning Models for Tabular Data", 2021
@@ -478,24 +478,8 @@ class MLP(nn.Module):
         d_out: int,
     ) -> None:
         """
-        Warning:
-            The `make_baseline` method is the recommended constructor. Use
-            :code:`__init__` only if you are sure that you need it.
-
-        Args:
-            d_in: the input size
-            d_layers: the list of linear layer dimensions. The size of the list is
-                treated as the number of blocks.
-            dropouts: dropout rates for all blocks. The size of the list must be equal
-                to the size of :code:`d_layers`. If float, then the same rate is set for
-                all dropout layers.
-            activation: the activation function for all blocks. Can be a class name from
-                `torch.nn` or a callable. Examples: :code:`'ReLU'`,
-                :code:`torch.nn.GELU`, :code:`MyActivation`.
-            d_out: the output size
-        Raises:
-            AssertionError: if :code:`d_layers` and :code:`dropouts` are of different
-                sizes.
+        Note:
+            `make_baseline` is the recommended constructor.
         """
         super().__init__()
         if isinstance(dropouts, float):
@@ -527,8 +511,11 @@ class MLP(nn.Module):
     ) -> 'MLP':
         """Create a "baseline" `MLP`.
 
-        It is a user-friendly alternative to :code:`__init__`. This variation of MLP was
-        used in [gorishniy2021revisiting].
+        This variation of MLP was used in [gorishniy2021revisiting]. Features:
+
+        * :code:`Activation` = :code:`ReLU`
+        * all linear layers except for the first one and the last one are of the same dimension
+        * the dropout rate is the same for all dropout layers
 
         Args:
             d_in: the input size
@@ -567,6 +554,33 @@ class MLP(nn.Module):
 
 class ResNet(nn.Module):
     """The ResNet model used in [gorishniy2021revisiting].
+
+    The following pseudo-code describes the architecture:
+
+    .. code-block:: text
+
+        ResNet: (in) -> Linear -> Block -> ... -> Block -> Head -> (out)
+
+         Block: (in) ------------------------------------------------------------> Add -> (out)
+                 |                                                                  |
+                 |-> Norm -> Linear -> Activation -> Dropout -> Linear -> Dropout ->|
+
+          Head: (in) -> Norm -> Activation -> Linear -> (out)
+
+    Examples:
+        .. testcode::
+
+            x = torch.randn(4, 2)
+            module = ResNet.make_baseline(
+                d_in=x.shape[1],
+                n_blocks=2,
+                d_main=3,
+                d_hidden=4,
+                dropout_first=0.25,
+                dropout_second=0.0,
+                d_out=1
+            )
+            assert module(x).shape == (len(x), 1)
 
     References:
         [gorishniy2021revisiting] Yury Gorishniy, Ivan Rubachev, Valentin Khrulkov, Artem Babenko, "Revisiting Deep Learning Models for Tabular Data", 2021
@@ -647,10 +661,10 @@ class ResNet(nn.Module):
         d_out: int,
     ) -> None:
         """
-        Warning:
-            The `make_baseline` method is the recommended constructor. Use `__init__`
-            only if you are sure that you need it.
+        Note:
+            `make_baseline` is the recommended constructor.
         """
+        assert activation not in ['ReGLU', 'GEGLU']
         super().__init__()
 
         self.first_layer = nn.Linear(d_in, d_main)
@@ -685,17 +699,30 @@ class ResNet(nn.Module):
         cls: Type['ResNet'],
         *,
         d_in: int,
+        n_blocks: int,
         d_main: int,
         d_hidden: int,
         dropout_first: float,
         dropout_second: float,
-        n_blocks: int,
         d_out: int,
     ) -> 'ResNet':
         """Create a "baseline" `ResNet`.
 
-        It is a user-friendly alternative to `__init__`. This variation of ResNet was
-        used in the original paper.
+        This variation of ResNet was used in [gorishniy2021revisiting]. Features:
+
+        * :code:`Activation` = :code:`ReLU`
+        * :code:`Norm` = :code:`BatchNorm1d`
+
+        Args:
+            d_in: the input size
+            n_blocks: the number of Blocks
+            d_main: the input size (or, equivalently, the output size) of each Block
+            d_hidden: the output size of the first linear layer in each Block
+            dropout_first: the dropout rate of the first dropout layer in each Block
+            dropout_second: the dropout rate of the second dropout layer in each Block
+
+        References:
+            [gorishniy2021revisiting] Yury Gorishniy, Ivan Rubachev, Valentin Khrulkov, Artem Babenko, "Revisiting Deep Learning Models for Tabular Data", 2021
         """
         return cls(
             d_in=d_in,
