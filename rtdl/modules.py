@@ -117,9 +117,8 @@ class NumericalFeatureTokenizer(nn.Module):
             d_token: the size of one token
             initialization: initialization policy for parameters. Must be one of
                 :code:`['uniform', 'normal']`. Let :code:`s = d ** -0.5`. Then, the
-                corresponding distributions are :code:`Uniform(-s, s)` and :code:`Normal(0, s)`. In
-                the paper [gorishniy2021revisiting], the 'uniform' initialization was
-                used.
+                corresponding distributions are :code:`Uniform(-s, s)` and :code:`Normal(0, s)`.
+                In [gorishniy2021revisiting], the 'uniform' initialization was used.
 
         References:
             * [gorishniy2021revisiting] Yury Gorishniy, Ivan Rubachev, Valentin Khrulkov, Artem Babenko, "Revisiting Deep Learning Models for Tabular Data", 2021
@@ -348,8 +347,7 @@ class FeatureTokenizer(nn.Module):
 class CLSToken(nn.Module):
     """[CLS]-token for BERT-like inference.
 
-    To learn about the [CLS]-based inference, see the original
-    `paper <https://arxiv.org/abs/1810.04805>`_.
+    To learn about the [CLS]-based inference, see [devlin2018bert].
 
     When used as a module, the [CLS]-token is appended **to the end** of each item in
     the batch.
@@ -365,6 +363,9 @@ class CLSToken(nn.Module):
             x = cls_token(x)
             assert x.shape == (batch_size, n_tokens + 1, d_token)
             assert (x[:, -1, :] == cls_token.expand(len(x))).all()
+
+    References:
+        * [devlin2018bert] Jacob Devlin, Ming-Wei Chang, Kenton Lee, Kristina Toutanova "BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding" 2018
     """
 
     def __init__(self, d_token: int, initialization: str) -> None:
@@ -745,7 +746,45 @@ class ResNet(nn.Module):
 
 
 class MultiheadAttention(nn.Module):
-    """The vanilla Multihead Attention."""
+    """Multihead Attention (self-/cross-) with optional 'linear' attention.
+
+    To learn more about Multihead Attention, see [devlin2018bert]. See the implementation
+    of `Transformer` and the examples below to learn how to use the compression technique
+    from [wang2020linformer] to speed up the module when the number of tokens is large.
+
+    Examples:
+        .. testcode::
+
+            n_objects, n_tokens, d_token = 2, 3, 12
+            n_heads = 6
+            a = torch.randn(n_objects, n_tokens, d_token)
+            b = torch.randn(n_objects, n_tokens * 2, d_token)
+            module = MultiheadAttention(
+                d_token=d_token, n_heads=n_heads, dropout=0.2, bias=True, initialization='kaiming'
+            )
+
+            # self-attention
+            x, attention_stats = module(a, a, None, None)
+            assert x.shape == a.shape
+            assert attention_stats['attention_probs'].shape == (n_objects * n_heads, n_tokens, n_tokens)
+            assert attention_stats['attention_logits'].shape == (n_objects * n_heads, n_tokens, n_tokens)
+
+            # cross-attention
+            assert module(a, b, None, None)
+
+            # Linformer self-attention with the 'headwise' sharing policy
+            k_compression = torch.nn.Linear(n_tokens, n_tokens // 4)
+            v_compression = torch.nn.Linear(n_tokens, n_tokens // 4)
+            assert module(a, a, k_compression, v_compression)
+
+            # Linformer self-attention with the 'key-value' sharing policy
+            kv_compression = torch.nn.Linear(n_tokens, n_tokens // 4)
+            assert module(a, a, kv_compression, kv_compression)
+
+    References:
+        * [devlin2018bert] Jacob Devlin, Ming-Wei Chang, Kenton Lee, Kristina Toutanova "BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding" 2018
+        * [wang2020linformer] Sinong Wang, Belinda Z. Li, Madian Khabsa, Han Fang, Hao Ma "Linformer: Self-Attention with Linear Complexity", 2020
+    """
 
     def __init__(
         self,
@@ -756,6 +795,20 @@ class MultiheadAttention(nn.Module):
         bias: bool,
         initialization: str,
     ) -> None:
+        """
+        Args:
+            d_token: the token size. Must be a multiple of :code:`n_heads`.
+            n_heads: the number of heads. If greater than 1, then the module will have
+                an addition output layer (so called "mixing" layer).
+            dropout: dropout rate for the attention map. The dropout is applied to
+                *probabilities* and do not affect logits.
+            bias: if `True`, then input (and output, if presented) layers also have bias.
+                `True` is a reasonable default choice.
+            initialization: initialization for input projection layers. Must be one of
+                :code:`['kaiming', 'xavier']`. `kaiming` is a reasonable default choice.
+        Raises:
+            AssertionError: if requirements for the inputs are not met.
+        """
         super().__init__()
         if n_heads > 1:
             assert d_token % n_heads == 0
@@ -778,7 +831,8 @@ class MultiheadAttention(nn.Module):
                 # gain is needed since W_qkv is represented with 3 separate layers (it
                 # implies different fan_out)
                 nn.init.xavier_uniform_(m.weight, gain=1 / math.sqrt(2))
-            nn.init.zeros_(m.bias)
+            if m.bias is not None:
+                nn.init.zeros_(m.bias)
         if self.W_out is not None:
             nn.init.zeros_(self.W_out.bias)
 
@@ -798,6 +852,16 @@ class MultiheadAttention(nn.Module):
         key_compression: Optional[nn.Linear],
         value_compression: Optional[nn.Linear],
     ) -> Tuple[Tensor, Dict[str, Tensor]]:
+        """Perform the forward pass.
+
+        Args:
+            x_q: query tokens
+            x_kv: key-value tokens
+            key_compression: Linformer-style compression for keys
+            value_compression: Linformer-style compression for values
+        Returns:
+            (tokens, attention_stats)
+        """
         _all_or_none([key_compression, value_compression])
         q, k, v = self.W_q(x_q), self.W_k(x_kv), self.W_v(x_kv)
         for tensor in [q, k, v]:
@@ -832,7 +896,7 @@ class MultiheadAttention(nn.Module):
 
 
 class Transformer(nn.Module):
-    """The vanilla Transformer with extra features.
+    """Transformer with extra features.
 
     This module is the backbone of `FTTransformer`."""
 
@@ -1100,7 +1164,9 @@ class FTTransformer(nn.Module):
             assert x.shape == (4, 1)
 
             module = FTTransformer.make_default(
-                n_num_features=3, cat_cardinalities=[2, 3], d_out=1
+                n_num_features=3,
+                cat_cardinalities=[2, 3],
+                d_out=1,
             )
             x = module(x_num, x_cat)
             assert x.shape == (4, 1)
@@ -1228,7 +1294,7 @@ class FTTransformer(nn.Module):
             n_num_features: the number of continuous features
             cat_cardinalities: cardinalities of categorical features (see
                 `CategoricalFeatureTokenizer` to learn more about cardinalities)
-            d_token: the token size for each feature
+            d_token: the token size for each feature. Must be a multiple of :code:`n_heads=8`.
             n_blocks: the number of Transformer blocks
             attention_dropout: the dropout for attention blocks (see `MultiheadAttention`).
                 Usually, positive values work good.
@@ -1241,7 +1307,7 @@ class FTTransformer(nn.Module):
             ffn_dropout: the dropout rate after the first linear layer in `Transformer.FFN`.
                 Usually, positive values work good.
             residual_dropout: the dropout rate for the output of each residual branch of
-                all Transformer blocks. If unsure, set it to zero.
+                all Transformer blocks. Zero is a reasonable default choice.
             last_layer_query_idx: indices of tokens that should be processed by the last
                 Transformer block. Note that for most cases there is no need to apply
                 the last Transformer block to anything except for the [CLS]-token. Hence,
@@ -1249,9 +1315,11 @@ class FTTransformer(nn.Module):
                 since the :code:`-1` is the position of [CLS]-token in FT-Transformer.
                 Note that this will not affect the result in any way.
             kv_compression_ratio: apply the technique from [wang2020linformer] to speed
-                up attention modules. Can actually slow things down if the number of
-                features is too low. Note that this option can affect task metrics in
-                unpredictable way. Overall, use this option with caution.
+                up attention modules when the number of features is large. Can actually
+                slow things down if the number of features is too low. Note that this
+                option can affect task metrics in unpredictable way. Overall, use this
+                option with caution. See `MultiheadAttention` for some examples and the
+                implementation of `Transformer` to see how this option is used.
             kv_compression_sharing: weight sharing policy for :code:`kv_compression_ratio`.
                 Must be one of :code:`[None, 'headwise', 'key-value', 'layerwise']`.
                 See [wang2020linformer] to learn more about sharing policies. Usually,
