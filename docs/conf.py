@@ -35,6 +35,7 @@ extensions = [
 
 autoclass_content = 'both'
 autodoc_member_order = 'bysource'
+autodoc_inherit_docstrings = False
 
 doctest_global_setup = '''
 import numpy as np
