@@ -38,7 +38,6 @@ class ReGLU(nn.Module):
             assert module(x).shape == (3, 2)
 
     References:
-
         [shazeer2020glu] Noam Shazeer, "GLU Variants Improve Transformer", 2020
     """
 
@@ -57,7 +56,6 @@ class GEGLU(nn.Module):
             assert module(x).shape == (3, 2)
 
     References:
-
         [shazeer2020glu] Noam Shazeer, "GLU Variants Improve Transformer", 2020
     """
 
@@ -118,13 +116,12 @@ class NumericalFeatureTokenizer(nn.Module):
             n_features: the number of continuous (scalar) features
             d_token: the size of one token
             initialization: initialization policy for parameters. Must be one of
-                :code:`['uniform', 'normal']`. Let `s = d ** -0.5`. Then, the
-                corresponding distributions are `Uniform(-s, s)` and `Normal(0, s)`. In
+                :code:`['uniform', 'normal']`. Let :code:`s = d ** -0.5`. Then, the
+                corresponding distributions are :code:`Uniform(-s, s)` and :code:`Normal(0, s)`. In
                 the paper [gorishniy2021revisiting], the 'uniform' initialization was
                 used.
 
         References:
-
             [gorishniy2021revisiting] Yury Gorishniy, Ivan Rubachev, Valentin Khrulkov, Artem Babenko, "Revisiting Deep Learning Models for Tabular Data", 2021
         """
         super().__init__()
@@ -145,7 +142,6 @@ class NumericalFeatureTokenizer(nn.Module):
         return self.weight.shape[1]
 
     def forward(self, x: Tensor) -> Tensor:
-        """Perform the forward pass."""
         x = self.weight[None] * x[..., None]
         x = x + self.bias[None]
         return x
@@ -199,8 +195,8 @@ class CategoricalFeatureTokenizer(nn.Module):
                 embedding regardless of feature value. The bias vectors are not shared
                 between features.
             initialization: initialization policy for parameters. Must be one of
-                :code:`['uniform', 'normal']`. Let `s = d ** -0.5`. Then, the
-                corresponding distributions are `Uniform(-s, s)` and `Normal(0, s)`. In
+                :code:`['uniform', 'normal']`. Let :code:`s = d ** -0.5`. Then, the
+                corresponding distributions are :code:`Uniform(-s, s)` and :code:`Normal(0, s)`. In
                 the paper [gorishniy2021revisiting], the 'uniform' initialization was
                 used.
 
@@ -232,7 +228,6 @@ class CategoricalFeatureTokenizer(nn.Module):
         return self.embeddings.embedding_dim
 
     def forward(self, x: Tensor) -> Tensor:
-        """Perform the forward pass."""
         x = self.embeddings(x + self.category_offsets[None])
         if self.bias is not None:
             x = x + self.bias[None]
@@ -268,9 +263,7 @@ class FeatureTokenizer(nn.Module):
             assert tokens.shape == (n_objects, n_num_features + n_cat_features, d_token)
 
     References:
-        [gorishniy2021revisiting]
-        Yury Gorishniy, Ivan Rubachev, Valentin Khrulkov, Artem Babenko
-        "Revisiting Deep Learning Models for Tabular Data", 2021
+        [gorishniy2021revisiting] Yury Gorishniy, Ivan Rubachev, Valentin Khrulkov, Artem Babenko "Revisiting Deep Learning Models for Tabular Data", 2021
     """
 
     def __init__(
@@ -359,22 +352,34 @@ class CLSToken(nn.Module):
     `paper <https://arxiv.org/abs/1810.04805>`_.
 
     When used as a module, the [CLS]-token is appended **to the end** of each item in
-    the batch:
+    the batch.
 
-    .. testcode::
+    Examples:
+        .. testcode::
 
-        batch_size = 2
-        n_tokens = 3
-        d_token = 4
-        cls_token = CLSToken(d_token, 'uniform')
-        x = torch.randn(batch_size, n_tokens, d_token)
-        x = cls_token(x)
-        assert x.shape == (batch_size, n_tokens + 1, d_token)
-        assert (x[:, -1, :] == cls_token.expand(len(x))).all()
+            batch_size = 2
+            n_tokens = 3
+            d_token = 4
+            cls_token = CLSToken(d_token, 'uniform')
+            x = torch.randn(batch_size, n_tokens, d_token)
+            x = cls_token(x)
+            assert x.shape == (batch_size, n_tokens + 1, d_token)
+            assert (x[:, -1, :] == cls_token.expand(len(x))).all()
     """
 
     def __init__(self, d_token: int, initialization: str) -> None:
-        """Initialize self."""
+        """
+        Args:
+            d_token: the size of token
+            initialization: initialization policy for parameters. Must be one of
+                :code:`['uniform', 'normal']`. Let :code:`s = d ** -0.5`. Then, the
+                corresponding distributions are :code:`Uniform(-s, s)` and :code:`Normal(0, s)`. In
+                the paper [gorishniy2021revisiting], the 'uniform' initialization was
+                used.
+
+        References:
+            [gorishniy2021revisiting] Yury Gorishniy, Ivan Rubachev, Valentin Khrulkov, Artem Babenko "Revisiting Deep Learning Models for Tabular Data", 2021
+        """
         super().__init__()
         initialization_ = _TokenInitialization.from_str(initialization)
         self.weight = nn.Parameter(Tensor(d_token))
@@ -440,7 +445,6 @@ class MLP(nn.Module):
             assert mlp(x).shape == (len(x), 1)
 
     References:
-
         [gorishniy2021revisiting] Yury Gorishniy, Ivan Rubachev, Valentin Khrulkov, Artem Babenko, "Revisiting Deep Learning Models for Tabular Data", 2021
     """
 
@@ -497,6 +501,7 @@ class MLP(nn.Module):
         if isinstance(dropouts, float):
             dropouts = [dropouts] * len(d_layers)
         assert len(d_layers) == len(dropouts)
+        assert activation not in ['ReGLU', 'GEGLU']
 
         self.blocks = nn.Sequential(
             *[
@@ -534,12 +539,10 @@ class MLP(nn.Module):
                 example: :code:`[1, 2, 3, 4]`.
             dropout: the dropout rate for all hidden layers
             d_out: the output size
-
         Returns:
             MLP
 
         References:
-
             [gorishniy2021revisiting] Yury Gorishniy, Ivan Rubachev, Valentin Khrulkov, Artem Babenko, "Revisiting Deep Learning Models for Tabular Data", 2021
         """
         assert isinstance(dropout, float)
@@ -557,7 +560,6 @@ class MLP(nn.Module):
         )
 
     def forward(self, x: Tensor) -> Tensor:
-        """Perform the forward pass."""
         x = self.blocks(x)
         x = self.head(x)
         return x
@@ -567,7 +569,6 @@ class ResNet(nn.Module):
     """The ResNet model used in [gorishniy2021revisiting].
 
     References:
-
         [gorishniy2021revisiting] Yury Gorishniy, Ivan Rubachev, Valentin Khrulkov, Artem Babenko, "Revisiting Deep Learning Models for Tabular Data", 2021
     """
 
@@ -587,7 +588,6 @@ class ResNet(nn.Module):
             activation: ModuleType,
             skip_connection: bool,
         ) -> None:
-            """Initialize self."""
             super().__init__()
             self.normalization = _make_nn_module(normalization, d_main)
             self.linear_first = nn.Linear(d_main, d_hidden, bias_first)
@@ -598,7 +598,6 @@ class ResNet(nn.Module):
             self.skip_connection = skip_connection
 
         def forward(self, x: Tensor) -> Tensor:
-            """Perform the forward pass."""
             x_input = x
             x = self.normalization(x)
             x = self.linear_first(x)
@@ -622,14 +621,12 @@ class ResNet(nn.Module):
             normalization: ModuleType,
             activation: ModuleType,
         ) -> None:
-            """Initialize self."""
             super().__init__()
             self.normalization = _make_nn_module(normalization, d_in)
             self.activation = _make_nn_module(activation)
             self.linear = nn.Linear(d_in, d_out, bias)
 
         def forward(self, x: Tensor) -> Tensor:
-            """Perform the forward pass."""
             if self.normalization is not None:
                 x = self.normalization(x)
             x = self.activation(x)
@@ -649,10 +646,8 @@ class ResNet(nn.Module):
         activation: ModuleType,
         d_out: int,
     ) -> None:
-        """Initialize self.
-
+        """
         Warning:
-
             The `make_baseline` method is the recommended constructor. Use `__init__`
             only if you are sure that you need it.
         """
@@ -715,7 +710,6 @@ class ResNet(nn.Module):
         )
 
     def forward(self, x: Tensor) -> Tensor:
-        """Perform the forward pass."""
         x = self.first_layer(x)
         x = self.blocks(x)
         x = self.head(x)
@@ -734,7 +728,6 @@ class MultiheadAttention(nn.Module):
         bias: bool,
         initialization: str,
     ) -> None:
-        """Initialize self."""
         super().__init__()
         if n_heads > 1:
             assert d_token % n_heads == 0
@@ -777,7 +770,6 @@ class MultiheadAttention(nn.Module):
         key_compression: Optional[nn.Linear],
         value_compression: Optional[nn.Linear],
     ) -> Tuple[Tensor, Dict[str, Tensor]]:
-        """Perform the forward pass."""
         _all_or_none([key_compression, value_compression])
         q, k, v = self.W_q(x_q), self.W_k(x_kv), self.W_v(x_kv)
         for tensor in [q, k, v]:
@@ -831,7 +823,6 @@ class Transformer(nn.Module):
             dropout: float,
             activation: ModuleType,
         ):
-            """Initialize self."""
             super().__init__()
             self.linear_first = nn.Linear(
                 d_token,
@@ -843,7 +834,6 @@ class Transformer(nn.Module):
             self.linear_second = nn.Linear(d_hidden, d_token, bias_second)
 
         def forward(self, x: Tensor) -> Tensor:
-            """Perform the forward pass."""
             x = self.linear_first(x)
             x = self.activation(x)
             x = self.dropout(x)
@@ -862,14 +852,12 @@ class Transformer(nn.Module):
             normalization: ModuleType,
             d_out: int,
         ):
-            """Initialize self."""
             super().__init__()
             self.normalization = _make_nn_module(normalization, d_in)
             self.activation = _make_nn_module(activation)
             self.linear = nn.Linear(d_in, d_out, bias)
 
         def forward(self, x: Tensor) -> Tensor:
-            """Perform the forward pass."""
             x = x[:, -1]
             x = self.normalization(x)
             x = self.activation(x)
@@ -900,7 +888,6 @@ class Transformer(nn.Module):
         head_normalization: ModuleType,
         d_out: int,
     ) -> None:
-        """Initialize self."""
         super().__init__()
         if not prenormalization:
             assert (
@@ -1021,7 +1008,6 @@ class Transformer(nn.Module):
         return x
 
     def forward(self, x: Tensor) -> Tensor:
-        """Perform the forward pass."""
         assert x.ndim == 3
         for layer_idx, layer in enumerate(self.blocks):
             layer = cast(nn.ModuleDict, layer)
@@ -1052,17 +1038,14 @@ class FTTransformer(nn.Module):
     """The FT-Transformer model proposed in [gorishniy2021revisiting].
 
     References:
-
         [gorishniy2021revisiting] Yury Gorishniy, Ivan Rubachev, Valentin Khrulkov, Artem Babenko, "Revisiting Deep Learning Models for Tabular Data", 2021
     """
 
     def __init__(
         self, feature_tokenizer: FeatureTokenizer, transformer: Transformer
     ) -> None:
-        """Initialize self.
-
+        """
         Warning:
-
             The `make_default` and `make_baseline` methods are the recommended
             constructors. Use `__init__` only if you are sure that you need it.
         """
@@ -1257,7 +1240,6 @@ class FTTransformer(nn.Module):
         )
 
     def forward(self, x_num: Optional[Tensor], x_cat: Optional[Tensor]) -> Tensor:
-        """Perform the forward pass."""
         x = self.feature_tokenizer(x_num, x_cat)
         x = self.cls_token(x)
         x = self.transformer(x)
