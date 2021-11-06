@@ -38,7 +38,7 @@ class ReGLU(nn.Module):
             assert module(x).shape == (3, 2)
 
     References:
-        [shazeer2020glu] Noam Shazeer, "GLU Variants Improve Transformer", 2020
+        * [shazeer2020glu] Noam Shazeer, "GLU Variants Improve Transformer", 2020
     """
 
     def forward(self, x: Tensor) -> Tensor:
@@ -56,7 +56,7 @@ class GEGLU(nn.Module):
             assert module(x).shape == (3, 2)
 
     References:
-        [shazeer2020glu] Noam Shazeer, "GLU Variants Improve Transformer", 2020
+        * [shazeer2020glu] Noam Shazeer, "GLU Variants Improve Transformer", 2020
     """
 
     def forward(self, x: Tensor) -> Tensor:
@@ -122,7 +122,7 @@ class NumericalFeatureTokenizer(nn.Module):
                 used.
 
         References:
-            [gorishniy2021revisiting] Yury Gorishniy, Ivan Rubachev, Valentin Khrulkov, Artem Babenko, "Revisiting Deep Learning Models for Tabular Data", 2021
+            * [gorishniy2021revisiting] Yury Gorishniy, Ivan Rubachev, Valentin Khrulkov, Artem Babenko, "Revisiting Deep Learning Models for Tabular Data", 2021
         """
         super().__init__()
         initialization_ = _TokenInitialization.from_str(initialization)
@@ -201,7 +201,7 @@ class CategoricalFeatureTokenizer(nn.Module):
                 used.
 
         References:
-            [gorishniy2021revisiting] Yury Gorishniy, Ivan Rubachev, Valentin Khrulkov, Artem Babenko, "Revisiting Deep Learning Models for Tabular Data", 2021
+            * [gorishniy2021revisiting] Yury Gorishniy, Ivan Rubachev, Valentin Khrulkov, Artem Babenko, "Revisiting Deep Learning Models for Tabular Data", 2021
         """
         super().__init__()
         assert cardinalities
@@ -263,7 +263,7 @@ class FeatureTokenizer(nn.Module):
             assert tokens.shape == (n_objects, n_num_features + n_cat_features, d_token)
 
     References:
-        [gorishniy2021revisiting] Yury Gorishniy, Ivan Rubachev, Valentin Khrulkov, Artem Babenko "Revisiting Deep Learning Models for Tabular Data", 2021
+        * [gorishniy2021revisiting] Yury Gorishniy, Ivan Rubachev, Valentin Khrulkov, Artem Babenko "Revisiting Deep Learning Models for Tabular Data", 2021
     """
 
     def __init__(
@@ -378,7 +378,7 @@ class CLSToken(nn.Module):
                 used.
 
         References:
-            [gorishniy2021revisiting] Yury Gorishniy, Ivan Rubachev, Valentin Khrulkov, Artem Babenko "Revisiting Deep Learning Models for Tabular Data", 2021
+            * [gorishniy2021revisiting] Yury Gorishniy, Ivan Rubachev, Valentin Khrulkov, Artem Babenko "Revisiting Deep Learning Models for Tabular Data", 2021
         """
         super().__init__()
         initialization_ = _TokenInitialization.from_str(initialization)
@@ -430,7 +430,7 @@ def _make_nn_module(module_type: ModuleType, *args) -> nn.Module:
 class MLP(nn.Module):
     """The MLP model used in [gorishniy2021revisiting].
 
-    The following pseudo-code describes the architecture:
+    The following scheme describes the architecture:
 
     .. code-block:: text
 
@@ -445,7 +445,7 @@ class MLP(nn.Module):
             assert module(x).shape == (len(x), 1)
 
     References:
-        [gorishniy2021revisiting] Yury Gorishniy, Ivan Rubachev, Valentin Khrulkov, Artem Babenko, "Revisiting Deep Learning Models for Tabular Data", 2021
+        * [gorishniy2021revisiting] Yury Gorishniy, Ivan Rubachev, Valentin Khrulkov, Artem Babenko, "Revisiting Deep Learning Models for Tabular Data", 2021
     """
 
     class Block(nn.Module):
@@ -530,7 +530,7 @@ class MLP(nn.Module):
             MLP
 
         References:
-            [gorishniy2021revisiting] Yury Gorishniy, Ivan Rubachev, Valentin Khrulkov, Artem Babenko, "Revisiting Deep Learning Models for Tabular Data", 2021
+            * [gorishniy2021revisiting] Yury Gorishniy, Ivan Rubachev, Valentin Khrulkov, Artem Babenko, "Revisiting Deep Learning Models for Tabular Data", 2021
         """
         assert isinstance(dropout, float)
         if len(d_layers) > 2:
@@ -555,15 +555,15 @@ class MLP(nn.Module):
 class ResNet(nn.Module):
     """The ResNet model used in [gorishniy2021revisiting].
 
-    The following pseudo-code describes the architecture:
+    The following scheme describes the architecture:
 
     .. code-block:: text
 
         ResNet: (in) -> Linear -> Block -> ... -> Block -> Head -> (out)
 
-         Block: (in) ------------------------------------------------------------> Add -> (out)
-                 |                                                                  |
                  |-> Norm -> Linear -> Activation -> Dropout -> Linear -> Dropout ->|
+                 |                                                                  |
+         Block: (in) ------------------------------------------------------------> Add -> (out)
 
           Head: (in) -> Norm -> Activation -> Linear -> (out)
 
@@ -583,7 +583,7 @@ class ResNet(nn.Module):
             assert module(x).shape == (len(x), 1)
 
     References:
-        [gorishniy2021revisiting] Yury Gorishniy, Ivan Rubachev, Valentin Khrulkov, Artem Babenko, "Revisiting Deep Learning Models for Tabular Data", 2021
+        * [gorishniy2021revisiting] Yury Gorishniy, Ivan Rubachev, Valentin Khrulkov, Artem Babenko, "Revisiting Deep Learning Models for Tabular Data", 2021
     """
 
     class Block(nn.Module):
@@ -718,11 +718,12 @@ class ResNet(nn.Module):
             n_blocks: the number of Blocks
             d_main: the input size (or, equivalently, the output size) of each Block
             d_hidden: the output size of the first linear layer in each Block
-            dropout_first: the dropout rate of the first dropout layer in each Block
-            dropout_second: the dropout rate of the second dropout layer in each Block
+            dropout_first: the dropout rate of the first dropout layer in each Block.
+                Usually, positive values work good.
+            dropout_second: the dropout rate of the second dropout layer in each Block.
 
         References:
-            [gorishniy2021revisiting] Yury Gorishniy, Ivan Rubachev, Valentin Khrulkov, Artem Babenko, "Revisiting Deep Learning Models for Tabular Data", 2021
+            * [gorishniy2021revisiting] Yury Gorishniy, Ivan Rubachev, Valentin Khrulkov, Artem Babenko, "Revisiting Deep Learning Models for Tabular Data", 2021
         """
         return cls(
             d_in=d_in,
@@ -838,7 +839,7 @@ class Transformer(nn.Module):
     WARNINGS = {'first_prenormalization': True, 'prenormalization': True}
 
     class FFN(nn.Module):
-        """The Feed-Forward Network module used in every Transformer block."""
+        """The Feed-Forward Network module used in every `Transformer` block."""
 
         def __init__(
             self,
@@ -1064,8 +1065,56 @@ class Transformer(nn.Module):
 class FTTransformer(nn.Module):
     """The FT-Transformer model proposed in [gorishniy2021revisiting].
 
+    Transforms features to tokens with `FeatureTokenizer` and applies `Transformer` [vaswani2017attention]
+    to the tokens. The following illustration provides a high-level overview of the
+    architecture:
+
+    .. image:: ../images/ft_transformer.png
+        :scale: 25%
+        :alt: FT-Transformer
+
+    The following illustration shows one Transformer block for :code:`prenormalization=True`:
+
+    .. image:: ../images/transformer_block.png
+        :scale: 25%
+        :alt: PreNorm Transformer block
+
+    Examples:
+        .. testcode::
+
+            x_num = torch.randn(4, 3)
+            x_cat = torch.tensor([[0, 1], [1, 0], [0, 2], [1, 1]])
+
+            module = FTTransformer.make_baseline(
+                n_num_features=3,
+                cat_cardinalities=[2, 3],
+                d_token=8,
+                n_blocks=2,
+                attention_dropout=0.2,
+                ffn_d_hidden=6,
+                ffn_dropout=0.2,
+                residual_dropout=0.0,
+                d_out=1,
+            )
+            x = module(x_num, x_cat)
+            assert x.shape == (4, 1)
+
+            module = FTTransformer.make_default(
+                n_num_features=3, cat_cardinalities=[2, 3], d_out=1
+            )
+            x = module(x_num, x_cat)
+            assert x.shape == (4, 1)
+
+        To learn more about the baseline and default parameters:
+
+        .. testcode::
+
+            baseline_parameters = FTTransformer.get_baseline_transformer_subconfig()
+            default_parameters = FTTransformer.get_default_transformer_config()
+
     References:
-        [gorishniy2021revisiting] Yury Gorishniy, Ivan Rubachev, Valentin Khrulkov, Artem Babenko, "Revisiting Deep Learning Models for Tabular Data", 2021
+        * [gorishniy2021revisiting] Yury Gorishniy, Ivan Rubachev, Valentin Khrulkov, Artem Babenko, "Revisiting Deep Learning Models for Tabular Data", 2021
+        * [vaswani2017attention] Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N. Gomez, Lukasz Kaiser, Illia Polosukhin, "Attention Is All You Need", 2017
     """
 
     def __init__(
@@ -1118,8 +1167,8 @@ class FTTransformer(nn.Module):
         }
         arch_subconfig = {k: v[n_blocks - 1] for k, v in grid.items()}  # type: ignore
         baseline_subconfig = cls.get_baseline_transformer_subconfig()
-        # (4 / 3) for xGLU activations results in almost the same parameter count
-        # as (2.0) for element-wise activations (e.g. ReLU; see the "else" branch)
+        # (4 / 3) for ReGLU/GEGLU activations results in almost the same parameter count
+        # as (2.0) for element-wise activations (e.g. ReLU or GELU; see the "else" branch)
         ffn_d_hidden_factor = (
             (4 / 3) if _is_glu_activation(baseline_subconfig['ffn_activation']) else 2.0
         )
@@ -1171,8 +1220,50 @@ class FTTransformer(nn.Module):
     ) -> 'FTTransformer':
         """Create a "baseline" `FTTransformer`.
 
-        It is a user-friendly alternative to `__init__`. This variation of
-        FT-Transformer was used in the original paper.
+        This variation of FT-Transformer was used in [gorishniy2021revisiting]. See
+        `get_baseline_transformer_subconfig` to learn the values of other parameters.
+        See `FTTransformer` for usage examples.
+
+        Args:
+            n_num_features: the number of continuous features
+            cat_cardinalities: cardinalities of categorical features (see
+                `CategoricalFeatureTokenizer` to learn more about cardinalities)
+            d_token: the token size for each feature
+            n_blocks: the number of Transformer blocks
+            attention_dropout: the dropout for attention blocks (see `MultiheadAttention`).
+                Usually, positive values work good.
+            ffn_d_hidden: the *input* size for the *second* linear layer in `Transformer.FFN`.
+                Note that it can be different from the output size of the first linear
+                layer, since activations such as ReGLU or GEGLU change the size of input.
+                For example, if :code:`ffn_d_hidden=10` and the activation is ReGLU (which
+                is always true for the baseline and default configurations), then the
+                output size of the first linear layer will be set to :code:`20`.
+            ffn_dropout: the dropout rate after the first linear layer in `Transformer.FFN`.
+                Usually, positive values work good.
+            residual_dropout: the dropout rate for the output of each residual branch of
+                all Transformer blocks. If unsure, set it to zero.
+            last_layer_query_idx: indices of tokens that should be processed by the last
+                Transformer block. Note that for most cases there is no need to apply
+                the last Transformer block to anything except for the [CLS]-token. Hence,
+                runtime and memory can be saved by setting :code:`last_layer_query_idx=[-1]`,
+                since the :code:`-1` is the position of [CLS]-token in FT-Transformer.
+                Note that this will not affect the result in any way.
+            kv_compression_ratio: apply the technique from [wang2020linformer] to speed
+                up attention modules. Can actually slow things down if the number of
+                features is too low. Note that this option can affect task metrics in
+                unpredictable way. Overall, use this option with caution.
+            kv_compression_sharing: weight sharing policy for :code:`kv_compression_ratio`.
+                Must be one of :code:`[None, 'headwise', 'key-value', 'layerwise']`.
+                See [wang2020linformer] to learn more about sharing policies. Usually,
+                :code:`headwise` and :code:`key-value` work good. If
+                :code:`kv_compression_ratio` is `None`, then this parameter also must be
+                `None`. Otherwise, it must not be `None` (compression parameters must be
+                shared in some way).
+            d_out: the output size.
+
+        References:
+            * [gorishniy2021revisiting] Yury Gorishniy, Ivan Rubachev, Valentin Khrulkov, Artem Babenko, "Revisiting Deep Learning Models for Tabular Data", 2021
+            * [wang2020linformer] Sinong Wang, Belinda Z. Li, Madian Khabsa, Han Fang, Hao Ma "Linformer: Self-Attention with Linear Complexity", 2020
         """
         transformer_config = cls.get_baseline_transformer_subconfig()
         for arg_name in [
@@ -1205,17 +1296,21 @@ class FTTransformer(nn.Module):
         """Create the default `FTTransformer`.
 
         With :code:`n_blocks=3` (default) it is the FT-Transformer variation that is
-        referred to as "default FT-Transformer" in the original paper.
+        referred to as "default FT-Transformer" in [gorishniy2021revisiting]. See
+        `FTTransformer` for usage examples. See `FTTransformer.make_baseline` for
+        parameter descriptions.
 
         Note:
-
             The second component of the default FT-Transformer is the default optimizer,
             which can be created with the `make_default_optimizer` method.
 
         Note:
+            According to [gorishniy2021revisiting], the main selling point of the default
+            FT-Transformer is the high effectiveness in the ensembling mode (i.e. when
+            predictions of several default FT-Transformers are averaged).
 
-            According to the original paper, the main selling point of the default
-            FT-Transformer is the high effectiveness in the ensembling mode.
+        References:
+            * [gorishniy2021revisiting] Yury Gorishniy, Ivan Rubachev, Valentin Khrulkov, Artem Babenko, "Revisiting Deep Learning Models for Tabular Data", 2021
         """
         # TODO: add a warning with the advice abount ensembling?
         transformer_config = cls.get_default_transformer_config(n_blocks=n_blocks)
