@@ -1204,7 +1204,7 @@ class FTTransformer(nn.Module):
         self, feature_tokenizer: FeatureTokenizer, transformer: Transformer
     ) -> None:
         """
-        Warning:
+        Note:
             `make_default` and `make_baseline` are the recommended constructors.
         """
         super().__init__()
