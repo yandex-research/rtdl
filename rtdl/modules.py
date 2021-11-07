@@ -105,7 +105,7 @@ class NumericalFeatureTokenizer(nn.Module):
             x = torch.randn(4, 2)
             n_objects, n_features = x.shape
             d_token = 3
-            tokenizer = NumericalFeatureTokenizer(n_features, d_token, 'uniform')
+            tokenizer = NumericalFeatureTokenizer(n_features, d_token, True, 'uniform')
             tokens = tokenizer(x)
             assert tokens.shape == (n_objects, n_features, d_token)
     """
@@ -114,16 +114,16 @@ class NumericalFeatureTokenizer(nn.Module):
         self,
         n_features: int,
         d_token: int,
+        bias: bool,
         initialization: str,
-        bias: bool = True,
     ) -> None:
         """
         Args:
             n_features: the number of continuous (scalar) features
             d_token: the size of one token
             bias: if `False`, then the transformation will include only multiplication.
-                **Warning**: :code:`bias=False` leads to significantly worse results.
-                This argument will be remove in future releases.
+                **Warning**: :code:`bias=False` leads to significantly worse results for
+                Transformer-like (token-based) architectures.
             initialization: initialization policy for parameters. Must be one of
                 :code:`['uniform', 'normal']`. Let :code:`s = d ** -0.5`. Then, the
                 corresponding distributions are :code:`Uniform(-s, s)` and :code:`Normal(0, s)`.
@@ -132,12 +132,6 @@ class NumericalFeatureTokenizer(nn.Module):
         References:
             * [gorishniy2021revisiting] Yury Gorishniy, Ivan Rubachev, Valentin Khrulkov, Artem Babenko, "Revisiting Deep Learning Models for Tabular Data", 2021
         """
-        if not bias:
-            warnings.warn(
-                'bias=False leads to significantly worse results. This argument will '
-                'be removed in future releases.',
-                UserWarning,
-            )
         super().__init__()
         initialization_ = _TokenInitialization.from_str(initialization)
         self.weight = nn.Parameter(Tensor(n_features, d_token))
@@ -305,6 +299,7 @@ class FeatureTokenizer(nn.Module):
             NumericalFeatureTokenizer(
                 n_features=n_num_features,
                 d_token=d_token,
+                bias=True,
                 initialization=self.initialization,
             )
             if n_num_features
@@ -410,7 +405,6 @@ class CLSToken(nn.Module):
         examples of usage.
 
         Note:
-
             Under the hood, the `torch.Tensor.expand` method is applied to the
             underlying :code:`weight` parameter, so gradients will be propagated as
             expected.
@@ -737,7 +731,6 @@ class ResNet(nn.Module):
             d_main: the input size (or, equivalently, the output size) of each Block
             d_hidden: the output size of the first linear layer in each Block
             dropout_first: the dropout rate of the first dropout layer in each Block.
-                Usually, positive values work well.
             dropout_second: the dropout rate of the second dropout layer in each Block.
 
         References:
@@ -1154,7 +1147,7 @@ class FTTransformer(nn.Module):
         :scale: 25%
         :alt: FT-Transformer
 
-    The following illustration shows one Transformer block for :code:`prenormalization=True`:
+    The following illustration demonstrates one Transformer block for :code:`prenormalization=True`:
 
     .. image:: ../images/transformer_block.png
         :scale: 25%
@@ -1241,7 +1234,11 @@ class FTTransformer(nn.Module):
     def get_default_transformer_config(
         cls: Type['FTTransformer'], *, n_blocks: int = 3
     ) -> Dict[str, Any]:
-        """Get the default parameters for the backbone."""
+        """Get the default parameters for the backbone.
+
+        Note:
+            The configurations are different for different values of:code:`n_blocks`.
+        """
         assert 1 <= n_blocks <= 6
         grid = {
             'd_token': [96, 128, 192, 256, 320, 384],
@@ -1307,14 +1304,18 @@ class FTTransformer(nn.Module):
         `get_baseline_transformer_subconfig` to learn the values of other parameters.
         See `FTTransformer` for usage examples.
 
+        Tip:
+            `get_default_transformer_config` can serve as a starting point for choosing
+            hyperparameter values.
+
         Args:
             n_num_features: the number of continuous features
-            cat_cardinalities: cardinalities of categorical features (see
+            cat_cardinalities: the cardinalities of categorical features (see
                 `CategoricalFeatureTokenizer` to learn more about cardinalities)
             d_token: the token size for each feature. Must be a multiple of :code:`n_heads=8`.
             n_blocks: the number of Transformer blocks
             attention_dropout: the dropout for attention blocks (see `MultiheadAttention`).
-                Usually, positive values work well.
+                Usually, positive values work better (even when the number of features is low).
             ffn_d_hidden: the *input* size for the *second* linear layer in `Transformer.FFN`.
                 Note that it can be different from the output size of the first linear
                 layer, since activations such as ReGLU or GEGLU change the size of input.
@@ -1322,9 +1323,8 @@ class FTTransformer(nn.Module):
                 is always true for the baseline and default configurations), then the
                 output size of the first linear layer will be set to :code:`20`.
             ffn_dropout: the dropout rate after the first linear layer in `Transformer.FFN`.
-                Usually, positive values work well.
             residual_dropout: the dropout rate for the output of each residual branch of
-                all Transformer blocks. Zero is a reasonable default choice.
+                all Transformer blocks.
             last_layer_query_idx: indices of tokens that should be processed by the last
                 Transformer block. Note that for most cases there is no need to apply
                 the last Transformer block to anything except for the [CLS]-token. Hence,
@@ -1339,8 +1339,8 @@ class FTTransformer(nn.Module):
                 implementation of `Transformer` to see how this option is used.
             kv_compression_sharing: weight sharing policy for :code:`kv_compression_ratio`.
                 Must be one of :code:`[None, 'headwise', 'key-value', 'layerwise']`.
-                See [wang2020linformer] to learn more about sharing policies. Usually,
-                :code:`headwise` and :code:`key-value` work well. If
+                See [wang2020linformer] to learn more about sharing policies.
+                :code:`headwise` and :code:`key-value` are reasonable default choices. If
                 :code:`kv_compression_ratio` is `None`, then this parameter also must be
                 `None`. Otherwise, it must not be `None` (compression parameters must be
                 shared in some way).
@@ -1390,14 +1390,15 @@ class FTTransformer(nn.Module):
             which can be created with the `make_default_optimizer` method.
 
         Note:
-            According to [gorishniy2021revisiting], the main selling point of the default
-            FT-Transformer is the high effectiveness in the ensembling mode (i.e. when
-            predictions of several default FT-Transformers are averaged).
+            According to [gorishniy2021revisiting], the default FT-Transformer is
+            effective in the ensembling mode (i.e. when predictions of several default
+            FT-Transformers are averaged). For a single FT-Transformer, it is still
+            possible to achieve better results by tuning hyperparameter for the
+            `make_baseline` constructor.
 
         References:
             * [gorishniy2021revisiting] Yury Gorishniy, Ivan Rubachev, Valentin Khrulkov, Artem Babenko, "Revisiting Deep Learning Models for Tabular Data", 2021
         """
-        # TODO: add a warning with the advice abount ensembling?
         transformer_config = cls.get_default_transformer_config(n_blocks=n_blocks)
         for arg_name in [
             'last_layer_query_idx',
