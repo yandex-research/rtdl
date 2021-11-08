@@ -13,6 +13,7 @@ from torch import Tensor
 from . import functional as rtdlF
 
 ModuleType = Union[str, Callable[..., nn.Module]]
+_INTERNAL_ERROR_MESSAGE = 'Internal error. Please, open an issue.'
 
 
 def _is_glu_activation(activation: ModuleType):
@@ -24,7 +25,7 @@ def _is_glu_activation(activation: ModuleType):
 
 
 def _all_or_none(values):
-    assert all(x is None for x in values) or all(x is not None for x in values)
+    return all(x is None for x in values) or all(x is not None for x in values)
 
 
 class ReGLU(nn.Module):
@@ -214,8 +215,8 @@ class CategoricalFeatureTokenizer(nn.Module):
             * [gorishniy2021revisiting] Yury Gorishniy, Ivan Rubachev, Valentin Khrulkov, Artem Babenko, "Revisiting Deep Learning Models for Tabular Data", 2021
         """
         super().__init__()
-        assert cardinalities
-        assert d_token > 0
+        assert cardinalities, 'cardinalities must be non-empty'
+        assert d_token > 0, 'd_token must be positive'
         initialization_ = _TokenInitialization.from_str(initialization)
 
         category_offsets = torch.tensor([0] + cardinalities[:-1]).cumsum(0)
@@ -292,8 +293,10 @@ class FeatureTokenizer(nn.Module):
             d_token: the size of one token.
         """
         super().__init__()
-        assert n_num_features >= 0
-        assert n_num_features or cat_cardinalities
+        assert n_num_features >= 0, 'n_num_features must be non-negative'
+        assert (
+            n_num_features or cat_cardinalities
+        ), 'at least one of n_num_features or cat_cardinalities must be positive/non-empty'
         self.initialization = 'uniform'
         self.num_tokenizer = (
             NumericalFeatureTokenizer(
@@ -345,9 +348,15 @@ class FeatureTokenizer(nn.Module):
         Raises:
             AssertionError: if the described requirements for the inputs are not met.
         """
-        assert x_num is not None or x_cat is not None
-        _all_or_none([self.num_tokenizer, x_num])
-        _all_or_none([self.cat_tokenizer, x_cat])
+        assert (
+            x_num is not None or x_cat is not None
+        ), 'At least one of x_num and x_cat must be presented'
+        assert _all_or_none(
+            [self.num_tokenizer, x_num]
+        ), 'If self.num_tokenizer is (not) None, then x_num must (not) be None'
+        assert _all_or_none(
+            [self.cat_tokenizer, x_cat]
+        ), 'If self.cat_tokenizer is (not) None, then x_cat must (not) be None'
         x = []
         if self.num_tokenizer is not None:
             x.append(self.num_tokenizer(x_num))
@@ -426,17 +435,21 @@ class CLSToken(nn.Module):
 
 
 def _make_nn_module(module_type: ModuleType, *args) -> nn.Module:
-    return (
-        (
-            ReGLU()
-            if module_type == 'ReGLU'
-            else GEGLU()
-            if module_type == 'GEGLU'
-            else getattr(nn, module_type)(*args)
-        )
-        if isinstance(module_type, str)
-        else module_type(*args)
-    )
+    if isinstance(module_type, str):
+        if module_type == 'ReGLU':
+            return ReGLU()
+        elif module_type == 'GEGLU':
+            return GEGLU()
+        else:
+            try:
+                cls = getattr(nn, module_type)
+            except AttributeError as err:
+                raise ValueError(
+                    f'Failed to construct the module {module_type} with the arguments {args}'
+                ) from err
+            return cls(*args)
+    else:
+        return module_type(*args)
 
 
 class MLP(nn.Module):
@@ -497,7 +510,6 @@ class MLP(nn.Module):
         if isinstance(dropouts, float):
             dropouts = [dropouts] * len(d_layers)
         assert len(d_layers) == len(dropouts)
-        assert activation not in ['ReGLU', 'GEGLU']
 
         self.blocks = nn.Sequential(
             *[
@@ -544,10 +556,10 @@ class MLP(nn.Module):
         References:
             * [gorishniy2021revisiting] Yury Gorishniy, Ivan Rubachev, Valentin Khrulkov, Artem Babenko, "Revisiting Deep Learning Models for Tabular Data", 2021
         """
-        assert isinstance(dropout, float)
+        assert isinstance(dropout, float), 'In this constructor, dropout must be float'
         if len(d_layers) > 2:
             assert len(set(d_layers[1:-1])) == 1, (
-                'if d_layers contains more than two elements, then'
+                'In this constructor, if d_layers contains more than two elements, then'
                 ' all elements except for the first and the last ones must be equal.'
             )
         return MLP(
@@ -676,7 +688,6 @@ class ResNet(nn.Module):
         Note:
             `make_baseline` is the recommended constructor.
         """
-        assert activation not in ['ReGLU', 'GEGLU']
         super().__init__()
 
         self.first_layer = nn.Linear(d_in, d_main)
@@ -821,7 +832,7 @@ class MultiheadAttention(nn.Module):
         """
         super().__init__()
         if n_heads > 1:
-            assert d_token % n_heads == 0
+            assert d_token % n_heads == 0, 'd_token must be a multiple of n_heads'
         assert initialization in ['kaiming', 'xavier']
 
         self.W_q = nn.Linear(d_token, d_token, bias)
@@ -872,10 +883,12 @@ class MultiheadAttention(nn.Module):
         Returns:
             (tokens, attention_stats)
         """
-        _all_or_none([key_compression, value_compression])
+        assert _all_or_none(
+            [key_compression, value_compression]
+        ), 'If key_compression is (not) None, then value_compression must (not) be None'
         q, k, v = self.W_q(x_q), self.W_k(x_kv), self.W_v(x_kv)
         for tensor in [q, k, v]:
-            assert tensor.shape[-1] % self.n_heads == 0
+            assert tensor.shape[-1] % self.n_heads == 0, _INTERNAL_ERROR_MESSAGE
         if key_compression is not None:
             k = key_compression(k.transpose(1, 2)).transpose(1, 2)
             v = value_compression(v.transpose(1, 2)).transpose(1, 2)  # type: ignore
@@ -991,11 +1004,19 @@ class Transformer(nn.Module):
         d_out: int,
     ) -> None:
         super().__init__()
+        if isinstance(last_layer_query_idx, int):
+            raise ValueError(
+                'last_layer_query_idx must be None, list[int] or slice. '
+                f'Do you mean last_layer_query_idx=[{last_layer_query_idx}] ?'
+            )
         if not prenormalization:
             assert (
                 not first_prenormalization
             ), 'If `prenormalization` is False, then `first_prenormalization` must be False'
-        _all_or_none([n_tokens, kv_compression_ratio, kv_compression_sharing])
+        assert _all_or_none([n_tokens, kv_compression_ratio, kv_compression_sharing]), (
+            'If any of the following arguments is (not) None, then all of them must (not) be None: '
+            'n_tokens, kv_compression_ratio, kv_compression_sharing'
+        )
         assert kv_compression_sharing in [None, 'headwise', 'key-value', 'layerwise']
         if not prenormalization:
             if self.WARNINGS['prenormalization']:
@@ -1006,7 +1027,9 @@ class Transformer(nn.Module):
                     'rtdl.Transformer.WARNINGS dictionary.',
                     UserWarning,
                 )
-            assert not first_prenormalization
+            assert (
+                not first_prenormalization
+            ), 'If prenormalization is False, then first_prenormalization is ignored and must be set to False'
         if (
             prenormalization
             and first_prenormalization
@@ -1023,7 +1046,9 @@ class Transformer(nn.Module):
             time.sleep(3)
 
         def make_kv_compression():
-            assert kv_compression_ratio and n_tokens
+            assert (
+                n_tokens and kv_compression_ratio
+            ), _INTERNAL_ERROR_MESSAGE  # for mypy
             # https://github.com/pytorch/fairseq/blob/1bba712622b8ae4efb3eb793a8a40da386fe11d0/examples/linformer/linformer_src/modules/multihead_linear_attention.py#L83
             return nn.Linear(n_tokens, int(n_tokens * kv_compression_ratio), bias=False)
 
@@ -1070,7 +1095,9 @@ class Transformer(nn.Module):
                 if kv_compression_sharing == 'headwise':
                     layer['value_compression'] = make_kv_compression()
                 else:
-                    assert kv_compression_sharing == 'key-value'
+                    assert (
+                        kv_compression_sharing == 'key-value'
+                    ), _INTERNAL_ERROR_MESSAGE
             self.blocks.append(layer)
 
         self.head = Transformer.Head(
@@ -1093,7 +1120,7 @@ class Transformer(nn.Module):
         )
 
     def _start_residual(self, layer, stage, x):
-        assert stage in ['attention', 'ffn']
+        assert stage in ['attention', 'ffn'], _INTERNAL_ERROR_MESSAGE
         x_residual = x
         if self.prenormalization:
             norm_key = f'{stage}_normalization'
@@ -1102,7 +1129,7 @@ class Transformer(nn.Module):
         return x_residual
 
     def _end_residual(self, layer, stage, x, x_residual):
-        assert stage in ['attention', 'ffn']
+        assert stage in ['attention', 'ffn'], _INTERNAL_ERROR_MESSAGE
         x_residual = layer[f'{stage}_residual_dropout'](x_residual)
         x = x + x_residual
         if not self.prenormalization:
@@ -1110,7 +1137,9 @@ class Transformer(nn.Module):
         return x
 
     def forward(self, x: Tensor) -> Tensor:
-        assert x.ndim == 3
+        assert (
+            x.ndim == 3
+        ), 'The input must have 3 dimensions: (n_objects, n_tokens, d_token)'
         for layer_idx, layer in enumerate(self.blocks):
             layer = cast(nn.ModuleDict, layer)
 
@@ -1202,7 +1231,11 @@ class FTTransformer(nn.Module):
         """
         super().__init__()
         if transformer.prenormalization:
-            assert 'attention_normalization' not in transformer.blocks[0]  # type: ignore
+            assert 'attention_normalization' not in transformer.blocks[0], (
+                'In the prenormalization setting, FT-Transformer does not '
+                'allow using the first normalization layer '
+                'in the first transformer block'
+            )
         self.feature_tokenizer = feature_tokenizer
         self.cls_token = CLSToken(
             feature_tokenizer.d_token, feature_tokenizer.initialization
@@ -1419,13 +1452,15 @@ class FTTransformer(nn.Module):
             )
         """
         no_wd_names = ['feature_tokenizer', 'normalization', '.bias']
-        assert isinstance(getattr(self, no_wd_names[0], None), FeatureTokenizer)
+        assert isinstance(
+            getattr(self, no_wd_names[0], None), FeatureTokenizer
+        ), _INTERNAL_ERROR_MESSAGE
         assert (
             sum(1 for name, _ in self.named_modules() if no_wd_names[1] in name)
             == len(self.transformer.blocks) * 2
             - int('attention_normalization' not in self.transformer.blocks[0])  # type: ignore
             + 1
-        )
+        ), _INTERNAL_ERROR_MESSAGE
 
         def needs_wd(name):
             return all(x not in name for x in no_wd_names)

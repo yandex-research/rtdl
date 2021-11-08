@@ -104,6 +104,10 @@ def test_ft_transformer(n_blocks, d_out, last_layer_query_idx, constructor, devi
     ).to(device)
     n = 2
 
+    # check that the following methods do not fail
+    model.optimization_param_groups()
+    model.make_default_optimizer()
+
     def f0():
         return rtdl.FTTransformer.make_default(
             n_num_features=4,
