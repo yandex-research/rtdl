@@ -1,20 +1,17 @@
 # Revisiting Tabular Deep Learning<!-- omit in toc -->
 This repository contains:
 - the official implementation of the paper "Revisiting Deep Learning Models for Tabular Data" ([link](https://arxiv.org/abs/2106.11959))
-- `rtdl` (**R**evisiting **T**abular **D**eep **L**earning):
+- [`rtdl`](https://yandex-research.github.io/rtdl) (**R**evisiting **T**abular **D**eep **L**earning):
   - It is a PyTorch-based package that provides a user-friendly API for the main models (FT-Transformer, ResNet, MLP) used in the paper
   - It can be used by practitioners looking for Deep Learning models for tabular data
   - It can serve as a source of baselines for researchers (**excluding FT-Transformer**, see the warning below)
-  - You can follow releases by hitting "Watch" / "Custom" / "Releases" in the right upper corner of the GitHub interface
   - See the [website](https://yandex-research.github.io/rtdl) for more details
-  - See the [discussion](https://github.com/yandex-research/rtdl/discussions/1)
 
 **Warning**: if you are a *researcher* (not a practitioner) and plan to use the
-FT-Transformer model as a baseline in your paper, please, use the original implementation
-from [ft_transformer.py](bin/ft_transformer.py). We will remove this limitation soon
-(i.e. `rtdl` will become the recommended way to use FT-Transformer in papers).
+FT-Transformer model as a baseline in your paper, please, use the implementation that
+was used in the original paper: [ft_transformer.py](bin/ft_transformer.py).
 
-The rest of this document is dedicated to the implementation of the paper.
+**The rest of this document is dedicated to the implementation of the paper.**
 
 ---
 
@@ -40,8 +37,7 @@ The rest of this document is dedicated to the implementation of the paper.
 - [6. How to cite](#6-how-to-cite)
 
 ## 1. The main results
-The main table, where all models are sorted by their final (test) performance on all datasets,
-can be found in the last cell of [this notebook](bin/report.ipynb).
+The tables from the main text (with extra details) can be found in [this notebook](bin/report.ipynb).
 
 ## 2. Overview
 The code is organized as follows:
@@ -50,19 +46,15 @@ The code is organized as follows:
   - `ensemble.py` performs ensembling
   - `tune.py` tunes models
   - `report.ipynb` summarizes all the results
-  - `create_tables.ipynb` builds Table 1 and Table 2 from the paper
   - code for the section "When FT-Transformer is better than ResNet?" of the paper:
     - `analysis_gbdt_vs_nn.py` runs the experiments
     - `create_synthetic_data_plots.py` builds plots
 - `lib` contains common tools used by programs in `bin`
 - `output` contains configuration files (inputs for programs in `bin`) and results (metrics, tuned configurations, etc.)
-- the remaining files and directories are mostly related to the `rtdl` package
+- the remaining files and directories are mostly related to the `rtdl` package and can be ignored
 
-The results are represented with numerous JSON files that are scatterd all over
-the `output` directory. The notebook `bin/report.ipynb` summarizes them into a report
-(a _much_ more detailed version of Table 1 and Table 2 from the paper). Use this notebook to:
-- build a detailed report where all the models are compared on all datasets
-- get insights about test, validation and train scores
+The results are represented with numerous JSON files that are scatterd all over the
+`output` directory. Check `bin/report.ipynb` to see how the results can be summarized.
 
 ## 3. Setup the environment
 
