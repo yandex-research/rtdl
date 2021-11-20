@@ -34,6 +34,7 @@ Documentation
    :hidden:
 
    rtdl
+   rtdl_data
 
 ----
 

@@ -41,7 +41,9 @@ doctest_global_setup = '''
 import numpy as np
 import torch
 import rtdl
+import rtdl.data
 from rtdl import *
+from rtdl.data import *
 '''
 
 intersphinx_mapping = {
