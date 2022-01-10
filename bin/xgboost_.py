@@ -4,6 +4,8 @@ from pathlib import Path
 import numpy as np
 import zero
 from xgboost import XGBClassifier, XGBRegressor
+import wandb
+from wandb.xgboost import wandb_callback
 
 import lib
 
@@ -52,7 +54,9 @@ else:
 # Fit model
 timer = zero.Timer()
 timer.run()
-model.fit(X[lib.TRAIN], Y[lib.TRAIN], **fit_kwargs)
+wandb.init(project="RTDL", config=args)
+model.fit(X[lib.TRAIN], Y[lib.TRAIN], **fit_kwargs,
+                callbacks=[wandb_callback()])
 
 # Save model and metrics
 
@@ -69,3 +73,4 @@ for part in X:
 stats['time'] = lib.format_seconds(timer())
 lib.dump_stats(stats, output, True)
 lib.backup_output(output)
+wandb.finish()

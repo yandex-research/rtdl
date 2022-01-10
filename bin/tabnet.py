@@ -7,6 +7,7 @@ import tensorflow as tf
 import zero
 
 import lib
+import wandb
 
 
 # %%
@@ -524,7 +525,7 @@ saver = tf.train.Saver()
 
 timer = zero.Timer()
 timer.run()
-
+wandb.init(project="RTDL", config=args)
 with tf.Session() as sess:
     sess.run(init)
     sess.run(init_local)
@@ -583,5 +584,7 @@ with tf.Session() as sess:
     saver.save(sess, str(output / "best.ckpt"))
     stats['time'] = zero.format_seconds(timer())
     lib.dump_stats(stats, output, final=True)
+    wandb.tensorflow.log(tf.summary.merge_all())
 
 print(f"Total time: {zero.format_seconds(timer())}")
+wandb.finish()

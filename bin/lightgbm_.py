@@ -7,6 +7,8 @@ import numpy as np
 import pandas as pd
 import zero
 from lightgbm import LGBMClassifier, LGBMRegressor
+import wandb
+from wandb.lightgbm import wandb_callback, log_summary
 
 import lib
 
@@ -78,11 +80,13 @@ else:
 
 timer = zero.Timer()
 timer.run()
-model.fit(
+wandb.init(project="RTDL", config=args)
+gbm = model.fit(
     X[lib.TRAIN],
     Y[lib.TRAIN],
     **fit_kwargs,
     eval_set=(X[lib.VAL], Y[lib.VAL]),
+    callbacks=[wandb_callback()]
 )
 if Path('catboost_info').exists():
     shutil.rmtree('catboost_info')
@@ -99,3 +103,4 @@ for part in X:
 stats['time'] = lib.format_seconds(timer())
 lib.dump_stats(stats, output, True)
 lib.backup_output(output)
+wandb.finish()

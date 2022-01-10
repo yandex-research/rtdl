@@ -14,6 +14,7 @@ import zero
 from tqdm.auto import tqdm
 
 import lib
+import wandb
 
 
 # %%
@@ -352,6 +353,7 @@ def evaluate(parts):
 
 main_timer = zero.Timer()
 main_timer.run()
+wandb.init(project="RTDL", config=args)
 for s in range(args["model"]["num_nets"]):
     m = MLP_2HL.get_model(s, argparse.Namespace(**args["model"])).to(device)
     opt = torch.optim.Adam(
@@ -389,13 +391,14 @@ for s in range(args["model"]["num_nets"]):
                 loss = loss_f1(net_ensemble.boost_rate * out, grad_direction)  # T
                 loss = loss * h
                 loss = loss.mean()
+                wandb.log({"Grownet Classification F1 Loss": loss})
             # Regression
             else:
                 grad_direction = -(out - y)
                 _, out = m(net_ensemble.embed_input(x_num, x_cat), middle_feat)
                 out = torch.as_tensor(out, dtype=torch.float32).cuda().view(-1, 1)
                 loss = loss_f1(net_ensemble.boost_rate * out, grad_direction)  # T
-
+                wandb.log({"Grownet Regression F1 Loss": loss})
             m.zero_grad()
             loss.backward()
             opt.step()
@@ -432,10 +435,12 @@ for s in range(args["model"]["num_nets"]):
                     _, out = net_ensemble.forward_grad(x_num, x_cat)
                     out = torch.as_tensor(out, dtype=torch.float32).cuda().view(-1, 1)
                     loss = loss_f2(out, y)
+                    wandb.log({"Grownet Classification F2 Loss": loss})
                 else:
                     _, out = net_ensemble.forward_grad(x_num, x_cat)
                     out = torch.as_tensor(out, dtype=torch.float32).cuda().view(-1, 1)
                     loss = loss_f2(out, y)
+                    wandb.log({"Grownet Regression F2 Loss": loss})
 
                 opt.zero_grad()
                 loss.backward()
@@ -457,8 +462,12 @@ for s in range(args["model"]["num_nets"]):
     net_ensemble.to_eval()
     print(f"Done with stage {s};")
     metrics, predictions = evaluate([lib.VAL, lib.TEST])
+    wandb.log({"score": metrics[lib.VAL]['score']})
     print(f"Evaluation time {zero.format_seconds(timer())}")
-
+    for k, v in metrics.items():
+        wandb.log({k:v})
+    for k, v in predictions.items():
+        wandb.log({f"predictions_{k}": v})
     progress.update(metrics[lib.VAL]["score"])
 
     if progress.success:
@@ -483,5 +492,6 @@ lib.dump_stats(stats, output, final=True)
 for k, v in predictions.items():
     np.save(output / f'p_{k}.npy', v)
 lib.backup_output(output)
+wandb.finish()
 
 # %%

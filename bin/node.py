@@ -13,6 +13,7 @@ import torch.nn.functional as F
 import torch.optim.swa_utils as swa_utils
 import zero
 from torch import Tensor
+import wandb
 
 import lib
 import lib.node as node
@@ -251,6 +252,7 @@ STATE_VARIABLES = [
 
 
 def save_checkpoint(suffix):
+    model_artifact = wandb.Artifact('node-artifact', type='model')
     torch.save(
         {
             'model': model.state_dict(),
@@ -263,7 +265,8 @@ def save_checkpoint(suffix):
     )
     lib.dump_stats(stats, output, suffix == 'final')
     lib.backup_output(output)
-
+    model_artifact.add_file(get_checkpoint_path(suffix))
+    wandb.run.log_artifact(model_artifact)
 
 for stage in list(range(args.get('swa', {}).get('n_checkpoints', 1)))[::-1]:
     if get_checkpoint_path(stage).exists():
@@ -297,6 +300,8 @@ with torch.no_grad():
                 size //= 2
             else:
                 break
+
+wandb.init(project="RTDL", config=args)
 for epoch in stream.epochs(args['training']['n_epochs']):
     print_epoch_info()
 
@@ -305,6 +310,7 @@ for epoch in stream.epochs(args['training']['n_epochs']):
         loss, new_chunk_size = lib.learn_with_auto_virtual_batch(
             model, optimizer, loss_fn, step, batch_idx, batch_size, chunk_size
         )
+        wandb.log({"Training Loss": loss})
         epoch_losses.append(loss.detach())
         if new_chunk_size and new_chunk_size < (chunk_size or batch_size):
             chunk_size = new_chunk_size
@@ -317,8 +323,10 @@ for epoch in stream.epochs(args['training']['n_epochs']):
     print(f'[{lib.TRAIN}] loss = {round(sum(epoch_losses) / len(epoch_losses), 3)}')
 
     metrics, predictions = evaluate(model, [lib.VAL, lib.TEST])
+    wandb.log({"score": metrics[lib.VAL]['score']})
     for k, v in metrics.items():
         training_log[k].append(v)
+        wandb.log({k:v})
 
     progress.update(metrics[lib.VAL]['score'])
     if progress.success:
@@ -328,6 +336,7 @@ for epoch in stream.epochs(args['training']['n_epochs']):
         save_checkpoint(stage)
         for k, v in predictions.items():
             np.save(output / f'p_{stage}_{k}.npy', v)
+            wandb.log({f"predictions_{k}": v})
 
     elif progress.fail:
 
@@ -404,9 +413,11 @@ print('\nRunning the final evaluation...')
 stats['metrics'], predictions = evaluate(model, lib.PARTS)
 for k, v in predictions.items():
     np.save(output / f'p_{k}.npy', v)
+    wandb.run.summary[f"final_prediction_{k}"] = v
 stats['time_final'] = lib.format_seconds(timer())
 save_checkpoint('final')
 print(f'Done! Time elapsed: {stats["time_final"]}')
 print(
     '\n!!! WARNING !!! The metrics for a single model are stored under the "metrics_0" key.\n'
 )
+wandb.finish()

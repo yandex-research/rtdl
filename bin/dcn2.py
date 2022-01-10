@@ -10,6 +10,7 @@ import torch.nn.functional as F
 import zero
 
 import lib
+import wandb
 
 
 # %%
@@ -224,6 +225,7 @@ def evaluate(parts):
 
 
 def save_checkpoint(final):
+    model_artifact = wandb.Artifact('dcn2-artifact', type='model')
     torch.save(
         {
             'model': model.state_dict(),
@@ -244,10 +246,13 @@ def save_checkpoint(final):
     )
     lib.dump_stats(stats, output, final)
     lib.backup_output(output)
+    model_artifact.add_file(checkpoint_path)
+    wandb.run.log_artifact(model_artifact)
 
 
 # %%
 timer.run()
+wandb.init(project="RTDL", config=args)
 for epoch in stream.epochs(args['training']['n_epochs']):
     print_epoch_info()
 
@@ -266,6 +271,7 @@ for epoch in stream.epochs(args['training']['n_epochs']):
             print('Loss is nan!')
             break
 
+        wandb.log({"Training Loss": loss})
         loss.backward()
         optimizer.step()
         epoch_losses.append(loss.detach())
@@ -278,8 +284,10 @@ for epoch in stream.epochs(args['training']['n_epochs']):
     print(f'[{lib.TRAIN}] loss = {round(sum(epoch_losses) / len(epoch_losses), 3)}')
 
     metrics, predictions = evaluate(lib.PARTS)
+    wandb.log({"score": metrics[lib.VAL]['score']})
     for k, v in metrics.items():
         training_log[k].append(v)
+        wandb.log({k:v})
     progress.update(metrics[lib.VAL]['score'])
 
     if progress.success:
@@ -289,6 +297,7 @@ for epoch in stream.epochs(args['training']['n_epochs']):
         save_checkpoint(False)
         for k, v in predictions.items():
             np.save(output / f'p_{k}.npy', v)
+            wandb.log({f"predictions_{k}": v})
 
     elif progress.fail:
         break
@@ -300,6 +309,8 @@ model.load_state_dict(torch.load(checkpoint_path)['model'])
 stats['metrics'], predictions = evaluate(lib.PARTS)
 for k, v in predictions.items():
     np.save(output / f'p_{k}.npy', v)
+    wandb.run.summary[f"final_prediction_{k}"] = v
 stats['time'] = lib.format_seconds(timer())
 save_checkpoint(True)
 print('Done!')
+wandb.finish()
