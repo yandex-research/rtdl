@@ -587,4 +587,3 @@ with tf.Session() as sess:
     wandb.tensorflow.log(tf.summary.merge_all())
 
 print(f"Total time: {zero.format_seconds(timer())}")
-wandb.finish()

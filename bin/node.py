@@ -420,4 +420,3 @@ print(f'Done! Time elapsed: {stats["time_final"]}')
 print(
     '\n!!! WARNING !!! The metrics for a single model are stored under the "metrics_0" key.\n'
 )
-wandb.finish()

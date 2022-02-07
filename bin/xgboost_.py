@@ -73,4 +73,3 @@ for part in X:
 stats['time'] = lib.format_seconds(timer())
 lib.dump_stats(stats, output, True)
 lib.backup_output(output)
-wandb.finish()

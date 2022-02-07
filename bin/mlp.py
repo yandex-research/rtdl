@@ -280,4 +280,3 @@ for k, v in predictions.items():
 stats['time'] = lib.format_seconds(timer())
 save_checkpoint(True)
 print('Done!')
-wandb.finish()

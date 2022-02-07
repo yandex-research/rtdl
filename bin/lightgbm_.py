@@ -8,7 +8,7 @@ import pandas as pd
 import zero
 from lightgbm import LGBMClassifier, LGBMRegressor
 import wandb
-from wandb.lightgbm import wandb_callback, log_summary
+from wandb.lightgbm import wandb_callback
 
 import lib
 
@@ -103,4 +103,3 @@ for part in X:
 stats['time'] = lib.format_seconds(timer())
 lib.dump_stats(stats, output, True)
 lib.backup_output(output)
-wandb.finish()

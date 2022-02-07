@@ -539,4 +539,3 @@ if __name__ == "__main__":
     stats['time'] = lib.format_seconds(timer())
     save_checkpoint(True)
     print('Done!')
-    wandb.finish()

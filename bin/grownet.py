@@ -492,6 +492,5 @@ lib.dump_stats(stats, output, final=True)
 for k, v in predictions.items():
     np.save(output / f'p_{k}.npy', v)
 lib.backup_output(output)
-wandb.finish()
 
 # %%
