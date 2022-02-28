@@ -242,11 +242,10 @@ should be more clear now. Feel free to open issues and ask questions.
 
 ## 6. How to cite
 ```
-@article{gorishniy2021revisiting,
+@inproceedings{gorishniy2021revisiting,
     title={Revisiting Deep Learning Models for Tabular Data},
     author={Yury Gorishniy and Ivan Rubachev and Valentin Khrulkov and Artem Babenko},
-    journal={arXiv},
-    volume={2106.11959},
+    booktitle={{NeurIPS}},
     year={2021},
 }
 ```
