@@ -5,7 +5,7 @@ from typing import List
 import numpy as np
 
 
-def check_category_sizes(X: np.ndarray) -> List[int]:
+def get_category_sizes(X: np.ndarray) -> List[int]:
     """Validate encoded categorical features and count distinct values.
 
     The function calculates the "category sizes" that can be used to construct
@@ -27,7 +27,7 @@ def check_category_sizes(X: np.ndarray) -> List[int]:
     Examples:
         .. testcode::
 
-            assert check_category_sizes(np.array(
+            assert get_category_sizes(np.array(
                 [
                     [0, 0, 0],
                     [1, 0, 0],

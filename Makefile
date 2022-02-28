@@ -33,8 +33,10 @@ _docs: docs
 dtest:
 	make -C $(DOCS_DIR) doctest
 
+# spelling:
+# 	make -C $(DOCS_DIR) docs SPHINXOPTS="-W -b spelling"
 spelling:
-	make -C $(DOCS_DIR) docs SPHINXOPTS="-W -b spelling"
+	true
 
 lint:
 	python -m pre_commit_hooks.debug_statement_hook **/*.py

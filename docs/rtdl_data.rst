@@ -9,4 +9,4 @@ rtdl.data
 Functions
 ---------
 
-.. autofunction:: check_category_sizes
+.. autofunction:: get_category_sizes

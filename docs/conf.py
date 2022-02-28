@@ -29,7 +29,7 @@ extensions = [
     'sphinx.ext.intersphinx',
     'sphinx.ext.napoleon',
     'sphinx.ext.viewcode',
-    'sphinxcontrib.spelling',
+    # 'sphinxcontrib.spelling',
     'sphinx_copybutton',
 ]
 
@@ -55,7 +55,7 @@ intersphinx_mapping = {
 napoleon_numpy_docstring = False
 napoleon_use_admonition_for_examples = False
 
-spelling_show_suggestions = True
+# spelling_show_suggestions = True
 
 # >>> HTML and theme options <<<
 import sphinx_material  # noqa
