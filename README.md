@@ -1,4 +1,4 @@
-# Revisiting Tabular Deep Learning<!-- omit in toc -->
+# Research on Tabular Deep Learning<!-- omit in toc -->
 This repository contains:
 - the official implementation of the paper "Revisiting Deep Learning Models for Tabular Data" ([link](https://arxiv.org/abs/2106.11959))
 - [`rtdl`](https://yandex-research.github.io/rtdl) (**R**evisiting **T**abular **D**eep **L**earning):
