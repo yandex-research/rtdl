@@ -8,7 +8,7 @@ default:
 	echo "Hello, World!"
 
 clean:
-	for x in "bin" "lib" "rtdl"; \
+	for x in "rtdl"; \
 	do \
 		find $$x -type f -name "*.py[co]" -delete -o -type d -name __pycache__ -delete; \
 	done;
@@ -40,7 +40,7 @@ spelling:
 
 lint:
 	python -m pre_commit_hooks.debug_statement_hook **/*.py
-	for x in "bin" "lib" "rtdl"; \
+	for x in "rtdl"; \
 	do \
 		isort $$x --check-only; \
 		black $$x --check; \
