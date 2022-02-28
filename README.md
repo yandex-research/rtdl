@@ -66,8 +66,8 @@ export REPO_DIR=<ABSOLUTE path to the desired repository directory>
 git clone <repository url> $REPO_DIR
 cd $REPO_DIR
 
-conda create -n rtdl python=3.8.8
-conda activate rtdl
+conda create -n rtdl-revisiting python=3.8.8
+conda activate rtdl-revisiting
 
 conda install pytorch==1.7.1 torchvision==0.8.2 cudatoolkit=10.1.243 numpy=1.19.2 -c pytorch -y
 conda install cudnn=7.6.5 -c anaconda -y
@@ -83,7 +83,7 @@ conda env config vars set CUDA_HOME=${CONDA_PREFIX}
 conda env config vars set CUDA_ROOT=${CONDA_PREFIX}
 
 conda deactivate
-conda activate rtdl
+conda activate rtdl-revisiting
 ```
 
 ### 3.2. TensorFlow environment
@@ -100,10 +100,10 @@ The instructions are the same as for the PyTorch environment (including installa
 **LICENSE**: _by downloading our dataset you accept licenses of all its components. We
 do not impose any new restrictions in addition to those licenses. You can find the list
 of sources in the section "References" of our paper._
-1. Download the data: `wget https://www.dropbox.com/s/o53umyg6mn3zhxy/rtdl_data.tar.gz?dl=1 -O rtdl_data.tar.gz`
-2. Move the archive to the root of the repository: `mv rtdl_data.tar.gz $PROJECT_DIR`
+1. Download the data: `wget https://www.dropbox.com/s/o53umyg6mn3zhxy/rtdl_data.tar.gz?dl=1 -O rtdl_revisiting_data.tar.gz`
+2. Move the archive to the root of the repository: `mv rtdl_revisiting_data.tar.gz $PROJECT_DIR`
 3. Go to the root of the repository: `cd $PROJECT_DIR`
-4. Unpack the archive: `tar -xvf rtdl_data.tar.gz`
+4. Unpack the archive: `tar -xvf rtdl_revisiting_data.tar.gz`
 
 ## 4. Tutorial (how to reproduce results)
 *This section only provides specific commands with few comments. After completing the tutorial, we recommend checking the next section for better understanding of how to work with the repository. It will also help to better understand the tutorial.*
