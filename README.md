@@ -9,6 +9,6 @@ Feel free to [open issues](https://github.com/yandex-research/rtdl/issues) and [
 
 (technical note: for each active project, you should have a separate clone of the whole repository and a separate virtual environment)
 
-|                       Name                       |                           Folder                            |   Comment    |
+|                       Name                       |                          Location                           |   Comment    |
 | :----------------------------------------------: | :---------------------------------------------------------: | :----------: |
 | Revisiting Deep Learning Models for Tabular Data | [projects/revisiting-models](./projects/revisiting-models/) | NeurIPS 2021 |
