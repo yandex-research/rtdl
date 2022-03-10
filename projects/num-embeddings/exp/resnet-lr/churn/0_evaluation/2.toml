@@ -1,0 +1,42 @@
+seed = 2
+
+[data]
+path = "data/churn"
+T_cache = true
+
+[data.T]
+seed = 0
+normalization = "quantile"
+num_nan_policy = "__none__"
+cat_nan_policy = "__none__"
+cat_min_frequency = "__none__"
+cat_encoding = "__none__"
+y_policy = "default"
+
+[model]
+d_num_embedding = 53
+num_embedding_arch = [
+    "linear",
+    "relu",
+]
+d_cat_embedding = "__none__"
+mlp = "__none__"
+transformer = "__none__"
+transformer_default = false
+transformer_baseline = true
+
+[model.resnet]
+n_blocks = 2
+d_main = 115
+dropout_first = 0.3988910663360386
+dropout_second = 0.0
+d_hidden = 217
+
+[training]
+batch_size = 128
+lr = 0.004687088679679877
+weight_decay = 3.43471156441547e-05
+optimizer = "AdamW"
+patience = 16
+n_epochs = inf
+eval_batch_size = 8192

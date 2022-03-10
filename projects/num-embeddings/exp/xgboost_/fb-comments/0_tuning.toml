@@ -1,0 +1,54 @@
+seed = 0
+program = "bin/xgboost_.py"
+n_trials = 100
+
+[base_config]
+seed = 0
+
+[base_config.data]
+path = "data/fb-comments"
+
+[base_config.data.T]
+cat_encoding = "one-hot"
+
+[base_config.xgboost]
+tree_method = "gpu_hist"
+
+[space.xgboost]
+colsample_bytree = [
+    "uniform",
+    0.5,
+    1.0,
+]
+gamma = [
+    "?loguniform",
+    0,
+    0.001,
+    100.0,
+]
+lambda = [
+    "?loguniform",
+    0.0,
+    0.1,
+    10.0,
+]
+learning_rate = [
+    "loguniform",
+    0.001,
+    1.0,
+]
+max_depth = [
+    "int",
+    3,
+    10,
+]
+min_child_weight = [
+    "loguniform",
+    0.0001,
+    100.0,
+]
+subsample = [
+    "uniform",
+    0.5,
+    1.0,
+]

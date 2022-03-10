@@ -1,0 +1,44 @@
+seed = 12
+bins = "__none__"
+
+[data]
+path = "data/otto"
+T_cache = true
+
+[data.T]
+seed = 0
+normalization = "__none__"
+num_nan_policy = "__none__"
+cat_nan_policy = "__none__"
+cat_min_frequency = "__none__"
+cat_encoding = "__none__"
+y_policy = "default"
+
+[model]
+d_num_embedding = 488
+num_embedding_arch = [
+    "linear",
+    "relu",
+]
+d_cat_embedding = "__none__"
+mlp = "__none__"
+resnet = "__none__"
+transformer_default = false
+transformer_baseline = true
+memory_efficient = true
+
+[model.transformer]
+residual_dropout = 0.0
+n_blocks = 2
+attention_dropout = 0.0904472066888393
+ffn_dropout = 0.17566324922564183
+ffn_d_hidden = 1033
+
+[training]
+batch_size = 512
+lr = 1.3275186563809527e-05
+weight_decay = 6.706145612311363e-05
+optimizer = "AdamW"
+patience = 16
+n_epochs = inf
+eval_batch_size = 8192

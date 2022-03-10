@@ -1,0 +1,51 @@
+seed = 4
+bins = "__none__"
+
+[data]
+path = "data/gesture"
+T_cache = true
+
+[data.T]
+seed = 0
+normalization = "quantile"
+num_nan_policy = "__none__"
+cat_nan_policy = "__none__"
+cat_min_frequency = "__none__"
+cat_encoding = "__none__"
+y_policy = "default"
+
+[model]
+d_num_embedding = 10
+num_embedding_arch = [
+    "autodis",
+]
+d_cat_embedding = "__none__"
+resnet = "__none__"
+transformer = "__none__"
+transformer_default = false
+transformer_baseline = true
+periodic_sigma = "__none__"
+positional_encoding = "__none__"
+fourier_features = "__none__"
+memory_efficient = true
+
+[model.mlp]
+d_layers = [
+    738,
+    871,
+    90,
+]
+dropout = 0.0616109915750084
+
+[model.autodis]
+n_meta_embeddings = 182
+temperature = 0.004149237561470569
+
+[training]
+batch_size = 128
+lr = 0.0004325552905019361
+weight_decay = 1.7868547548942546e-06
+optimizer = "AdamW"
+patience = 16
+n_epochs = inf
+eval_batch_size = 8192

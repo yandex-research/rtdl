@@ -1,0 +1,54 @@
+seed = 1
+
+[data]
+path = "data/churn"
+T_cache = true
+
+[data.T]
+seed = 0
+normalization = "quantile"
+num_nan_policy = "__none__"
+cat_nan_policy = "__none__"
+cat_min_frequency = "__none__"
+cat_encoding = "__none__"
+y_policy = "default"
+
+[model]
+d_num_embedding = 105
+num_embedding_arch = [
+    "linear",
+    "relu",
+    "linear",
+    "relu",
+]
+d_cat_embedding = "__none__"
+resnet = "__none__"
+transformer = "__none__"
+transformer_default = false
+transformer_baseline = true
+memory_efficient = false
+
+[model.mlp]
+d_layers = [
+    1020,
+    477,
+    477,
+    477,
+    477,
+    680,
+]
+dropout = 0.4294110263326248
+
+[training]
+batch_size = 128
+lr = 0.0036240803879253737
+weight_decay = 0.0
+optimizer = "AdamW"
+patience = 16
+n_epochs = inf
+eval_batch_size = 8192
+
+[bins]
+count = 24
+tree = "__none__"
+subsample = "__none__"

@@ -1,0 +1,217 @@
+{
+    "program": "bin/tune.py",
+    "environment": {
+        "CUDA_VISIBLE_DEVICES": "0",
+        "gpus": {
+            "driver": "450.119.04",
+            "devices": [
+                {
+                    "name": "A100-SXM-80GB",
+                    "memory_total": 85199093760,
+                    "memory_free": 85195948032,
+                    "memory_used": 3145728,
+                    "utilization": 0
+                }
+            ]
+        },
+        "torch.version.cuda": "11.1",
+        "torch.backends.cudnn.version()": 8005,
+        "torch.cuda.nccl.version()": [
+            2,
+            10,
+            3
+        ]
+    },
+    "config": {
+        "seed": 0,
+        "program": "bin/train3.py",
+        "base_config": {
+            "seed": 0,
+            "data": {
+                "T_cache": true,
+                "path": "data/microsoft",
+                "T": {
+                    "normalization": "quantile"
+                }
+            },
+            "training": {
+                "batch_size": 1024
+            },
+            "model": {
+                "num_embedding_arch": [
+                    "positional"
+                ],
+                "memory_efficient": false,
+                "positional_encoding": {
+                    "trainable": false,
+                    "initialization": "log-linear"
+                }
+            }
+        },
+        "space": {
+            "model": {
+                "resnet": {
+                    "n_blocks": [
+                        "int",
+                        1,
+                        8
+                    ],
+                    "d_main": [
+                        "int",
+                        32,
+                        512
+                    ],
+                    "d_hidden_factor": [
+                        "uniform",
+                        1.0,
+                        4.0
+                    ],
+                    "dropout_first": [
+                        "uniform",
+                        0.0,
+                        0.5
+                    ],
+                    "dropout_second": [
+                        "?uniform",
+                        0.0,
+                        0.0,
+                        0.5
+                    ]
+                },
+                "positional_encoding": {
+                    "n": [
+                        "int",
+                        1,
+                        128
+                    ],
+                    "sigma": [
+                        "loguniform",
+                        0.001,
+                        100.0
+                    ]
+                }
+            },
+            "training": {
+                "lr": [
+                    "loguniform",
+                    5e-05,
+                    0.005
+                ],
+                "weight_decay": [
+                    "?loguniform",
+                    0.0,
+                    1e-06,
+                    0.001
+                ]
+            }
+        },
+        "n_trials": 100,
+        "timeout": null,
+        "sampler": {}
+    },
+    "best": {
+        "program": "bin/train3.py",
+        "environment": {
+            "CUDA_VISIBLE_DEVICES": "0",
+            "gpus": {
+                "driver": "450.119.04",
+                "devices": [
+                    {
+                        "name": "A100-SXM-80GB",
+                        "memory_total": 85199093760,
+                        "memory_free": 85195948032,
+                        "memory_used": 3145728,
+                        "utilization": 0
+                    }
+                ]
+            },
+            "torch.version.cuda": "11.1",
+            "torch.backends.cudnn.version()": 8005,
+            "torch.cuda.nccl.version()": [
+                2,
+                10,
+                3
+            ]
+        },
+        "config": {
+            "seed": 0,
+            "data": {
+                "path": "data/microsoft",
+                "T": {
+                    "seed": 0,
+                    "normalization": "quantile",
+                    "num_nan_policy": null,
+                    "cat_nan_policy": null,
+                    "cat_min_frequency": null,
+                    "cat_encoding": null,
+                    "y_policy": "default"
+                },
+                "T_cache": true
+            },
+            "model": {
+                "d_num_embedding": null,
+                "num_embedding_arch": [
+                    "positional"
+                ],
+                "d_cat_embedding": null,
+                "mlp": null,
+                "resnet": {
+                    "n_blocks": 5,
+                    "d_main": 74,
+                    "dropout_first": 0.4469872248877659,
+                    "dropout_second": 0.0,
+                    "d_hidden": 233
+                },
+                "transformer": null,
+                "transformer_default": false,
+                "transformer_baseline": true,
+                "periodic_sigma": null,
+                "positional_encoding": {
+                    "n": 19,
+                    "sigma": 0.008956881233472169,
+                    "trainable": false,
+                    "initialization": "log-linear"
+                },
+                "autodis": null,
+                "fourier_features": null,
+                "memory_efficient": false
+            },
+            "training": {
+                "batch_size": 1024,
+                "lr": 7.982563937583184e-05,
+                "weight_decay": 0.0,
+                "optimizer": "AdamW",
+                "patience": 16,
+                "n_epochs": Infinity,
+                "eval_batch_size": 8192
+            },
+            "bins": null
+        },
+        "prediction_type": null,
+        "epoch_size": 707,
+        "n_parameters": 557424,
+        "best_epoch": 25,
+        "metrics": {
+            "train": {
+                "rmse": 0.7043405551570487,
+                "score": -0.7043405551570487
+            },
+            "val": {
+                "rmse": 0.7453809666990724,
+                "score": -0.7453809666990724
+            },
+            "test": {
+                "rmse": 0.749499207786294,
+                "score": -0.749499207786294
+            }
+        },
+        "time": "0:03:39",
+        "trial_id": 94,
+        "tuning_time": "5:08:43"
+    },
+    "time": "5:23:14",
+    "continuations": [
+        38,
+        83
+    ]
+}

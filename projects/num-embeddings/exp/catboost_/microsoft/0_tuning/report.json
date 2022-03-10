@@ -1,0 +1,146 @@
+{
+    "program": "bin/tune.py",
+    "environment": {
+        "CUDA_VISIBLE_DEVICES": "0",
+        "gpus": {
+            "driver": "450.119.04",
+            "devices": [
+                {
+                    "name": "A100-SXM-80GB",
+                    "memory_total": 85199093760,
+                    "memory_free": 85195948032,
+                    "memory_used": 3145728,
+                    "utilization": 0
+                }
+            ]
+        },
+        "torch.version.cuda": "11.1",
+        "torch.backends.cudnn.version()": 8005,
+        "torch.cuda.nccl.version()": [
+            2,
+            10,
+            3
+        ]
+    },
+    "config": {
+        "seed": 0,
+        "program": "bin/catboost_.py",
+        "base_config": {
+            "seed": 0,
+            "data": {
+                "path": "data/microsoft"
+            },
+            "catboost": {
+                "thread_count": 1,
+                "task_type": "GPU"
+            }
+        },
+        "space": {
+            "catboost": {
+                "bagging_temperature": [
+                    "uniform",
+                    0.0,
+                    1.0
+                ],
+                "depth": [
+                    "int",
+                    3,
+                    10
+                ],
+                "l2_leaf_reg": [
+                    "uniform",
+                    0.1,
+                    10.0
+                ],
+                "leaf_estimation_iterations": [
+                    "int",
+                    1,
+                    10
+                ],
+                "learning_rate": [
+                    "loguniform",
+                    0.001,
+                    1.0
+                ]
+            }
+        },
+        "n_trials": 100,
+        "timeout": null,
+        "sampler": {}
+    },
+    "best": {
+        "program": "bin/catboost_.py",
+        "environment": {
+            "CUDA_VISIBLE_DEVICES": "0",
+            "gpus": {
+                "driver": "450.119.04",
+                "devices": [
+                    {
+                        "name": "A100-SXM-80GB",
+                        "memory_total": 85199093760,
+                        "memory_free": 85195948032,
+                        "memory_used": 3145728,
+                        "utilization": 0
+                    }
+                ]
+            },
+            "torch.version.cuda": "11.1",
+            "torch.backends.cudnn.version()": 8005,
+            "torch.cuda.nccl.version()": [
+                2,
+                10,
+                3
+            ]
+        },
+        "config": {
+            "seed": 0,
+            "data": {
+                "path": "data/microsoft",
+                "T": {
+                    "seed": 0,
+                    "normalization": null,
+                    "num_nan_policy": null,
+                    "cat_nan_policy": null,
+                    "cat_min_frequency": null,
+                    "cat_encoding": null,
+                    "y_policy": "default"
+                },
+                "T_cache": false
+            },
+            "catboost": {
+                "iterations": 2000,
+                "early_stopping_rounds": 50,
+                "od_pval": 0.001,
+                "task_type": "GPU",
+                "thread_count": 1,
+                "bagging_temperature": 0.18459030006186608,
+                "depth": 10,
+                "l2_leaf_reg": 0.9445244580021658,
+                "leaf_estimation_iterations": 4,
+                "learning_rate": 0.04241883303719453
+            },
+            "catboost_fit": {
+                "logging_level": "Verbose"
+            }
+        },
+        "prediction_type": null,
+        "metrics": {
+            "train": {
+                "rmse": 0.6455367584707279,
+                "score": -0.6455367584707279
+            },
+            "val": {
+                "rmse": 0.7389879795260184,
+                "score": -0.7389879795260184
+            },
+            "test": {
+                "rmse": 0.7427457358073657,
+                "score": -0.7427457358073657
+            }
+        },
+        "time": "0:00:47",
+        "trial_id": 88,
+        "tuning_time": "0:55:14"
+    },
+    "time": "1:03:41"
+}

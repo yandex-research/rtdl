@@ -1,0 +1,55 @@
+seed = 7
+
+[data]
+path = "data/house"
+T_cache = true
+
+[data.T]
+seed = 0
+normalization = "quantile"
+num_nan_policy = "__none__"
+cat_nan_policy = "__none__"
+cat_min_frequency = "__none__"
+cat_encoding = "__none__"
+y_policy = "default"
+
+[model]
+d_num_embedding = "__none__"
+num_embedding_arch = []
+d_cat_embedding = "__none__"
+resnet = "__none__"
+transformer = "__none__"
+transformer_default = false
+transformer_baseline = true
+periodic_sigma = "__none__"
+positional_encoding = "__none__"
+autodis = "__none__"
+fourier_features = "__none__"
+memory_efficient = true
+
+[model.mlp]
+d_layers = [
+    832,
+    268,
+    217,
+]
+dropout = 0.3087947729403932
+
+[training]
+batch_size = 256
+lr = 0.00014511467962823675
+weight_decay = 0.0006026207806803599
+optimizer = "AdamW"
+patience = 16
+n_epochs = inf
+eval_batch_size = 8192
+
+[bins]
+count = 81
+encoding = "one-blob"
+one_blob_gamma = 0.15137575044774298
+subsample = "__none__"
+
+[bins.tree]
+min_samples_leaf = 9
+min_impurity_decrease = 0.0023248012938977074

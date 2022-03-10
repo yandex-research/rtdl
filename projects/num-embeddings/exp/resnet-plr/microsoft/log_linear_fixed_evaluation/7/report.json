@@ -1,0 +1,99 @@
+{
+    "program": "bin/train3___51d2b4c6c09748db816d9af89fc821dc.py",
+    "environment": {
+        "CUDA_VISIBLE_DEVICES": "0",
+        "gpus": {
+            "driver": "450.119.04",
+            "devices": [
+                {
+                    "name": "A100-SXM-80GB",
+                    "memory_total": 85199093760,
+                    "memory_free": 85195948032,
+                    "memory_used": 3145728,
+                    "utilization": 0
+                }
+            ]
+        },
+        "torch.version.cuda": "11.1",
+        "torch.backends.cudnn.version()": 8005,
+        "torch.cuda.nccl.version()": [
+            2,
+            10,
+            3
+        ]
+    },
+    "config": {
+        "seed": 7,
+        "data": {
+            "path": "data/microsoft",
+            "T": {
+                "seed": 0,
+                "normalization": "quantile",
+                "num_nan_policy": null,
+                "cat_nan_policy": null,
+                "cat_min_frequency": null,
+                "cat_encoding": null,
+                "y_policy": "default"
+            },
+            "T_cache": true
+        },
+        "model": {
+            "d_num_embedding": 76,
+            "num_embedding_arch": [
+                "positional",
+                "linear",
+                "relu"
+            ],
+            "d_cat_embedding": null,
+            "mlp": null,
+            "resnet": {
+                "n_blocks": 6,
+                "d_main": 260,
+                "dropout_first": 0.23267452234644406,
+                "dropout_second": 0.4072674227101546,
+                "d_hidden": 312
+            },
+            "transformer": null,
+            "transformer_default": false,
+            "transformer_baseline": true,
+            "periodic_sigma": null,
+            "positional_encoding": {
+                "n": 105,
+                "sigma": 0.0017373408807492855,
+                "trainable": false,
+                "initialization": "log-linear"
+            },
+            "fourier_features": null,
+            "memory_efficient": false
+        },
+        "training": {
+            "batch_size": 1024,
+            "lr": 0.00020949614421979682,
+            "weight_decay": 0.0,
+            "optimizer": "AdamW",
+            "patience": 16,
+            "n_epochs": Infinity,
+            "eval_batch_size": 8192
+        },
+        "bins": null
+    },
+    "prediction_type": null,
+    "epoch_size": 707,
+    "n_parameters": 5849289,
+    "best_epoch": 6,
+    "metrics": {
+        "train": {
+            "rmse": 0.7170487613642158,
+            "score": -0.7170487613642158
+        },
+        "val": {
+            "rmse": 0.7467584311262684,
+            "score": -0.7467584311262684
+        },
+        "test": {
+            "rmse": 0.7506630617646305,
+            "score": -0.7506630617646305
+        }
+    },
+    "time": "0:14:57"
+}

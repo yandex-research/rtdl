@@ -1,0 +1,53 @@
+seed = 14
+bins = "__none__"
+
+[data]
+path = "data/otto"
+T_cache = true
+
+[data.T]
+seed = 0
+normalization = "__none__"
+num_nan_policy = "__none__"
+cat_nan_policy = "__none__"
+cat_min_frequency = "__none__"
+cat_encoding = "__none__"
+y_policy = "default"
+
+[model]
+d_num_embedding = 16
+num_embedding_arch = [
+    "positional",
+    "linear",
+    "relu",
+]
+d_cat_embedding = "__none__"
+resnet = "__none__"
+transformer = "__none__"
+transformer_default = false
+transformer_baseline = true
+periodic_sigma = "__none__"
+fourier_features = "__none__"
+memory_efficient = false
+
+[model.mlp]
+d_layers = [
+    978,
+    110,
+]
+dropout = 0.4517559668948624
+
+[model.positional_encoding]
+n = 27
+sigma = 0.0010105578479382342
+trainable = true
+initialization = "log-linear"
+
+[training]
+batch_size = 512
+lr = 0.0017316870770398669
+weight_decay = 3.303198320959704e-06
+optimizer = "AdamW"
+patience = 16
+n_epochs = inf
+eval_batch_size = 8192

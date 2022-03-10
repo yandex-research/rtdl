@@ -1,0 +1,48 @@
+seed = 4
+
+[data]
+path = "data/microsoft"
+T_cache = true
+
+[data.T]
+seed = 0
+normalization = "quantile"
+num_nan_policy = "__none__"
+cat_nan_policy = "__none__"
+cat_min_frequency = "__none__"
+cat_encoding = "__none__"
+y_policy = "default"
+
+[model]
+d_num_embedding = 272
+num_embedding_arch = [
+    "linear",
+]
+d_cat_embedding = "__none__"
+mlp = "__none__"
+resnet = "__none__"
+transformer_default = false
+transformer_baseline = true
+memory_efficient = true
+
+[model.transformer]
+residual_dropout = 0.0
+n_blocks = 3
+attention_dropout = 0.09396850732842674
+ffn_dropout = 0.4543517989366313
+ffn_d_hidden = 428
+
+[training]
+batch_size = 1024
+lr = 2.5913270101731377e-05
+weight_decay = 1e-05
+optimizer = "AdamW"
+patience = 16
+n_epochs = inf
+eval_batch_size = 8192
+
+[bins]
+count = 2
+value = "ratio"
+tree = "__none__"
+subsample = "__none__"

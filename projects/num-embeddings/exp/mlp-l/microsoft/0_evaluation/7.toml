@@ -1,0 +1,44 @@
+seed = 7
+
+[data]
+path = "data/microsoft"
+T_cache = true
+
+[data.T]
+seed = 0
+normalization = "quantile"
+num_nan_policy = "__none__"
+cat_nan_policy = "__none__"
+cat_min_frequency = "__none__"
+cat_encoding = "__none__"
+y_policy = "default"
+
+[model]
+d_num_embedding = 6
+num_embedding_arch = [
+    "linear",
+]
+d_cat_embedding = "__none__"
+resnet = "__none__"
+transformer = "__none__"
+transformer_default = false
+transformer_baseline = true
+
+[model.mlp]
+d_layers = [
+    970,
+    230,
+    230,
+    230,
+    503,
+]
+dropout = 0.39035703515091214
+
+[training]
+batch_size = 1024
+lr = 0.00010054153780055776
+weight_decay = 5.512300311023067e-06
+optimizer = "AdamW"
+patience = 16
+n_epochs = inf
+eval_batch_size = 8192

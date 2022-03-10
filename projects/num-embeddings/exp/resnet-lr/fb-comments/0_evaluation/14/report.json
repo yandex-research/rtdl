@@ -1,0 +1,88 @@
+{
+    "program": "bin/train0___912fd2370c0d4451bd9822ed33ca15ed.py",
+    "environment": {
+        "CUDA_VISIBLE_DEVICES": "0",
+        "gpus": {
+            "driver": "450.119.04",
+            "devices": [
+                {
+                    "name": "A100-SXM-80GB",
+                    "memory_total": 85199093760,
+                    "memory_free": 85195948032,
+                    "memory_used": 3145728,
+                    "utilization": 0
+                }
+            ]
+        },
+        "torch.version.cuda": "11.1",
+        "torch.backends.cudnn.version()": 8005,
+        "torch.cuda.nccl.version()": [
+            2,
+            10,
+            3
+        ]
+    },
+    "config": {
+        "seed": 14,
+        "data": {
+            "path": "data/fb-comments",
+            "T": {
+                "seed": 0,
+                "normalization": "quantile",
+                "num_nan_policy": null,
+                "cat_nan_policy": null,
+                "cat_min_frequency": null,
+                "cat_encoding": null,
+                "y_policy": "default"
+            },
+            "T_cache": true
+        },
+        "model": {
+            "d_num_embedding": 55,
+            "num_embedding_arch": [
+                "linear",
+                "relu"
+            ],
+            "d_cat_embedding": null,
+            "mlp": null,
+            "resnet": {
+                "n_blocks": 1,
+                "d_main": 354,
+                "dropout_first": 0.34475555440502237,
+                "dropout_second": 0.0,
+                "d_hidden": 850
+            },
+            "transformer": null,
+            "transformer_default": false,
+            "transformer_baseline": true
+        },
+        "training": {
+            "batch_size": 512,
+            "lr": 0.00014253326669727242,
+            "weight_decay": 1.4859735076585133e-05,
+            "optimizer": "AdamW",
+            "patience": 16,
+            "n_epochs": Infinity,
+            "eval_batch_size": 8192
+        }
+    },
+    "prediction_type": null,
+    "epoch_size": 308,
+    "n_parameters": 1612803,
+    "best_epoch": 110,
+    "metrics": {
+        "train": {
+            "rmse": 4.142865913092656,
+            "score": -4.142865913092656
+        },
+        "val": {
+            "rmse": 5.288231500733209,
+            "score": -5.288231500733209
+        },
+        "test": {
+            "rmse": 5.558048970673621,
+            "score": -5.558048970673621
+        }
+    },
+    "time": "0:02:13"
+}

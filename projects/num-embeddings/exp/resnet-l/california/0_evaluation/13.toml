@@ -1,0 +1,41 @@
+seed = 13
+
+[data]
+path = "data/california"
+T_cache = true
+
+[data.T]
+seed = 0
+normalization = "quantile"
+num_nan_policy = "__none__"
+cat_nan_policy = "__none__"
+cat_min_frequency = "__none__"
+cat_encoding = "__none__"
+y_policy = "default"
+
+[model]
+d_num_embedding = 101
+num_embedding_arch = [
+    "linear",
+]
+d_cat_embedding = "__none__"
+mlp = "__none__"
+transformer = "__none__"
+transformer_default = false
+transformer_baseline = true
+
+[model.resnet]
+n_blocks = 7
+d_main = 183
+dropout_first = 0.24030625307235037
+dropout_second = 0.09845838030214168
+d_hidden = 281
+
+[training]
+batch_size = 256
+lr = 0.00043265097965102477
+weight_decay = 3.1830596831882603e-06
+optimizer = "AdamW"
+patience = 16
+n_epochs = inf
+eval_batch_size = 8192

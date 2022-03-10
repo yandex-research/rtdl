@@ -1,0 +1,300 @@
+{
+    "program": "bin/tune.py",
+    "environment": {
+        "CUDA_VISIBLE_DEVICES": "1",
+        "gpus": {
+            "driver": "460.106.00",
+            "devices": [
+                {
+                    "name": "GeForce RTX 2080 Ti",
+                    "memory_total": 11554717696,
+                    "memory_free": 4723376128,
+                    "memory_used": 6831341568,
+                    "utilization": 55
+                },
+                {
+                    "name": "GeForce RTX 2080 Ti",
+                    "memory_total": 11552096256,
+                    "memory_free": 11548033024,
+                    "memory_used": 4063232,
+                    "utilization": 0
+                }
+            ]
+        },
+        "torch.version.cuda": "11.1",
+        "torch.backends.cudnn.version()": 8005,
+        "torch.cuda.nccl.version()": [
+            2,
+            10,
+            3
+        ]
+    },
+    "config": {
+        "seed": 0,
+        "program": "bin/train3.py",
+        "base_config": {
+            "seed": 0,
+            "data": {
+                "T_cache": true,
+                "path": "data/adult",
+                "T": {
+                    "normalization": "quantile"
+                }
+            },
+            "training": {
+                "batch_size": 256
+            },
+            "model": {
+                "num_embedding_arch": [
+                    "positional",
+                    "linear",
+                    "relu",
+                    "linear",
+                    "relu"
+                ],
+                "memory_efficient": false,
+                "positional_encoding": {
+                    "trainable": false,
+                    "initialization": "log-linear"
+                }
+            }
+        },
+        "space": {
+            "model": {
+                "d_num_embedding": [
+                    "int",
+                    1,
+                    128
+                ],
+                "mlp": {
+                    "d_layers": [
+                        "$mlp_d_layers",
+                        1,
+                        8,
+                        16,
+                        1024
+                    ],
+                    "dropout": [
+                        "?uniform",
+                        0.0,
+                        0.0,
+                        0.5
+                    ]
+                },
+                "positional_encoding": {
+                    "n": [
+                        "int",
+                        1,
+                        128
+                    ],
+                    "sigma": [
+                        "loguniform",
+                        0.001,
+                        100.0
+                    ]
+                }
+            },
+            "training": {
+                "lr": [
+                    "loguniform",
+                    5e-05,
+                    0.005
+                ],
+                "weight_decay": [
+                    "?loguniform",
+                    0.0,
+                    1e-06,
+                    0.001
+                ]
+            }
+        },
+        "n_trials": 100,
+        "timeout": null,
+        "sampler": {}
+    },
+    "best": {
+        "program": "bin/train3.py",
+        "environment": {
+            "CUDA_VISIBLE_DEVICES": "1",
+            "gpus": {
+                "driver": "460.106.00",
+                "devices": [
+                    {
+                        "name": "GeForce RTX 2080 Ti",
+                        "memory_total": 11554717696,
+                        "memory_free": 10591207424,
+                        "memory_used": 963510272,
+                        "utilization": 8
+                    },
+                    {
+                        "name": "GeForce RTX 2080 Ti",
+                        "memory_total": 11552096256,
+                        "memory_free": 11548033024,
+                        "memory_used": 4063232,
+                        "utilization": 5
+                    }
+                ]
+            },
+            "torch.version.cuda": "11.1",
+            "torch.backends.cudnn.version()": 8005,
+            "torch.cuda.nccl.version()": [
+                2,
+                10,
+                3
+            ]
+        },
+        "config": {
+            "seed": 0,
+            "data": {
+                "path": "data/adult",
+                "T": {
+                    "seed": 0,
+                    "normalization": "quantile",
+                    "num_nan_policy": null,
+                    "cat_nan_policy": null,
+                    "cat_min_frequency": null,
+                    "cat_encoding": null,
+                    "y_policy": "default"
+                },
+                "T_cache": true
+            },
+            "model": {
+                "d_num_embedding": 115,
+                "num_embedding_arch": [
+                    "positional",
+                    "linear",
+                    "relu",
+                    "linear",
+                    "relu"
+                ],
+                "d_cat_embedding": null,
+                "mlp": {
+                    "d_layers": [
+                        50
+                    ],
+                    "dropout": 0.0
+                },
+                "resnet": null,
+                "transformer": null,
+                "transformer_default": false,
+                "transformer_baseline": true,
+                "periodic_sigma": null,
+                "positional_encoding": {
+                    "n": 14,
+                    "sigma": 79.85349048613237,
+                    "trainable": false,
+                    "initialization": "log-linear"
+                },
+                "fourier_features": null,
+                "memory_efficient": false
+            },
+            "training": {
+                "batch_size": 256,
+                "lr": 0.002488403741238433,
+                "weight_decay": 0.0,
+                "optimizer": "AdamW",
+                "patience": 16,
+                "n_epochs": Infinity,
+                "eval_batch_size": 8192
+            },
+            "bins": null
+        },
+        "prediction_type": "logits",
+        "epoch_size": 102,
+        "n_parameters": 139751,
+        "best_epoch": 4,
+        "metrics": {
+            "train": {
+                "0": {
+                    "precision": 0.9039356339666538,
+                    "recall": 0.943109987357775,
+                    "f1-score": 0.9231073823842404,
+                    "support": 19775
+                },
+                "1": {
+                    "precision": 0.7922821270310192,
+                    "recall": 0.684042722780169,
+                    "f1-score": 0.7341945418769784,
+                    "support": 6273
+                },
+                "accuracy": 0.8807202088452089,
+                "macro avg": {
+                    "precision": 0.8481088804988365,
+                    "recall": 0.813576355068972,
+                    "f1-score": 0.8286509621306094,
+                    "support": 26048
+                },
+                "weighted avg": {
+                    "precision": 0.8770467193088207,
+                    "recall": 0.8807202088452089,
+                    "f1-score": 0.8776125171929761,
+                    "support": 26048
+                },
+                "roc_auc": 0.9364286812645772,
+                "score": 0.8807202088452089
+            },
+            "val": {
+                "0": {
+                    "precision": 0.897430944562488,
+                    "recall": 0.9395348837209302,
+                    "f1-score": 0.9180003951788185,
+                    "support": 4945
+                },
+                "1": {
+                    "precision": 0.7761976047904192,
+                    "recall": 0.6613520408163265,
+                    "f1-score": 0.7141873278236915,
+                    "support": 1568
+                },
+                "accuracy": 0.8725625671733456,
+                "macro avg": {
+                    "precision": 0.8368142746764535,
+                    "recall": 0.8004434622686283,
+                    "f1-score": 0.816093861501255,
+                    "support": 6513
+                },
+                "weighted avg": {
+                    "precision": 0.8682441064291233,
+                    "recall": 0.8725625671733456,
+                    "f1-score": 0.8689325478561041,
+                    "support": 6513
+                },
+                "roc_auc": 0.9277593064526114,
+                "score": 0.8725625671733456
+            },
+            "test": {
+                "0": {
+                    "precision": 0.899575780948708,
+                    "recall": 0.9379171692802574,
+                    "f1-score": 0.9183464566929134,
+                    "support": 12435
+                },
+                "1": {
+                    "precision": 0.767189384800965,
+                    "recall": 0.6614664586583463,
+                    "f1-score": 0.7104160848924881,
+                    "support": 3846
+                },
+                "accuracy": 0.8726122474049506,
+                "macro avg": {
+                    "precision": 0.8333825828748365,
+                    "recall": 0.7996918139693019,
+                    "f1-score": 0.8143812707927007,
+                    "support": 16281
+                },
+                "weighted avg": {
+                    "precision": 0.8683026355900556,
+                    "recall": 0.8726122474049506,
+                    "f1-score": 0.8692278392895331,
+                    "support": 16281
+                },
+                "roc_auc": 0.9271296440920765,
+                "score": 0.8726122474049506
+            }
+        },
+        "time": "0:00:06",
+        "trial_id": 83,
+        "tuning_time": "0:19:47"
+    },
+    "time": "0:22:59"
+}

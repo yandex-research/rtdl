@@ -1,0 +1,47 @@
+seed = 5
+
+[data]
+path = "data/house"
+T_cache = true
+
+[data.T]
+seed = 0
+normalization = "quantile"
+num_nan_policy = "__none__"
+cat_nan_policy = "__none__"
+cat_min_frequency = "__none__"
+cat_encoding = "__none__"
+y_policy = "default"
+
+[model]
+d_num_embedding = 77
+num_embedding_arch = [
+    "linear",
+    "relu",
+]
+d_cat_embedding = "__none__"
+resnet = "__none__"
+transformer = "__none__"
+transformer_default = false
+transformer_baseline = true
+
+[model.mlp]
+d_layers = [
+    502,
+    925,
+    925,
+    925,
+    925,
+    925,
+    61,
+]
+dropout = 0.31696150772398435
+
+[training]
+batch_size = 256
+lr = 0.00027392616572802816
+weight_decay = 0.0
+optimizer = "AdamW"
+patience = 16
+n_epochs = inf
+eval_batch_size = 8192

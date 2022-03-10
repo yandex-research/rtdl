@@ -1,0 +1,358 @@
+{
+    "program": "bin/tune.py",
+    "environment": {
+        "CUDA_VISIBLE_DEVICES": "2",
+        "gpus": {
+            "driver": "470.63.01",
+            "devices": [
+                {
+                    "name": "NVIDIA A100-SXM-80GB",
+                    "memory_total": 85198045184,
+                    "memory_free": 49998397440,
+                    "memory_used": 35199647744,
+                    "utilization": 84
+                },
+                {
+                    "name": "NVIDIA A100-SXM-80GB",
+                    "memory_total": 85198045184,
+                    "memory_free": 57136054272,
+                    "memory_used": 28061990912,
+                    "utilization": 54
+                },
+                {
+                    "name": "NVIDIA A100-SXM-80GB",
+                    "memory_total": 85198045184,
+                    "memory_free": 85194899456,
+                    "memory_used": 3145728,
+                    "utilization": 0
+                },
+                {
+                    "name": "NVIDIA A100-SXM-80GB",
+                    "memory_total": 85198045184,
+                    "memory_free": 85194899456,
+                    "memory_used": 3145728,
+                    "utilization": 0
+                },
+                {
+                    "name": "NVIDIA A100-SXM-80GB",
+                    "memory_total": 85198045184,
+                    "memory_free": 81474551808,
+                    "memory_used": 3723493376,
+                    "utilization": 0
+                },
+                {
+                    "name": "NVIDIA A100-SXM-80GB",
+                    "memory_total": 85198045184,
+                    "memory_free": 85194899456,
+                    "memory_used": 3145728,
+                    "utilization": 0
+                }
+            ]
+        },
+        "torch.version.cuda": "11.1",
+        "torch.backends.cudnn.version()": 8005,
+        "torch.cuda.nccl.version()": [
+            2,
+            10,
+            3
+        ]
+    },
+    "config": {
+        "seed": 0,
+        "program": "bin/train3.py",
+        "base_config": {
+            "seed": 0,
+            "data": {
+                "T_cache": true,
+                "path": "data/adult",
+                "T": {
+                    "normalization": "quantile"
+                }
+            },
+            "training": {
+                "batch_size": 256
+            },
+            "model": {
+                "num_embedding_arch": [
+                    "positional"
+                ],
+                "memory_efficient": false,
+                "positional_encoding": {
+                    "trainable": true,
+                    "initialization": "normal"
+                }
+            }
+        },
+        "space": {
+            "model": {
+                "resnet": {
+                    "n_blocks": [
+                        "int",
+                        1,
+                        8
+                    ],
+                    "d_main": [
+                        "int",
+                        32,
+                        512
+                    ],
+                    "d_hidden_factor": [
+                        "uniform",
+                        1.0,
+                        4.0
+                    ],
+                    "dropout_first": [
+                        "uniform",
+                        0.0,
+                        0.5
+                    ],
+                    "dropout_second": [
+                        "?uniform",
+                        0.0,
+                        0.0,
+                        0.5
+                    ]
+                },
+                "positional_encoding": {
+                    "n": [
+                        "int",
+                        1,
+                        128
+                    ],
+                    "sigma": [
+                        "loguniform",
+                        0.01,
+                        100.0
+                    ]
+                }
+            },
+            "training": {
+                "lr": [
+                    "loguniform",
+                    5e-05,
+                    0.005
+                ],
+                "weight_decay": [
+                    "?loguniform",
+                    0.0,
+                    1e-06,
+                    0.001
+                ]
+            }
+        },
+        "n_trials": 100,
+        "timeout": null,
+        "sampler": {}
+    },
+    "best": {
+        "program": "bin/train3.py",
+        "environment": {
+            "CUDA_VISIBLE_DEVICES": "2",
+            "gpus": {
+                "driver": "470.63.01",
+                "devices": [
+                    {
+                        "name": "NVIDIA A100-SXM-80GB",
+                        "memory_total": 85198045184,
+                        "memory_free": 49998397440,
+                        "memory_used": 35199647744,
+                        "utilization": 91
+                    },
+                    {
+                        "name": "NVIDIA A100-SXM-80GB",
+                        "memory_total": 85198045184,
+                        "memory_free": 57136054272,
+                        "memory_used": 28061990912,
+                        "utilization": 59
+                    },
+                    {
+                        "name": "NVIDIA A100-SXM-80GB",
+                        "memory_total": 85198045184,
+                        "memory_free": 85194899456,
+                        "memory_used": 3145728,
+                        "utilization": 0
+                    },
+                    {
+                        "name": "NVIDIA A100-SXM-80GB",
+                        "memory_total": 85198045184,
+                        "memory_free": 85194899456,
+                        "memory_used": 3145728,
+                        "utilization": 0
+                    },
+                    {
+                        "name": "NVIDIA A100-SXM-80GB",
+                        "memory_total": 85198045184,
+                        "memory_free": 81474551808,
+                        "memory_used": 3723493376,
+                        "utilization": 0
+                    },
+                    {
+                        "name": "NVIDIA A100-SXM-80GB",
+                        "memory_total": 85198045184,
+                        "memory_free": 85194899456,
+                        "memory_used": 3145728,
+                        "utilization": 0
+                    }
+                ]
+            },
+            "torch.version.cuda": "11.1",
+            "torch.backends.cudnn.version()": 8005,
+            "torch.cuda.nccl.version()": [
+                2,
+                10,
+                3
+            ]
+        },
+        "config": {
+            "seed": 0,
+            "data": {
+                "path": "data/adult",
+                "T": {
+                    "seed": 0,
+                    "normalization": "quantile",
+                    "num_nan_policy": null,
+                    "cat_nan_policy": null,
+                    "cat_min_frequency": null,
+                    "cat_encoding": null,
+                    "y_policy": "default"
+                },
+                "T_cache": true
+            },
+            "model": {
+                "d_num_embedding": null,
+                "num_embedding_arch": [
+                    "positional"
+                ],
+                "d_cat_embedding": null,
+                "mlp": null,
+                "resnet": {
+                    "n_blocks": 4,
+                    "d_main": 277,
+                    "dropout_first": 0.11184292227377478,
+                    "dropout_second": 0.09295480730024402,
+                    "d_hidden": 693
+                },
+                "transformer": null,
+                "transformer_default": false,
+                "transformer_baseline": true,
+                "periodic_sigma": null,
+                "positional_encoding": {
+                    "n": 39,
+                    "sigma": 64.12130005571137,
+                    "trainable": true,
+                    "initialization": "normal"
+                },
+                "autodis": null,
+                "fourier_features": null,
+                "memory_efficient": false
+            },
+            "training": {
+                "batch_size": 256,
+                "lr": 0.003798287846218939,
+                "weight_decay": 3.9339300902723256e-06,
+                "optimizer": "AdamW",
+                "patience": 16,
+                "n_epochs": Infinity,
+                "eval_batch_size": 8192
+            },
+            "bins": null
+        },
+        "prediction_type": "logits",
+        "epoch_size": 102,
+        "n_parameters": 1701017,
+        "best_epoch": 8,
+        "metrics": {
+            "train": {
+                "0": {
+                    "precision": 0.9030667057329818,
+                    "recall": 0.9351706700379266,
+                    "f1-score": 0.9188383474523637,
+                    "support": 19775
+                },
+                "1": {
+                    "precision": 0.76983842010772,
+                    "recall": 0.6835644827036506,
+                    "f1-score": 0.7241408426918855,
+                    "support": 6273
+                },
+                "accuracy": 0.8745777027027027,
+                "macro avg": {
+                    "precision": 0.8364525629203509,
+                    "recall": 0.8093675763707886,
+                    "f1-score": 0.8214895950721246,
+                    "support": 26048
+                },
+                "weighted avg": {
+                    "precision": 0.8709820529486118,
+                    "recall": 0.8745777027027027,
+                    "f1-score": 0.8719503926242587,
+                    "support": 26048
+                },
+                "roc_auc": 0.9380261079178056,
+                "score": 0.8745777027027027
+            },
+            "val": {
+                "0": {
+                    "precision": 0.8978599221789884,
+                    "recall": 0.9332659251769464,
+                    "f1-score": 0.9152206246901338,
+                    "support": 4945
+                },
+                "1": {
+                    "precision": 0.7596504005826656,
+                    "recall": 0.6651785714285714,
+                    "f1-score": 0.7092825569534171,
+                    "support": 1568
+                },
+                "accuracy": 0.8687240902809765,
+                "macro avg": {
+                    "precision": 0.828755161380827,
+                    "recall": 0.7992222483027589,
+                    "f1-score": 0.8122515908217754,
+                    "support": 6513
+                },
+                "weighted avg": {
+                    "precision": 0.8645860806523441,
+                    "recall": 0.8687240902809765,
+                    "f1-score": 0.8656411850753369,
+                    "support": 6513
+                },
+                "roc_auc": 0.921869131879243,
+                "score": 0.8687240902809765
+            },
+            "test": {
+                "0": {
+                    "precision": 0.8973880597014925,
+                    "recall": 0.9283474065138722,
+                    "f1-score": 0.9126052413138859,
+                    "support": 12435
+                },
+                "1": {
+                    "precision": 0.7392449517120281,
+                    "recall": 0.656786271450858,
+                    "f1-score": 0.6955803387030153,
+                    "support": 3846
+                },
+                "accuracy": 0.8641975308641975,
+                "macro avg": {
+                    "precision": 0.8183165057067603,
+                    "recall": 0.792566838982365,
+                    "f1-score": 0.8040927900084506,
+                    "support": 16281
+                },
+                "weighted avg": {
+                    "precision": 0.8600305022217627,
+                    "recall": 0.8641975308641975,
+                    "f1-score": 0.8613382567649388,
+                    "support": 16281
+                },
+                "roc_auc": 0.9173769853890256,
+                "score": 0.8641975308641975
+            }
+        },
+        "time": "0:00:21",
+        "trial_id": 99,
+        "tuning_time": "0:56:03"
+    },
+    "time": "0:56:03"
+}

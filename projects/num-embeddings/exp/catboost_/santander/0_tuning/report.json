@@ -1,0 +1,178 @@
+{
+    "program": "bin/tune.py",
+    "environment": {},
+    "config": {
+        "seed": 0,
+        "program": "bin/catboost_.py",
+        "base_config": {
+            "seed": 0,
+            "data": {
+                "path": "data/santander"
+            },
+            "catboost": {
+                "thread_count": 4
+            }
+        },
+        "space": {
+            "catboost": {
+                "bagging_temperature": [
+                    "uniform",
+                    0.0,
+                    1.0
+                ],
+                "depth": [
+                    "int",
+                    3,
+                    10
+                ],
+                "l2_leaf_reg": [
+                    "uniform",
+                    0.1,
+                    10.0
+                ],
+                "leaf_estimation_iterations": [
+                    "int",
+                    1,
+                    10
+                ],
+                "learning_rate": [
+                    "loguniform",
+                    0.001,
+                    1.0
+                ]
+            }
+        },
+        "n_trials": 100,
+        "timeout": null,
+        "sampler": {}
+    },
+    "best": {
+        "program": "bin/catboost_.py",
+        "environment": {},
+        "config": {
+            "seed": 0,
+            "data": {
+                "path": "data/santander",
+                "T": {
+                    "seed": 0,
+                    "normalization": null,
+                    "num_nan_policy": null,
+                    "cat_nan_policy": null,
+                    "cat_min_frequency": null,
+                    "cat_encoding": null,
+                    "y_policy": "default"
+                },
+                "T_cache": false
+            },
+            "catboost": {
+                "iterations": 2000,
+                "early_stopping_rounds": 50,
+                "od_pval": 0.001,
+                "task_type": "CPU",
+                "thread_count": 4,
+                "bagging_temperature": 0.005925406827771457,
+                "depth": 3,
+                "l2_leaf_reg": 7.9128702747428425,
+                "leaf_estimation_iterations": 1,
+                "learning_rate": 0.22595290272446578
+            },
+            "catboost_fit": {
+                "logging_level": "Verbose"
+            }
+        },
+        "prediction_type": "probs",
+        "metrics": {
+            "train": {
+                "0": {
+                    "precision": 0.9457347011434296,
+                    "recall": 0.9920530146432976,
+                    "f1-score": 0.9683402920543415,
+                    "support": 115138
+                },
+                "1": {
+                    "precision": 0.8733213346255019,
+                    "recall": 0.4904369460426061,
+                    "f1-score": 0.6281304456061737,
+                    "support": 12862
+                },
+                "accuracy": 0.9416484375,
+                "macro avg": {
+                    "precision": 0.9095280178844658,
+                    "recall": 0.7412449803429519,
+                    "f1-score": 0.7982353688302576,
+                    "support": 128000
+                },
+                "weighted avg": {
+                    "precision": 0.9384582892672297,
+                    "recall": 0.9416484375,
+                    "f1-score": 0.9341545182651514,
+                    "support": 128000
+                },
+                "roc_auc": 0.9445782575934603,
+                "score": 0.9416484375
+            },
+            "val": {
+                "0": {
+                    "precision": 0.934512223285276,
+                    "recall": 0.9840883824346859,
+                    "f1-score": 0.9586597850918013,
+                    "support": 28784
+                },
+                "1": {
+                    "precision": 0.7288336293664891,
+                    "recall": 0.38277363184079605,
+                    "f1-score": 0.5019367991845056,
+                    "support": 3216
+                },
+                "accuracy": 0.92365625,
+                "macro avg": {
+                    "precision": 0.8316729263258825,
+                    "recall": 0.683431007137741,
+                    "f1-score": 0.7302982921381534,
+                    "support": 32000
+                },
+                "weighted avg": {
+                    "precision": 0.9138415245964379,
+                    "recall": 0.92365625,
+                    "f1-score": 0.9127591250081181,
+                    "support": 32000
+                },
+                "roc_auc": 0.8981944821819198,
+                "score": 0.92365625
+            },
+            "test": {
+                "0": {
+                    "precision": 0.9333789761954919,
+                    "recall": 0.9851584213451918,
+                    "f1-score": 0.9585699605170643,
+                    "support": 35980
+                },
+                "1": {
+                    "precision": 0.7361660079051383,
+                    "recall": 0.3706467661691542,
+                    "f1-score": 0.49305095962938444,
+                    "support": 4020
+                },
+                "accuracy": 0.9234,
+                "macro avg": {
+                    "precision": 0.8347724920503151,
+                    "recall": 0.677902593757173,
+                    "f1-score": 0.7258104600732244,
+                    "support": 40000
+                },
+                "weighted avg": {
+                    "precision": 0.9135590728823114,
+                    "recall": 0.9234,
+                    "f1-score": 0.9117853009278524,
+                    "support": 40000
+                },
+                "roc_auc": 0.8939067378504919,
+                "score": 0.9234
+            }
+        },
+        "time": "0:00:31",
+        "trial_id": 11,
+        "tuning_time": "0:12:18"
+    },
+    "time": "1:16:44"
+}

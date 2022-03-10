@@ -1,0 +1,79 @@
+seed = 0
+program = "bin/train1.py"
+n_trials = 100
+
+[base_config]
+seed = 0
+
+[base_config.data]
+T_cache = true
+path = "data/california"
+
+[base_config.data.T]
+normalization = "quantile"
+
+[base_config.training]
+batch_size = 256
+
+[base_config.model]
+num_embedding_arch = [
+    "linear",
+    "relu",
+    "linear",
+    "relu",
+]
+memory_efficient = false
+
+[space.bins]
+count = [
+    "int",
+    2,
+    256,
+]
+
+[space.bins.tree]
+min_samples_leaf = [
+    "int",
+    1,
+    128,
+]
+min_impurity_decrease = [
+    "loguniform",
+    1e-09,
+    0.01,
+]
+
+[space.model]
+d_num_embedding = [
+    "int",
+    1,
+    128,
+]
+
+[space.model.mlp]
+d_layers = [
+    "$mlp_d_layers",
+    1,
+    8,
+    16,
+    1024,
+]
+dropout = [
+    "?uniform",
+    0.0,
+    0.0,
+    0.5,
+]
+
+[space.training]
+lr = [
+    "loguniform",
+    5e-05,
+    0.005,
+]
+weight_decay = [
+    "?loguniform",
+    0.0,
+    1e-06,
+    0.001,
+]

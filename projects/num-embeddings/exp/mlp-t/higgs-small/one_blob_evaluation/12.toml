@@ -1,0 +1,56 @@
+seed = 12
+
+[data]
+path = "data/higgs-small"
+T_cache = true
+
+[data.T]
+seed = 0
+normalization = "quantile"
+num_nan_policy = "__none__"
+cat_nan_policy = "__none__"
+cat_min_frequency = "__none__"
+cat_encoding = "__none__"
+y_policy = "default"
+
+[model]
+d_num_embedding = "__none__"
+num_embedding_arch = []
+d_cat_embedding = "__none__"
+resnet = "__none__"
+transformer = "__none__"
+transformer_default = false
+transformer_baseline = true
+periodic_sigma = "__none__"
+positional_encoding = "__none__"
+autodis = "__none__"
+fourier_features = "__none__"
+memory_efficient = true
+
+[model.mlp]
+d_layers = [
+    234,
+    199,
+    199,
+    521,
+]
+dropout = 0.28793976201264165
+
+[training]
+batch_size = 512
+lr = 0.0004170091762340263
+weight_decay = 5.6387450514776506e-05
+optimizer = "AdamW"
+patience = 16
+n_epochs = inf
+eval_batch_size = 8192
+
+[bins]
+count = 110
+encoding = "one-blob"
+one_blob_gamma = 0.13930614116048043
+subsample = "__none__"
+
+[bins.tree]
+min_samples_leaf = 108
+min_impurity_decrease = 9.895784640149491e-05

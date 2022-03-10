@@ -1,0 +1,53 @@
+seed = 0
+
+[data]
+path = "data/covtype"
+T_cache = true
+
+[data.T]
+seed = 0
+normalization = "quantile"
+num_nan_policy = "__none__"
+cat_nan_policy = "__none__"
+cat_min_frequency = "__none__"
+cat_encoding = "__none__"
+y_policy = "default"
+
+[model]
+d_num_embedding = 11
+num_embedding_arch = [
+    "linear",
+    "relu",
+]
+d_cat_embedding = "__none__"
+resnet = "__none__"
+transformer = "__none__"
+transformer_default = false
+transformer_baseline = true
+memory_efficient = false
+
+[model.mlp]
+d_layers = [
+    188,
+    614,
+    614,
+    700,
+]
+dropout = 0.1000737354347703
+
+[training]
+batch_size = 1024
+lr = 0.00038975560147119754
+weight_decay = 1.9833752427315926e-05
+optimizer = "AdamW"
+patience = 16
+n_epochs = inf
+eval_batch_size = 8192
+
+[bins]
+count = 93
+subsample = "__none__"
+
+[bins.tree]
+min_samples_leaf = 7
+min_impurity_decrease = 1.5574452688915325e-08

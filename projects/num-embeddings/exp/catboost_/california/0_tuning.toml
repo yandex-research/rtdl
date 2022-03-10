@@ -1,0 +1,39 @@
+seed = 0
+program = "bin/catboost_.py"
+n_trials = 100
+
+[base_config]
+seed = 0
+
+[base_config.data]
+path = "data/california"
+
+[base_config.catboost]
+thread_count = 4
+
+[space.catboost]
+bagging_temperature = [
+    "uniform",
+    0.0,
+    1.0,
+]
+depth = [
+    "int",
+    3,
+    10,
+]
+l2_leaf_reg = [
+    "uniform",
+    0.1,
+    10.0,
+]
+leaf_estimation_iterations = [
+    "int",
+    1,
+    10,
+]
+learning_rate = [
+    "loguniform",
+    0.001,
+    1.0,
+]

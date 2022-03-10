@@ -1,0 +1,79 @@
+seed = 0
+program = "bin/train3.py"
+n_trials = 100
+
+[base_config]
+seed = 0
+
+[base_config.data]
+T_cache = true
+path = "data/microsoft"
+
+[base_config.data.T]
+normalization = "quantile"
+
+[base_config.training]
+batch_size = 1024
+
+[base_config.model]
+num_embedding_arch = [
+    "positional",
+]
+memory_efficient = false
+
+[base_config.model.positional_encoding]
+trainable = false
+initialization = "log-linear"
+
+[space.model.resnet]
+n_blocks = [
+    "int",
+    1,
+    8,
+]
+d_main = [
+    "int",
+    32,
+    512,
+]
+d_hidden_factor = [
+    "uniform",
+    1.0,
+    4.0,
+]
+dropout_first = [
+    "uniform",
+    0.0,
+    0.5,
+]
+dropout_second = [
+    "?uniform",
+    0.0,
+    0.0,
+    0.5,
+]
+
+[space.model.positional_encoding]
+n = [
+    "int",
+    1,
+    128,
+]
+sigma = [
+    "loguniform",
+    0.001,
+    100.0,
+]
+
+[space.training]
+lr = [
+    "loguniform",
+    5e-05,
+    0.005,
+]
+weight_decay = [
+    "?loguniform",
+    0.0,
+    1e-06,
+    0.001,
+]

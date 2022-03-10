@@ -1,0 +1,86 @@
+seed = 0
+program = "bin/train1.py"
+n_trials = 100
+
+[base_config]
+seed = 0
+
+[base_config.data]
+T_cache = true
+path = "data/otto"
+
+[base_config.data.T]
+normalization = "__none__"
+
+[base_config.model]
+num_embedding_arch = [
+    "linear",
+    "relu",
+]
+
+[base_config.model.transformer]
+residual_dropout = 0.0
+
+[base_config.training]
+batch_size = 512
+
+[space.model]
+d_num_embedding = [
+    "int",
+    96,
+    512,
+    8,
+]
+
+[space.model.transformer]
+n_blocks = [
+    "int",
+    1,
+    4,
+]
+attention_dropout = [
+    "uniform",
+    0.0,
+    0.5,
+]
+ffn_d_hidden_factor = [
+    "uniform",
+    0.6666666666666666,
+    2.6666666666666665,
+]
+ffn_dropout = [
+    "uniform",
+    0.0,
+    0.5,
+]
+
+[space.training]
+lr = [
+    "loguniform",
+    1e-05,
+    0.001,
+]
+weight_decay = [
+    "loguniform",
+    1e-06,
+    0.0001,
+]
+
+[space.bins]
+count = [
+    "int",
+    2,
+    256,
+]
+
+[space.bins.tree]
+min_samples_leaf = [
+    "int",
+    1,
+    128,
+]
+min_impurity_decrease = [
+    "loguniform",
+    1e-09,
+    0.01,
+]

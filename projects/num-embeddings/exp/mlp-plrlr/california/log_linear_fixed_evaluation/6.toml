@@ -1,0 +1,54 @@
+seed = 6
+bins = "__none__"
+
+[data]
+path = "data/california"
+T_cache = true
+
+[data.T]
+seed = 0
+normalization = "quantile"
+num_nan_policy = "__none__"
+cat_nan_policy = "__none__"
+cat_min_frequency = "__none__"
+cat_encoding = "__none__"
+y_policy = "default"
+
+[model]
+d_num_embedding = 110
+num_embedding_arch = [
+    "positional",
+    "linear",
+    "relu",
+    "linear",
+    "relu",
+]
+d_cat_embedding = "__none__"
+resnet = "__none__"
+transformer = "__none__"
+transformer_default = false
+transformer_baseline = true
+periodic_sigma = "__none__"
+fourier_features = "__none__"
+memory_efficient = false
+
+[model.mlp]
+d_layers = [
+    808,
+]
+dropout = 0.38948913099357013
+
+[model.positional_encoding]
+n = 116
+sigma = 0.0067196938999436176
+trainable = false
+initialization = "log-linear"
+
+[training]
+batch_size = 256
+lr = 0.004149213503750342
+weight_decay = 4.004666715397647e-06
+optimizer = "AdamW"
+patience = 16
+n_epochs = inf
+eval_batch_size = 8192

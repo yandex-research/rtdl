@@ -1,0 +1,103 @@
+{
+    "program": "bin/tune.py",
+    "environment": {},
+    "config": {
+        "seed": 0,
+        "program": "bin/catboost_.py",
+        "base_config": {
+            "seed": 0,
+            "data": {
+                "path": "data/house"
+            },
+            "catboost": {
+                "thread_count": 4
+            }
+        },
+        "space": {
+            "catboost": {
+                "bagging_temperature": [
+                    "uniform",
+                    0.0,
+                    1.0
+                ],
+                "depth": [
+                    "int",
+                    3,
+                    10
+                ],
+                "l2_leaf_reg": [
+                    "uniform",
+                    0.1,
+                    10.0
+                ],
+                "leaf_estimation_iterations": [
+                    "int",
+                    1,
+                    10
+                ],
+                "learning_rate": [
+                    "loguniform",
+                    0.001,
+                    1.0
+                ]
+            }
+        },
+        "n_trials": 100,
+        "timeout": null,
+        "sampler": {}
+    },
+    "best": {
+        "program": "bin/catboost_.py",
+        "environment": {},
+        "config": {
+            "seed": 0,
+            "data": {
+                "path": "data/house",
+                "T": {
+                    "seed": 0,
+                    "normalization": null,
+                    "num_nan_policy": null,
+                    "cat_nan_policy": null,
+                    "cat_min_frequency": null,
+                    "cat_encoding": null,
+                    "y_policy": "default"
+                },
+                "T_cache": false
+            },
+            "catboost": {
+                "iterations": 2000,
+                "early_stopping_rounds": 50,
+                "od_pval": 0.001,
+                "task_type": "CPU",
+                "thread_count": 4,
+                "bagging_temperature": 0.09862224026902408,
+                "depth": 6,
+                "l2_leaf_reg": 6.088685399811386,
+                "leaf_estimation_iterations": 6,
+                "learning_rate": 0.044212191600031224
+            },
+            "catboost_fit": {
+                "logging_level": "Verbose"
+            }
+        },
+        "prediction_type": null,
+        "metrics": {
+            "train": {
+                "rmse": 13487.868334948114,
+                "score": -13487.868334948114
+            },
+            "val": {
+                "rmse": 29998.894207090976,
+                "score": -29998.894207090976
+            },
+            "test": {
+                "rmse": 31388.186825883342,
+                "score": -31388.186825883342
+            }
+        },
+        "time": "0:00:05",
+        "trial_id": 88,
+        "tuning_time": "0:15:52"
+    },
+    "time": "0:17:17"
+}

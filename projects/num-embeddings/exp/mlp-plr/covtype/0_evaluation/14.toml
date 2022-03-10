@@ -1,0 +1,56 @@
+seed = 14
+bins = "__none__"
+
+[data]
+path = "data/covtype"
+T_cache = true
+
+[data.T]
+seed = 0
+normalization = "quantile"
+num_nan_policy = "__none__"
+cat_nan_policy = "__none__"
+cat_min_frequency = "__none__"
+cat_encoding = "__none__"
+y_policy = "default"
+
+[model]
+d_num_embedding = 6
+num_embedding_arch = [
+    "positional",
+    "linear",
+    "relu",
+]
+d_cat_embedding = "__none__"
+resnet = "__none__"
+transformer = "__none__"
+transformer_default = false
+transformer_baseline = true
+periodic_sigma = "__none__"
+fourier_features = "__none__"
+memory_efficient = false
+
+[model.mlp]
+d_layers = [
+    1022,
+    493,
+    493,
+    493,
+    61,
+]
+dropout = 0.2542868894203743
+
+[model.positional_encoding]
+n = 69
+sigma = 1.8134293067209186
+trainable = true
+initialization = "normal"
+
+[training]
+batch_size = 1024
+lr = 0.0008953716085441852
+weight_decay = 0.000730165789745516
+optimizer = "AdamW"
+patience = 16
+n_epochs = inf
+eval_batch_size = 8192

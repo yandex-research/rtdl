@@ -1,0 +1,51 @@
+seed = 7
+
+[data]
+path = "data/covtype"
+T_cache = true
+
+[data.T]
+seed = 0
+normalization = "quantile"
+num_nan_policy = "__none__"
+cat_nan_policy = "__none__"
+cat_min_frequency = "__none__"
+cat_encoding = "__none__"
+y_policy = "default"
+
+[model]
+d_num_embedding = 20
+num_embedding_arch = [
+    "linear",
+    "relu",
+]
+d_cat_embedding = "__none__"
+mlp = "__none__"
+transformer = "__none__"
+transformer_default = false
+transformer_baseline = true
+memory_efficient = false
+
+[model.resnet]
+n_blocks = 6
+d_main = 262
+dropout_first = 0.49069784751758383
+dropout_second = 0.0
+d_hidden = 451
+
+[training]
+batch_size = 1024
+lr = 0.0008405148118823823
+weight_decay = 1.5280964004284706e-05
+optimizer = "AdamW"
+patience = 16
+n_epochs = inf
+eval_batch_size = 8192
+
+[bins]
+count = 235
+subsample = "__none__"
+
+[bins.tree]
+min_samples_leaf = 83
+min_impurity_decrease = 5.148052513585479e-06

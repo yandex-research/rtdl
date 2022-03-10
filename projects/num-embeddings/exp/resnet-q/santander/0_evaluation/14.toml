@@ -1,0 +1,45 @@
+seed = 14
+
+[data]
+path = "data/santander"
+T_cache = true
+
+[data.T]
+seed = 0
+normalization = "quantile"
+num_nan_policy = "__none__"
+cat_nan_policy = "__none__"
+cat_min_frequency = "__none__"
+cat_encoding = "__none__"
+y_policy = "default"
+
+[model]
+d_num_embedding = "__none__"
+num_embedding_arch = []
+d_cat_embedding = "__none__"
+mlp = "__none__"
+transformer = "__none__"
+transformer_default = false
+transformer_baseline = true
+memory_efficient = true
+
+[model.resnet]
+n_blocks = 4
+d_main = 300
+dropout_first = 0.4980196368174971
+dropout_second = 0.36280237572673596
+d_hidden = 443
+
+[training]
+batch_size = 1024
+lr = 0.00010165646691986
+weight_decay = 6.886801592886404e-05
+optimizer = "AdamW"
+patience = 16
+n_epochs = inf
+eval_batch_size = 8192
+
+[bins]
+count = 70
+tree = "__none__"
+subsample = "__none__"

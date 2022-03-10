@@ -1,0 +1,45 @@
+seed = 13
+
+[data]
+path = "data/adult"
+T_cache = true
+
+[data.T]
+seed = 0
+normalization = "quantile"
+num_nan_policy = "__none__"
+cat_nan_policy = "__none__"
+cat_min_frequency = "__none__"
+cat_encoding = "__none__"
+y_policy = "default"
+
+[model]
+d_num_embedding = "__none__"
+num_embedding_arch = []
+d_cat_embedding = "__none__"
+resnet = "__none__"
+transformer = "__none__"
+transformer_default = false
+transformer_baseline = true
+memory_efficient = true
+
+[model.mlp]
+d_layers = [
+    118,
+    328,
+]
+dropout = 0.04865568320431375
+
+[training]
+batch_size = 256
+lr = 0.002581983107933456
+weight_decay = 4.537878437247559e-05
+optimizer = "AdamW"
+patience = 16
+n_epochs = inf
+eval_batch_size = 8192
+
+[bins]
+count = 131
+tree = "__none__"
+subsample = "__none__"

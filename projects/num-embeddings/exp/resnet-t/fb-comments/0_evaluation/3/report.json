@@ -1,0 +1,94 @@
+{
+    "program": "bin/train1___a2290d7d3844420fadc9b6be0771c3c9.py",
+    "environment": {
+        "CUDA_VISIBLE_DEVICES": "0",
+        "gpus": {
+            "driver": "450.119.04",
+            "devices": [
+                {
+                    "name": "A100-SXM-80GB",
+                    "memory_total": 85199093760,
+                    "memory_free": 85195948032,
+                    "memory_used": 3145728,
+                    "utilization": 0
+                }
+            ]
+        },
+        "torch.version.cuda": "11.1",
+        "torch.backends.cudnn.version()": 8005,
+        "torch.cuda.nccl.version()": [
+            2,
+            10,
+            3
+        ]
+    },
+    "config": {
+        "seed": 3,
+        "data": {
+            "path": "data/fb-comments",
+            "T": {
+                "seed": 0,
+                "normalization": "quantile",
+                "num_nan_policy": null,
+                "cat_nan_policy": null,
+                "cat_min_frequency": null,
+                "cat_encoding": null,
+                "y_policy": "default"
+            },
+            "T_cache": true
+        },
+        "model": {
+            "d_num_embedding": null,
+            "num_embedding_arch": [],
+            "d_cat_embedding": null,
+            "mlp": null,
+            "resnet": {
+                "n_blocks": 5,
+                "d_main": 438,
+                "dropout_first": 0.499730368088394,
+                "dropout_second": 0.0,
+                "d_hidden": 1410
+            },
+            "transformer": null,
+            "transformer_default": false,
+            "transformer_baseline": true,
+            "memory_efficient": true
+        },
+        "training": {
+            "batch_size": 512,
+            "lr": 6.822195867044196e-05,
+            "weight_decay": 0.0,
+            "optimizer": "AdamW",
+            "patience": 16,
+            "n_epochs": Infinity,
+            "eval_batch_size": 8192
+        },
+        "bins": {
+            "count": 8,
+            "tree": {
+                "min_samples_leaf": 67,
+                "min_impurity_decrease": 1.1761614134705238e-07
+            },
+            "subsample": null
+        }
+    },
+    "prediction_type": null,
+    "epoch_size": 308,
+    "n_parameters": 6401851,
+    "best_epoch": 73,
+    "metrics": {
+        "train": {
+            "rmse": 3.805149505898308,
+            "score": -3.805149505898308
+        },
+        "val": {
+            "rmse": 5.318372201567635,
+            "score": -5.318372201567635
+        },
+        "test": {
+            "rmse": 5.8357719092902025,
+            "score": -5.8357719092902025
+        }
+    },
+    "time": "0:03:39"
+}

@@ -1,0 +1,47 @@
+seed = 2
+
+[data]
+path = "data/eye"
+T_cache = true
+
+[data.T]
+seed = 0
+normalization = "standard"
+num_nan_policy = "__none__"
+cat_nan_policy = "__none__"
+cat_min_frequency = "__none__"
+cat_encoding = "__none__"
+y_policy = "default"
+
+[model]
+d_num_embedding = 432
+num_embedding_arch = [
+    "linear",
+]
+d_cat_embedding = "__none__"
+mlp = "__none__"
+resnet = "__none__"
+transformer_default = false
+transformer_baseline = true
+memory_efficient = true
+
+[model.transformer]
+residual_dropout = 0.0
+n_blocks = 3
+attention_dropout = 0.08621362629365688
+ffn_dropout = 0.3461133069441783
+ffn_d_hidden = 1046
+
+[training]
+batch_size = 128
+lr = 0.00017603951996375436
+weight_decay = 3.848474513017833e-05
+optimizer = "AdamW"
+patience = 16
+n_epochs = inf
+eval_batch_size = 8192
+
+[bins]
+count = 248
+tree = "__none__"
+subsample = "__none__"

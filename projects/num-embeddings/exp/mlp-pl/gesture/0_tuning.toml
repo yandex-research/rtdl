@@ -1,0 +1,74 @@
+seed = 0
+program = "bin/train3.py"
+n_trials = 100
+
+[base_config]
+seed = 0
+
+[base_config.data]
+T_cache = true
+path = "data/gesture"
+
+[base_config.data.T]
+normalization = "quantile"
+
+[base_config.training]
+batch_size = 128
+
+[base_config.model]
+num_embedding_arch = [
+    "positional",
+    "linear",
+]
+memory_efficient = false
+
+[base_config.model.positional_encoding]
+trainable = true
+initialization = "normal"
+
+[space.model]
+d_num_embedding = [
+    "int",
+    1,
+    128,
+]
+
+[space.model.mlp]
+d_layers = [
+    "$mlp_d_layers",
+    1,
+    8,
+    16,
+    1024,
+]
+dropout = [
+    "?uniform",
+    0.0,
+    0.0,
+    0.5,
+]
+
+[space.model.positional_encoding]
+n = [
+    "int",
+    1,
+    128,
+]
+sigma = [
+    "loguniform",
+    0.01,
+    100.0,
+]
+
+[space.training]
+lr = [
+    "loguniform",
+    5e-05,
+    0.005,
+]
+weight_decay = [
+    "?loguniform",
+    0.0,
+    1e-06,
+    0.001,
+]
