@@ -1,6 +1,6 @@
 # On Embeddings for Numerical Features in Tabular Deep Learning<!-- omit in toc -->
 
-This is the official implementation of the paper "On Embeddings for Numerical Features in Tabular Deep Learning".
+This is the official implementation of the paper "On Embeddings for Numerical Features in Tabular Deep Learning" (the link will be added once the paper becomes available on arXiv).
 
 ---
 - [The main results](#the-main-results)
