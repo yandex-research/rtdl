@@ -1,6 +1,6 @@
 """Research on Tabular Deep Learning."""
 
-__version__ = '0.0.12'
+__version__ = '0.0.13.dev0'
 
 from . import data  # noqa
 from .functional import geglu, reglu  # noqa
