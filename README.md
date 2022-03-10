@@ -1,9 +1,9 @@
 # Research on Tabular Deep Learning<!-- omit in toc -->
 This repository contains:
 - source code for our papers and projects on tabular Deep Learning. See the ["Projects"](#projects) section below.
-- `rtdl` - a PyTorch-based package providing a user-friendly API for the main models and concepts from the projects. See the [documentation](https://yandex-research.github.io/rtdl).
+- `rtdl` - a PyTorch-based package providing a user-friendly API for the main models and concepts from the projects. See the [documentation](https://Yura52.github.io/rtdl).
 
-Feel free to [open issues](https://github.com/yandex-research/rtdl/issues) and [start discussions](https://github.com/yandex-research/rtdl/discussions) related to the projects and the library.
+Feel free to [open issues](https://github.com/Yura52/rtdl/issues) and [start discussions](https://github.com/Yura52/rtdl/discussions) related to the projects and the library.
 
 ## Projects
 

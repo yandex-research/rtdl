@@ -1,5 +1,5 @@
 # Tests in this file validate that the models in `rtdl` are LITERALLY THE SAME as
-# the ones used in the paper (https://github.com/yandex-research/rtdl/tree/main/bin)
+# the ones used in the paper (https://github.com/Yura52/rtdl/tree/main/bin)
 # The testing approach:
 # (1) copy weights from the correct model to the RTDL model
 # (2) check that the two models produce the same output for the same input
@@ -44,7 +44,7 @@ def copy_layer(dst: nn.Module, src: nn.Module):
 @torch.no_grad()
 @mark.parametrize('seed', range(10))
 def test_mlp(seed):
-    # Source: https://github.com/yandex-research/rtdl/blob/0e5169659c7ce552bc05bbaa85f7e204adc3d88e/bin/mlp.py
+    # Source: https://github.com/Yura52/rtdl/blob/0e5169659c7ce552bc05bbaa85f7e204adc3d88e/bin/mlp.py
 
     class CorrectMLP(nn.Module):
         def __init__(
@@ -140,7 +140,7 @@ def test_mlp(seed):
 @torch.no_grad()
 @mark.parametrize('seed', range(10))
 def test_resnet(seed):
-    # Source: https://github.com/yandex-research/rtdl/blob/0e5169659c7ce552bc05bbaa85f7e204adc3d88e/bin/resnet.py
+    # Source: https://github.com/Yura52/rtdl/blob/0e5169659c7ce552bc05bbaa85f7e204adc3d88e/bin/resnet.py
 
     class CorrectResNet(nn.Module):
         def __init__(
@@ -292,7 +292,7 @@ def test_resnet(seed):
 @mark.parametrize('seed', range(10))
 @mark.parametrize('kv_compression_ratio', [None, 0.5])
 def test_ft_transformer(seed, kv_compression_ratio):
-    # """Source: https://github.com/yandex-research/rtdl/blob/0e5169659c7ce552bc05bbaa85f7e204adc3d88e/bin/ft_transformer.py"""
+    # """Source: https://github.com/Yura52/rtdl/blob/0e5169659c7ce552bc05bbaa85f7e204adc3d88e/bin/ft_transformer.py"""
     # The only difference is that [CLS] is now the last token.
 
     def correct_reglu(x: Tensor) -> Tensor:
@@ -582,7 +582,7 @@ def test_ft_transformer(seed, kv_compression_ratio):
             x = x.squeeze(-1)
             return x
 
-    # Source: https://github.com/yandex-research/rtdl/blob/0e5169659c7ce552bc05bbaa85f7e204adc3d88e/output/california_housing/ft_transformer/default/0.toml
+    # Source: https://github.com/Yura52/rtdl/blob/0e5169659c7ce552bc05bbaa85f7e204adc3d88e/output/california_housing/ft_transformer/default/0.toml
     default_config = {
         'seed': 0,
         'data': {

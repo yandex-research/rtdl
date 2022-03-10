@@ -1,7 +1,7 @@
 Research on Tabular Deep Learning
 =================================
 
-:code:`rtdl` is a PyTorch-based package providing a user-friendly API for the main models and concepts from the `RTDL projects <https://github.com/yandex-research/rtdl#projects>`_. The name is an abbreviation for "Research on Tabular Deep Learning".
+:code:`rtdl` is a PyTorch-based package providing a user-friendly API for the main models and concepts from the `RTDL projects <https://github.com/Yura52/rtdl#projects>`_. The name is an abbreviation for "Research on Tabular Deep Learning".
 
 Installation
 ------------
@@ -14,7 +14,7 @@ Documentation
 -------------
 
 - See the API reference in the left sidebar
-- Colab example: https://colab.research.google.com/github/yandex-research/rtdl/blob/main/examples/rtdl.ipynb
+- Colab example: https://colab.research.google.com/github/Yura52/rtdl/blob/main/examples/rtdl.ipynb
 
 .. toctree::
    :caption: API REFERENCE

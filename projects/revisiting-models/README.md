@@ -58,7 +58,7 @@ Install [conda](https://docs.conda.io/en/latest/miniconda.html)
 export REPO_DIR=<ABSOLUTE path to the REPOSITORY root>
 # example: export REPO_DIR=/home/myusername/repositories/rtdl-revisiting-models
 export PROJECT_DIR="${REPO_DIR}/projects/revisiting-models"
-git clone https://github.com/yandex-research/rtdl $REPO_DIR
+git clone https://github.com/Yura52/rtdl $REPO_DIR
 cd $PROJECT_DIR
 
 conda create -n rtdl-revisiting-models python=3.8.8

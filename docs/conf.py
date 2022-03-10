@@ -9,8 +9,8 @@ sys.path.append(str(rtdl_path))
 import rtdl  # noqa
 
 # >>> Project information <<<
-author = 'Yandex Research'
-copyright = '2021, Yandex LLC'
+author = 'rtdl authors'
+copyright = '2021, rtdl authors'
 project = 'rtdl'
 release = rtdl.__version__
 version = rtdl.__version__
@@ -18,7 +18,7 @@ version = rtdl.__version__
 # >>> General options <<<
 default_role = 'py:obj'
 pygments_style = 'default'
-repo_url = 'https://github.com/yandex-research/rtdl'
+repo_url = 'https://github.com/Yura52/rtdl'
 templates_path = ['_templates']
 
 # >>> Extensions options <<<
@@ -64,7 +64,7 @@ html_static_path = ['_static']
 html_theme = 'sphinx_material'
 html_css_files = ['custom.css']
 html_theme_options = {
-    'base_url': 'https://yandex-research.github.io/rtdl',
+    'base_url': 'https://Yura52.github.io/rtdl',
     'color_primary': 'red',
     'globaltoc_collapse': False,
     'globaltoc_depth': 2,
