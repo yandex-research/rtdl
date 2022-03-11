@@ -230,24 +230,6 @@ def eye_movements():
     )
 
 
-def gas_concentrations():
-    dataset_dir, _ = _start('gas')
-    bunch = _fetch_openml(1477)
-
-    X_num_all = bunch['data'].values.astype(np.float32)
-    y_all = _encode_classification_target(bunch['target'].cat.codes.values)
-    idx = _make_split(len(X_num_all), y_all, 3)
-
-    _save(
-        dataset_dir,
-        'Gas Concentrations',
-        TaskType.MULTICLASS,
-        **_apply_split({'X_num': X_num_all, 'y': y_all}, idx),
-        X_cat=None,
-        idx=idx,
-    )
-
-
 def gesture_phase():
     dataset_dir, _ = _start('gesture')
     bunch = _fetch_openml(4538)
@@ -575,7 +557,6 @@ def main(argv):
 
     # OpenML
     # eye_movements()
-    # gas_concentrations()
     # gesture_phase()
     # house_16h()
     # higgs_small()
@@ -587,7 +568,6 @@ def main(argv):
 
     # UCI
     # facebook_comments_volume(True)
-    # facebook_comments_volume(False)
 
     # Python packages
     # california_housing()  # Scikit-Learn
