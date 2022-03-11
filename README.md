@@ -11,5 +11,5 @@ Feel free to [open issues](https://github.com/Yura52/rtdl/issues) and [start dis
 
 | Name                                                          | Location                                                    | Comment      |
 | :------------------------------------------------------------ | :---------------------------------------------------------- | :----------- |
-| On Embeddings for Numerical Features in Tabular Deep Learning | [projects/num-embeddings](./projects/num-embeddings/)       |              |
+| On Embeddings for Numerical Features in Tabular Deep Learning | [projects/num-embeddings](./projects/num-embeddings/)       | arXiv 2022   |
 | Revisiting Deep Learning Models for Tabular Data              | [projects/revisiting-models](./projects/revisiting-models/) | NeurIPS 2021 |
