@@ -131,7 +131,7 @@ You need all of them for reproducing results, but you need only `train4.py` for 
 - `bin/train3.py` implements a superset of features from `bin/train1.py`
 - `bin/train4.py` implements a superset of features from `bin/train3.py`
 
-To see which one of the four scripts was used to run a given experiment, check the "program" field of the corresponding tuning config. For example, here is the tuning config for MLP on the California Housing dataset: [exp/mlp/california/0_tuning.toml](./exp/mlp/california/0_tuning.toml). The config indicates that `bin/train0.py` was used. It means that the configs in [`exp/mlp/california/0_evaluation`](./exp/mlp/california/0_evaluation) are compatible specifically with `bin/train0.py`. To verify that, you can copy one of them to a separate location and pass to `bin/train0.py`:
+To see which one of the four scripts was used to run a given experiment, check the "program" field of the corresponding tuning config. For example, here is the tuning config for MLP on the California Housing dataset: [`exp/mlp/california/0_tuning.toml`](./exp/mlp/california/0_tuning.toml). The config indicates that `bin/train0.py` was used. It means that the configs in [`exp/mlp/california/0_evaluation`](./exp/mlp/california/0_evaluation) are compatible specifically with `bin/train0.py`. To verify that, you can copy one of them to a separate location and pass to `bin/train0.py`:
 ```
 mkdir exp/tmp
 cp exp/mlp/california/0_evaluation/0.toml exp/tmp/0.toml
