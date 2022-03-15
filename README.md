@@ -1,15 +1,13 @@
-# Research on Tabular Deep Learning<!-- omit in toc -->
-This repository contains:
-- source code for our papers and projects on tabular Deep Learning. See the ["Projects"](#projects) section below.
-- `rtdl` - a PyTorch-based package providing a user-friendly API for the main models and concepts from the projects. See the [documentation](https://Yura52.github.io/rtdl).
+# Research on Tabular Deep Learning
 
-Feel free to [open issues](https://github.com/Yura52/rtdl/issues) and [start discussions](https://github.com/Yura52/rtdl/discussions) related to the projects and the library.
+**For paper implementations, see [this section](#papers-and-projects)**
 
-## Projects
+`rtdl` is a PyTorch-based package providing a user-friendly API for the main models and concepts from our [papers](#papers-and-projects). See the [documentation](https://Yura52.github.io/rtdl).
 
-(technical note: for each active project, you should have a separate clone of the whole repository and a separate virtual environment)
+## Papers and projects
 
-| Name                                                          | Location                                                    | Comment      |
-| :------------------------------------------------------------ | :---------------------------------------------------------- | :----------- |
-| On Embeddings for Numerical Features in Tabular Deep Learning | [projects/num-embeddings](./projects/num-embeddings/)       | arXiv 2022   |
-| Revisiting Deep Learning Models for Tabular Data              | [projects/revisiting-models](./projects/revisiting-models/) | NeurIPS 2021 |
+| Name                                                          | Location                                                       | Comment        |
+| :------------------------------------------------------------ | :------------------------------------------------------------- | :------------- |
+| On Embeddings for Numerical Features in Tabular Deep Learning | [link](https://github.com/Yura52/tabular-dl-num-embeddings)    | arXiv 2022     |
+| Revisiting Deep Learning Models for Tabular Data              | [link](https://github.com/Yura52/tabular-dl-revisiting-models) | NeurIPS 2021   |
+| `rtdl`                                                        | [link](https://github.com/Yura52/rtdl)                         | Python package |
