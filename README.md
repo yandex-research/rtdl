@@ -1,6 +1,6 @@
 # Research on Tabular Deep Learning
 
-**For paper implementations, see [this section](#papers-and-projects)**
+**For paper implementations, see the section ["Papers and projects"](#papers-and-projects)**
 
 `rtdl` is a PyTorch-based package providing a user-friendly API for the main models and concepts from our [papers](#papers-and-projects). See the [documentation](https://Yura52.github.io/rtdl).
 
