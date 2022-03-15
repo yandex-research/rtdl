@@ -4,6 +4,8 @@
 
 `rtdl` is a PyTorch-based package providing a user-friendly API for the main models and concepts from our [papers](#papers-and-projects). See the [documentation](https://Yura52.github.io/rtdl).
 
+Feel free to report [issues](https://github.com/Yura52/rtdl/issues) and post [questions/feedback/thoughts](https://github.com/Yura52/rtdl/discussions).
+
 ## Papers and projects
 
 | Name                                                          | Location                                                       | Comment        |
