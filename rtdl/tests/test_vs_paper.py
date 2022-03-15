@@ -67,7 +67,7 @@ def test_mlp(seed):
                 nn.init.kaiming_uniform_(
                     self.category_embeddings.weight, a=math.sqrt(5)
                 )
-                print(f'{self.category_embeddings.weight.shape=}')
+                # print(f'{self.category_embeddings.weight.shape=}')
 
             self.layers = nn.ModuleList(
                 [
@@ -180,7 +180,7 @@ def test_resnet(seed):
                 nn.init.kaiming_uniform_(
                     self.category_embeddings.weight, a=math.sqrt(5)
                 )
-                print(f'{self.category_embeddings.weight.shape=}')
+                # print(f'{self.category_embeddings.weight.shape=}')
 
             self.first_layer = nn.Linear(d_in, d)
             self.layers = nn.ModuleList(
