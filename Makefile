@@ -8,10 +8,7 @@ default:
 	echo "Hello, World!"
 
 clean:
-	for x in "rtdl"; \
-	do \
-		find $$x -type f -name "*.py[co]" -delete -o -type d -name __pycache__ -delete; \
-	done;
+	find rtdl -type f -name "*.py[co]" -delete -o -type d -name __pycache__ -delete
 	rm -f .coverage
 	rm -rf .ipynb_checkpoints
 	rm -rf .mypy_cache
@@ -33,19 +30,14 @@ _docs: docs
 dtest:
 	make -C $(DOCS_DIR) doctest
 
-# spelling:
-# 	make -C $(DOCS_DIR) docs SPHINXOPTS="-W -b spelling"
 spelling:
-	true
+	make -C $(DOCS_DIR) docs SPHINXOPTS="-W -b spelling"
 
 lint:
 	python -m pre_commit_hooks.debug_statement_hook **/*.py
-	for x in "rtdl"; \
-	do \
-		isort $$x --check-only; \
-		black $$x --check; \
-		flake8 $$x; \
-	done;
+	isort rtdl --check-only
+	black rtdl --check
+	flake8 rtdl
 
 # the order is important: clean must be first, docs must precede dtest
 pre-commit: clean lint test docs dtest spelling typecheck
