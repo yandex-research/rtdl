@@ -1,7 +1,7 @@
 Research on Tabular Deep Learning
 =================================
 
-:code:`rtdl` is a PyTorch-based package providing a user-friendly API for the main models and concepts from the `RTDL projects <https://github.com/Yura52/rtdl#projects>`_. The name is an abbreviation for "Research on Tabular Deep Learning".
+:code:`rtdl` is a PyTorch-based package providing a user-friendly API for the main models and concepts from our `papers <https://github.com/Yura52/rtdl#papers-and-projects>`_.
 
 Installation
 ------------
