@@ -1,22 +1,10 @@
 [build-system]
-requires = ["flit_core >=3.2,<4"]
 build-backend = "flit_core.buildapi"
+requires = ["flit_core >=3.2,<4"]
 
 [project]
-name = "rtdl"
-requires-python = ">=3.7"
-license = {file = "LICENSE"}
 authors = [
     {name = "rtdl authors", email = "strausmg@gmail.com"}
-]
-keywords = [
-    "artificial intelligence",
-    "deep learning",
-    "library",
-    "python",
-    "pytorch",
-    "research",
-    "torch",
 ]
 classifiers = [
     "Intended Audience :: Developers",
@@ -35,16 +23,41 @@ dependencies = [
     "numpy >=1.18,<2",
     "torch >= 1.7,<2",
 ]
-urls = {Documentation = "https://Yura52.github.io/rtdl", Code = "https://github.com/Yura52/rtdl"}
 dynamic = ["version", "description"]
-
-[tool.flit.module]
+keywords = [
+    "artificial intelligence",
+    "deep learning",
+    "library",
+    "python",
+    "pytorch",
+    "research",
+    "torch",
+]
+license = {file = "LICENSE"}
 name = "rtdl"
+requires-python = ">=3.7"
+urls = {Documentation = "https://Yura52.github.io/rtdl", Code = "https://github.com/Yura52/rtdl"}
 
 [tool.black]
 skip_string_normalization = true
+
+[tool.coverage.run]
+branch = true
+omit = "rtdl/tests/*"
+source = "rtdl"
+
+[tool.flit.module]
+name = "rtdl"
 
 [tool.isort]
 profile = "black"
 multi_line_output = 3
 known_first_party = ["rtdl"]
+
+[tool.mypy]
+check_untyped_defs = true
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "rtdl.*.tests.*"
+ignore_errors = true
