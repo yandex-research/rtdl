@@ -1,4 +1,4 @@
-from typing import List, Optional, Union
+from typing import List, Optional
 
 import torch.nn as nn
 from torch import Tensor
@@ -67,7 +67,7 @@ class MLP(nn.Module):
         d_in: int,
         d_out: Optional[int],
         d_layers: List[int],
-        dropouts: Union[float, List[float]],
+        dropout: float,
         activation: ModuleType0,
     ) -> None:
         """
@@ -78,9 +78,6 @@ class MLP(nn.Module):
         if not d_layers:
             raise ValueError('d_layers must be non-empty')
         super().__init__()
-        if isinstance(dropouts, float):
-            dropouts = [dropouts] * len(d_layers)
-        assert len(d_layers) == len(dropouts)
 
         self.blocks = nn.Sequential(
             *[
@@ -91,7 +88,7 @@ class MLP(nn.Module):
                     activation=activation,
                     dropout=dropout,
                 )
-                for i, (d, dropout) in enumerate(zip(d_layers, dropouts))
+                for i, d in enumerate(d_layers)
             ]
         )
         self.head = (
@@ -114,9 +111,8 @@ class MLP(nn.Module):
 
         Features:
 
-        * :code:`Activation` = :code:`ReLU`
         * all linear layers have the same dimension
-        * the dropout rate is the same for all blocks
+        * :code:`Activation` = :code:`ReLU`
 
         Args:
             d_in: the input size.
@@ -137,7 +133,7 @@ class MLP(nn.Module):
             d_in=d_in,
             d_out=d_out,
             d_layers=[d_layer] * n_blocks if n_blocks else [],  # type: ignore
-            dropouts=dropout,
+            dropout=dropout,
             activation='ReLU',
         )
 
