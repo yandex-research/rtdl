@@ -73,11 +73,10 @@ class MultiheadAttention(nn.Module):
             AssertionError: if requirements for the inputs are not met.
         """
         super().__init__()
-        if n_heads > 1:
-            assert (
-                d_embedding % n_heads == 0
-            ), 'd_embedding must be a multiple of n_heads'
-        assert initialization in ['kaiming', 'xavier']
+        if n_heads > 1 and d_embedding % n_heads != 0:
+            raise ValueError('d_embedding must be a multiple of n_heads')
+        if initialization not in ['kaiming', 'xavier']:
+            raise ValueError('initialization must be "kaiming" or "xavier"')
 
         self.W_q = nn.Linear(d_embedding, d_embedding, bias)
         self.W_k = nn.Linear(d_embedding, d_embedding, bias)
@@ -127,9 +126,10 @@ class MultiheadAttention(nn.Module):
         Returns:
             (new_token_embeddings, attention_stats)
         """
-        assert _all_or_none(
-            [key_compression, value_compression]
-        ), 'key_compression and value_compression must be both None or both not-None.'
+        if not _all_or_none([key_compression, value_compression]):
+            raise ValueError(
+                'key_compression and value_compression must be both None or both not-None'
+            )
         q, k, v = self.W_q(x_q), self.W_k(x_kv), self.W_v(x_kv)
         for tensor in [q, k, v]:
             assert tensor.shape[-1] % self.n_heads == 0, INTERNAL_ERROR_MESSAGE

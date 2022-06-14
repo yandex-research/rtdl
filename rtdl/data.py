@@ -35,19 +35,23 @@ def get_category_sizes(X: np.ndarray) -> List[int]:
                 ]
             )) == [3, 2, 1]
     """
-    assert X.ndim == 2
-    assert issubclass(X.dtype.type, np.signedinteger)
+    if X.ndim != 2:
+        raise ValueError('X must be two-dimensional')
+    if not issubclass(X.dtype.type, np.signedinteger):
+        raise ValueError('X data type must be integer')
     sizes = []
     for i, column in enumerate(X.T):
         unique_values = np.unique(column)
         min_value = unique_values.min()
-        assert (
-            min_value == 0
-        ), f'The minimum value of column {i} is {min_value}, but it must be zero.'
+        if min_value != 0:
+            raise ValueError(
+                f'The minimum value of column {i} is {min_value}, but it must be zero.'
+            )
         max_value = unique_values.max()
-        assert max_value + 1 == len(
-            unique_values
-        ), f'The values of column {i} do not fully cover the range from zero to maximum_value={max_value}'
+        if max_value + 1 != len(unique_values):
+            raise ValueError(
+                f'The values of column {i} do not fully cover the range from zero to maximum_value={max_value}'
+            )
 
         sizes.append(len(unique_values))
     return sizes
