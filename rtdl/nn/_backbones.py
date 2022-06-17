@@ -1,9 +1,15 @@
+import time
+import warnings
+from collections import OrderedDict
 from typing import List, Optional
 
 import torch.nn as nn
+import torch.nn.functional as F
 from torch import Tensor
 
-from ._utils import ModuleType0, make_nn_module
+from .._utils import INTERNAL_ERROR_MESSAGE, all_or_none
+from ._attention import MultiheadAttention
+from ._utils import ModuleType, ModuleType0, make_nn_module
 
 
 class MLP(nn.Module):
@@ -161,7 +167,7 @@ class ResNet(nn.Module):
 
     Attributes:
         blocks: the main blocks of the model (`torch.nn.Sequential` of `ResNet.Block`s)
-        head: (optional) the last layer (`ResNet.Head`)
+        head: (optional) the last module (`ResNet.Head`)
 
     Examples:
         .. testcode::
@@ -260,8 +266,6 @@ class ResNet(nn.Module):
         Note:
             Use the `make_baseline` method instead of the constructor unless you need
             more control over the architecture.
-
-
         """
         super().__init__()
 
@@ -340,6 +344,279 @@ class ResNet(nn.Module):
     def forward(self, x: Tensor) -> Tensor:
         x = self.first_layer(x)
         x = self.blocks(x)
+        if self.head is not None:
+            x = self.head(x)
+        return x
+
+
+class _ReGLU(nn.Module):
+    def forward(self, x: Tensor) -> Tensor:
+        if x.shape[-1] % 2 != 0:
+            raise ValueError('The size of the last dimension must be even.')
+        a, b = x.chunk(2, dim=-1)
+        return a * F.relu(b)
+
+
+def _is_reglu(module: ModuleType) -> bool:
+    return isinstance(module, str) and module == 'ReGLU' or module is _ReGLU
+
+
+class Transformer(nn.Module):
+    """Transformer with extra features.
+
+    This module is the backbone of `FTTransformer`."""
+
+    WARNINGS = {'first_prenormalization': True, 'prenormalization': True}
+
+    class Block(nn.Module):
+        def __init__(
+            self,
+            *,
+            d_embedding: int,
+            attention_n_heads: int,
+            attention_dropout: float,
+            attention_normalization: ModuleType,
+            attention_residual_dropout: float,
+            attention_skip_connection: bool,
+            linformer_compression_ratio: Optional[float],
+            linformer_sharing_policy: Optional[str],
+            n_tokens: Optional[int],
+            ffn_d_hidden: int,
+            ffn_dropout: float,
+            ffn_activation: ModuleType,
+            ffn_normalization: ModuleType,
+            ffn_residual_dropout: float,
+            ffn_skip_connection: bool,
+            prenormalization: bool,
+            cls_token_index: Optional[int],
+        ):
+            super().__init__()
+            self.prenormalization = prenormalization
+            self.cls_token_index = cls_token_index
+
+            self.attention_normalization = make_nn_module(
+                attention_normalization, d_embedding
+            )
+            self.attention = MultiheadAttention(
+                d_embedding=d_embedding,
+                n_heads=attention_n_heads,
+                dropout=attention_dropout,
+                linformer_compression_ratio=linformer_compression_ratio,
+                linformer_sharing_policy=linformer_sharing_policy,
+                n_tokens=n_tokens,
+            )
+            self.attention_residual_dropout = nn.Dropout(attention_residual_dropout)
+            self.attention_skip_connection = attention_skip_connection
+
+            self.ffn_normalization = make_nn_module(ffn_normalization, d_embedding)
+            ffn_d_hidden_first = ffn_d_hidden * (2 if _is_reglu(ffn_activation) else 1)
+            self.ffn = nn.Sequential(
+                OrderedDict(
+                    [
+                        ('first_linear', nn.Linear(d_embedding, ffn_d_hidden_first)),
+                        ('activation', make_nn_module(ffn_activation)),
+                        ('dropout', nn.Dropout(ffn_dropout)),
+                        ('second_linear', nn.Linear(ffn_d_hidden, d_embedding)),
+                    ]
+                )
+            )
+            self.ffn_residual_dropout = nn.Dropout(ffn_residual_dropout)
+            self.ffn_skip_connection = ffn_skip_connection
+
+        def forward(self, x: Tensor) -> Tensor:
+            for stage in ['attention', 'ffn']:
+                normalization = getattr(self, stage + '_normalization')
+                residual_dropout = getattr(self, stage + '_residual_dropout')
+                skip_connection = getattr(self, stage + '_skip_connection')
+
+                # start residual
+                x_residual = x
+                if self.prenormalization:
+                    x_residual = normalization(x_residual)
+
+                # apply the module
+                if stage == 'attention':
+                    if self.cls_token_index is None:
+                        x_residual = self.attention(x_residual, x_residual)
+                    else:
+                        cls_idx = slice(self.cls_token_index, self.cls_token_index + 1)
+                        x_residual = self.attention(x_residual[:, cls_idx], x_residual)
+                        x = x[:, cls_idx]
+                else:
+                    x_residual = self.ffn(x_residual)
+
+                # end residual
+                x_residual = residual_dropout(x_residual)
+                x = x + x_residual if skip_connection else x_residual
+                if not self.prenormalization:
+                    x = normalization(x)
+
+            return x
+
+    class Head(nn.Module):
+        """The final module of the `Transformer`."""
+
+        def __init__(
+            self,
+            *,
+            d_in: int,
+            d_out: int,
+            bias: bool,
+            activation: ModuleType0,
+            normalization: ModuleType,
+        ):
+            super().__init__()
+            self.normalization = make_nn_module(normalization, d_in)
+            self.activation = make_nn_module(activation)
+            self.linear = nn.Linear(d_in, d_out, bias)
+
+        def forward(self, x: Tensor) -> Tensor:
+            x = self.normalization(x)
+            x = self.activation(x)
+            x = self.linear(x)
+            return x
+
+    def __init__(
+        self,
+        *,
+        d_embedding: int,
+        d_out: Optional[int],
+        n_blocks: int,
+        # attention
+        attention_n_heads: int,
+        attention_dropout: float,
+        attention_normalization: str,
+        attention_residual_dropout: float,
+        # ffn
+        ffn_d_hidden: int,
+        ffn_dropout: float,
+        ffn_activation: str,
+        ffn_normalization: str,
+        ffn_residual_dropout: float,
+        # backbone
+        prenormalization: bool,
+        first_prenormalization: bool,
+        pooling: Optional[str],
+        cls_token_index: Optional[int],
+        last_block_cls_only: bool,
+        # head
+        head_activation: Optional[ModuleType0],
+        head_normalization: Optional[ModuleType],
+        # linformer
+        linformer_compression_ratio: Optional[float] = None,
+        linformer_sharing_policy: Optional[str] = None,
+        n_tokens: Optional[int] = None,
+    ) -> None:
+        super().__init__()
+        if n_blocks < 1:
+            raise ValueError('n_blocks must be positive')
+        if pooling == 'cls':
+            if cls_token_index is None:
+                raise ValueError(
+                    'if pooling == "cls", then cls_token_index must be provided'
+                )
+        else:
+            if last_block_cls_only:
+                raise ValueError(
+                    'if pooling != "cls", then last_block_cls_only must be False'
+                )
+        pooling_valid_values = ['cls', 'avg']
+        if pooling not in pooling_valid_values:
+            raise ValueError(f'pooling must be one of: {pooling_valid_values}')
+        if not all_or_none([d_out, pooling, head_activation, head_normalization]):
+            raise ValueError(
+                'The arguments d_out, pooling, head_activation and head_normalization'
+                ' must be either all None or all not-None'
+            )
+        if not prenormalization:
+            if self.WARNINGS['prenormalization']:
+                warnings.warn(
+                    'prenormalization is set to False. Are you sure about this? '
+                    'The training can become less stable. '
+                    'You can turn off this warning by tweaking the '
+                    'rtdl.nn.Transformer.WARNINGS dictionary.',
+                    UserWarning,
+                )
+            if first_prenormalization:
+                raise ValueError(
+                    'If prenormalization is False, then first_prenormalization must be False'
+                )
+        if (
+            prenormalization
+            and first_prenormalization
+            and self.WARNINGS['first_prenormalization']
+        ):
+            warnings.warn(
+                'first_prenormalization is set to True. Are you sure about this? '
+                'For example, the vanilla FTTransformer with '
+                'first_prenormalization=True performs SIGNIFICANTLY worse. '
+                'You can turn off this warning by tweaking the '
+                'rtdl.nn.Transformer.WARNINGS dictionary.',
+                UserWarning,
+            )
+            time.sleep(3)
+
+        self.blocks = nn.Sequential(
+            *[
+                Transformer.Block(
+                    d_embedding=d_embedding,
+                    attention_n_heads=attention_n_heads,
+                    attention_dropout=attention_dropout,
+                    attention_normalization=(
+                        'Identity'
+                        if self.prenormalization
+                        and block_idx == 0
+                        and not first_prenormalization
+                        else attention_normalization
+                    ),
+                    attention_residual_dropout=attention_residual_dropout,
+                    attention_skip_connection=True,
+                    linformer_compression_ratio=linformer_compression_ratio,
+                    linformer_sharing_policy=linformer_sharing_policy,
+                    n_tokens=n_tokens,
+                    ffn_d_hidden=ffn_d_hidden,
+                    ffn_dropout=ffn_dropout,
+                    ffn_activation=ffn_activation,
+                    ffn_normalization=ffn_normalization,
+                    ffn_residual_dropout=ffn_residual_dropout,
+                    ffn_skip_connection=True,
+                    prenormalization=prenormalization,
+                    cls_token_index=(
+                        cls_token_index
+                        if last_block_cls_only and block_idx == n_blocks - 1
+                        else None
+                    ),
+                )
+                for block_idx in range(n_blocks)
+            ]
+        )
+        self.pooling = pooling
+        self.head = (
+            None
+            if d_out is None
+            else Transformer.Head(
+                d_in=d_embedding,
+                d_out=d_out,
+                bias=True,
+                activation=head_activation,  # type: ignore
+                normalization=head_normalization if prenormalization else 'Identity',  # type: ignore
+            )
+        )
+
+    def forward(self, x: Tensor) -> Tensor:
+        assert (
+            x.ndim == 3
+        ), 'The input must have 3 dimensions: (n_objects, n_tokens, d_embedding)'
+
+        x = self.blocks(x)
+        if self.pooling == 'cls':
+            # the last block is responsible for keeping only the cls token
+            assert x.shape[1] == 1, INTERNAL_ERROR_MESSAGE
+            x = x.squeeze(1)
+        elif self.pooling == 'avg':
+            x = x.mean(1)
+        else:
+            assert False, INTERNAL_ERROR_MESSAGE
         if self.head is not None:
             x = self.head(x)
         return x
