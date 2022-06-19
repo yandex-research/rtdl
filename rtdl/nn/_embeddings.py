@@ -1,21 +1,18 @@
 import math
+from typing import List
 
 import torch
 import torch.nn as nn
 from torch import Tensor
 
 
-def _initialize_embeddings(weight: Tensor, initialization: str, d: int) -> None:
+def _initialize_embeddings(weight: Tensor, d: int) -> None:
     d_sqrt_inv = 1 / math.sqrt(d)
-    if initialization == 'uniform':
-        # used in the paper "Revisiting Deep Learning Models for Tabular Data";
-        # is equivalent to `nn.init.kaiming_uniform_(x, a=math.sqrt(5))` (which is
-        # used by torch to initialize nn.Linear.weight, for example)
-        nn.init.uniform_(weight, a=-d_sqrt_inv, b=d_sqrt_inv)
-    elif initialization == 'normal':
-        nn.init.normal_(weight, std=d_sqrt_inv)
-    else:
-        raise ValueError('initialization must be one of: ["uniform", "normal"]')
+    # This initialization is taken from torch.nn.Linear and is equivalent to:
+    # nn.init.kaiming_uniform_(..., a=math.sqrt(5))
+    # Also, this initialization was used in the paper "Revisiting Deep Learning Models
+    # for Tabular Data".
+    nn.init.uniform_(weight, a=-d_sqrt_inv, b=d_sqrt_inv)
 
 
 class CLSEmbedding(nn.Module):
@@ -42,18 +39,17 @@ class CLSEmbedding(nn.Module):
         * [devlin2018bert] Jacob Devlin, Ming-Wei Chang, Kenton Lee, Kristina Toutanova "BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding" 2018
     """
 
-    def __init__(self, d: int, initialization: str) -> None:
+    def __init__(self, d_embedding: int) -> None:
         """
         Args:
-            d: the size of the embedding
-            initialization: initialization policy for parameters. Must be one of
-                :code:`['uniform', 'normal']`. Let :code:`s = d ** -0.5`. Then, the
-                corresponding distributions are :code:`Uniform(-s, s)` and
-                :code:`Normal(0, s)`. `'uniform'` is a good starting point.
+            d_embedding: the size of the embedding
         """
         super().__init__()
-        self.weight = nn.Parameter(Tensor(d))
-        _initialize_embeddings(self.weight, initialization, d)
+        self.weight = nn.Parameter(Tensor(d_embedding))
+        self.reset_parameters()
+
+    def reset_parameters(self) -> None:
+        _initialize_embeddings(self.weight, self.weight.shape[-1])
 
     def expand(self, *d_leading: int) -> Tensor:
         """Repeat the [CLS]-embedding (e.g. to make a batch).
@@ -97,4 +93,62 @@ class CLSEmbedding(nn.Module):
         return self.weight.view(*new_dims, -1).expand(*d_leading, -1)
 
     def forward(self, x: Tensor) -> Tensor:
+        if x.ndim != 3:
+            raise ValueError('The input must have three dimensions')
         return torch.cat([self.expand(len(x), 1), x], dim=1)
+
+
+class CatEmbeddings(nn.Module):
+    """Embeddings for categorical features."""
+
+    category_offsets: Tensor
+
+    def __init__(self, cardinalities: List[int], d_embedding: int, bias: bool) -> None:
+        super().__init__()
+        if not cardinalities:
+            raise ValueError('cardinalities must be non-empty')
+        if d_embedding < 1:
+            raise ValueError('d_embedding must be positive')
+
+        category_offsets = torch.tensor([0] + cardinalities[:-1]).cumsum(0)
+        self.register_buffer('category_offsets', category_offsets)
+        self.embeddings = nn.Embedding(sum(cardinalities), d_embedding)
+        self.bias = (
+            nn.Parameter(Tensor(len(cardinalities), d_embedding)) if bias else None
+        )
+        self.reset_parameters()
+
+    def reset_parameters(self) -> None:
+        for parameter in [self.embeddings.weight, self.bias]:
+            if parameter is not None:
+                _initialize_embeddings(parameter, parameter.shape[-1])
+
+    def forward(self, x: Tensor) -> Tensor:
+        if x.ndim != 2:
+            raise ValueError('The input must have two dimensions')
+        x = self.embeddings(x + self.category_offsets[None])
+        if self.bias is not None:
+            x = x + self.bias[None]
+        return x
+
+
+class LinearEmbeddings(nn.Module):
+    """Linear embeddings for numerical features."""
+
+    def __init__(self, n_features: int, d_embedding: int, bias: bool = True):
+        self.weight = nn.Parameter(Tensor(n_features, d_embedding))
+        self.bias = nn.Parameter(Tensor(n_features, d_embedding)) if bias else None
+        self.reset_parameters()
+
+    def reset_parameters(self) -> None:
+        for parameter in [self.weight, self.bias]:
+            if parameter is not None:
+                _initialize_embeddings(parameter, parameter.shape[-1])
+
+    def forward(self, x: Tensor) -> Tensor:
+        if x.ndim != 2:
+            raise ValueError('The input must have two dimensions')
+        x = self.weight[None] * x[..., None]
+        if self.bias is not None:
+            x = x + self.bias[None]
+        return x
