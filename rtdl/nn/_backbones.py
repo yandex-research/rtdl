@@ -1,7 +1,7 @@
 import time
 import warnings
 from collections import OrderedDict
-from typing import List, Optional
+from typing import List, Optional, Union
 
 import torch.nn as nn
 import torch.nn.functional as F
@@ -73,16 +73,23 @@ class MLP(nn.Module):
         d_in: int,
         d_out: Optional[int],
         d_layers: List[int],
-        dropout: float,
+        dropouts: Union[float, List[float]],
         activation: ModuleType0,
     ) -> None:
         """
         Note:
-            Use the `make_baseline` method instead of the constructor unless you need
-            more control over the architecture.
+            Use the `make_baseline` method instead of the constructor unless you need more
+            control over the architecture.
         """
         if not d_layers:
             raise ValueError('d_layers must be non-empty')
+        if isinstance(dropouts, float):
+            dropouts = [dropouts] * len(d_layers)
+        if len(dropouts) != len(d_layers):
+            raise ValueError(
+                'if dropouts is a list, then its size must be equal to the size of d_layers'
+            )
+
         super().__init__()
 
         self.blocks = nn.Sequential(
@@ -94,7 +101,7 @@ class MLP(nn.Module):
                     activation=activation,
                     dropout=dropout,
                 )
-                for i, d in enumerate(d_layers)
+                for i, (d, dropout) in enumerate(zip(d_layers, dropouts))
             ]
         )
         self.head = (
@@ -113,12 +120,13 @@ class MLP(nn.Module):
         d_layer: int,
         dropout: float,
     ) -> 'MLP':
-        """Create a "baseline" `MLP`.
+        """A simplified constructor for building baseline MLPs.
 
         Features:
 
         * all linear layers have the same dimension
-        * :code:`Activation` = :code:`ReLU`
+        * all dropout layers have the same dropout rate
+        * all activations are ``ReLU``
 
         Args:
             d_in: the input size.
@@ -139,7 +147,7 @@ class MLP(nn.Module):
             d_in=d_in,
             d_out=d_out,
             d_layers=[d_layer] * n_blocks if n_blocks else [],  # type: ignore
-            dropout=dropout,
+            dropouts=dropout,
             activation='ReLU',
         )
 
@@ -310,12 +318,12 @@ class ResNet(nn.Module):
         dropout_first: float,
         dropout_second: float,
     ) -> 'ResNet':
-        """Create a "baseline" `ResNet`.
+        """A simplified constructor for building baseline ResNets.
 
         Features:
 
-        * :code:`Activation` = :code:`ReLU`
-        * :code:`Norm` = :code:`BatchNorm1d`
+        * all activations are ``ReLU``
+        * all normalizations are ``BatchNorm1d``
 
         Args:
             d_in: the input size

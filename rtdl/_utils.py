@@ -1,4 +1,7 @@
-INTERNAL_ERROR_MESSAGE = 'Internal error. Please, open an issue.'
+INTERNAL_ERROR_MESSAGE = (
+    'Internal error. Please, open an issue here:'
+    ' https://github.com/Yura52/rtdl/issues/new'
+)
 
 
 def all_or_none(values):
