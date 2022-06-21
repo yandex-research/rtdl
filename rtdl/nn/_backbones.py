@@ -4,12 +4,11 @@ from collections import OrderedDict
 from typing import List, Optional, Union
 
 import torch.nn as nn
-import torch.nn.functional as F
 from torch import Tensor
 
 from .._utils import INTERNAL_ERROR_MESSAGE, all_or_none
 from ._attention import MultiheadAttention
-from ._utils import ModuleType, ModuleType0, make_nn_module
+from ._utils import ModuleType, ModuleType0, ReGLU, make_nn_module
 
 
 class MLP(nn.Module):
@@ -357,16 +356,8 @@ class ResNet(nn.Module):
         return x
 
 
-class _ReGLU(nn.Module):
-    def forward(self, x: Tensor) -> Tensor:
-        if x.shape[-1] % 2 != 0:
-            raise ValueError('The size of the last dimension must be even.')
-        a, b = x.chunk(2, dim=-1)
-        return a * F.relu(b)
-
-
 def _is_reglu(module: ModuleType) -> bool:
-    return isinstance(module, str) and module == 'ReGLU' or module is _ReGLU
+    return isinstance(module, str) and module == 'ReGLU' or module is ReGLU
 
 
 class Transformer(nn.Module):
@@ -501,9 +492,10 @@ class Transformer(nn.Module):
         ffn_activation: str,
         ffn_normalization: str,
         ffn_residual_dropout: float,
-        # backbone
+        # block
         prenormalization: bool,
         first_prenormalization: bool,
+        # inference
         pooling: Optional[str],
         cls_token_index: Optional[int],
         last_block_cls_only: bool,
@@ -609,6 +601,52 @@ class Transformer(nn.Module):
                 activation=head_activation,  # type: ignore
                 normalization=head_normalization if prenormalization else 'Identity',  # type: ignore
             )
+        )
+
+    @classmethod
+    def make_baseline(
+        cls,
+        *,
+        d_embedding: int,
+        d_out: Optional[int],
+        n_blocks: int,
+        attention_n_heads: int,
+        attention_dropout: float,
+        ffn_d_hidden: int,
+        ffn_dropout: float,
+        activation: str,
+        residual_dropout: float,
+        pooling: Optional[str],
+        cls_token_index: Optional[int],
+        last_block_cls_only: bool,
+        linformer_compression_ratio: Optional[float] = None,
+        linformer_sharing_policy: Optional[str] = None,
+        n_tokens: Optional[int] = None,
+    ) -> 'Transformer':
+        normalization = 'LayerNorm'
+        return Transformer(
+            d_embedding=d_embedding,
+            d_out=d_out,
+            n_blocks=n_blocks,
+            attention_n_heads=attention_n_heads,
+            attention_dropout=attention_dropout,
+            attention_normalization=normalization,
+            attention_residual_dropout=residual_dropout,
+            ffn_d_hidden=ffn_d_hidden,
+            ffn_dropout=ffn_dropout,
+            ffn_activation=activation,
+            ffn_normalization=normalization,
+            ffn_residual_dropout=residual_dropout,
+            prenormalization=True,
+            first_prenormalization=False,
+            pooling=pooling,
+            cls_token_index=cls_token_index,
+            last_block_cls_only=last_block_cls_only,
+            head_activation='ReLU' if _is_reglu(activation) else activation,
+            head_normalization=normalization,
+            linformer_compression_ratio=linformer_compression_ratio,
+            linformer_sharing_policy=linformer_sharing_policy,
+            n_tokens=n_tokens,
         )
 
     def forward(self, x: Tensor) -> Tensor:
