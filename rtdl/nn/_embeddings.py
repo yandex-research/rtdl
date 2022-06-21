@@ -169,3 +169,22 @@ class LinearEmbeddings(nn.Module):
         if self.bias is not None:
             x = x + self.bias[None]
         return x
+
+
+class PeriodicEmbeddings(nn.Module):
+    # Source: https://github.com/Yura52/tabular-dl-num-embeddings/blob/e49e95c52f829ad0ab7d653e0776c2a84c03e261/lib/deep.py#L28
+    def __init__(self, n_features: int, d_embedding: int, sigma: float) -> None:
+        if d_embedding % 2:
+            raise ValueError('d_embedding must be even')
+        self.sigma = sigma
+        self.coefficients = nn.Parameter(Tensor(n_features, d_embedding // 2))
+        self.reset_parameters()
+
+    def reset_parameters(self):
+        nn.init.normal_(self.coefficients, 0.0, self.sigma)
+
+    def forward(self, x: Tensor) -> Tensor:
+        if x.ndim != 2:
+            raise ValueError('The input must have two dimensions')
+        x = 2 * math.pi * self.coefficients[None] * x[..., None]
+        return torch.cat([torch.cos(x), torch.sin(x)], -1)
