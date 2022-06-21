@@ -3,6 +3,7 @@ from typing import List
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from torch import Tensor
 
 
@@ -96,6 +97,22 @@ class CLSEmbedding(nn.Module):
         if x.ndim != 3:
             raise ValueError('The input must have three dimensions')
         return torch.cat([self.expand(len(x), 1), x], dim=1)
+
+
+class OneHotEncoder(nn.Module):
+    cardinalities: Tensor
+
+    def __init__(self, cardinalities: List[int]) -> None:
+        self.register_buffer('cardinalities', torch.tensor(cardinalities))
+
+    def forward(self, x: Tensor) -> Tensor:
+        if x.ndim != 2:
+            raise ValueError('The input must have two dimensions')
+        encoded_columns = [
+            F.one_hot(column, cardinality)
+            for column, cardinality in zip(x.T, self.cardinalities)
+        ]
+        return torch.cat(encoded_columns, 1)
 
 
 class CatEmbeddings(nn.Module):
