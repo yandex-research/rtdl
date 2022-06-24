@@ -3,7 +3,7 @@ from typing import Any, Dict, List
 import torch.nn as nn
 
 from ._utils import INTERNAL_ERROR_MESSAGE
-from .nn import CatEmbeddings, CLSEmbedding, LinearEmbeddings
+from .nn import CatEmbeddings, CLSEmbedding, LinearEmbeddings, PeriodicEmbeddings
 
 
 def default_no_weight_decay_condition(
@@ -29,7 +29,9 @@ def default_no_weight_decay_condition(
             ),
         )
         or (isinstance(module, nn.Linear) and parameter_name == 'bias')
-        or isinstance(module, (CatEmbeddings, CLSEmbedding, LinearEmbeddings))
+        or isinstance(
+            module, (CatEmbeddings, CLSEmbedding, LinearEmbeddings, PeriodicEmbeddings)
+        )
     )
 
 

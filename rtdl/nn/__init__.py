@@ -5,6 +5,7 @@ from ._backbones import MLP, ResNet, Transformer  # noqa
 from ._embeddings import (  # noqa
     CatEmbeddings,
     CLSEmbedding,
+    ELinear,
     LinearEmbeddings,
     OneHotEncoder,
     PeriodicEmbeddings,

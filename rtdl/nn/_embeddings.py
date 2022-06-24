@@ -188,3 +188,30 @@ class PeriodicEmbeddings(nn.Module):
             raise ValueError('The input must have two dimensions')
         x = 2 * math.pi * self.coefficients[None] * x[..., None]
         return torch.cat([torch.cos(x), torch.sin(x)], -1)
+
+
+class ELinear(nn.Module):
+    def __init__(self, d_in: int, d_out: int, n_tokens: int, bias: bool = True) -> None:
+        super().__init__()
+        self.weight = nn.Parameter(Tensor(n_tokens, d_in, d_out))
+        self.bias = nn.Parameter(Tensor(n_tokens, d_out)) if bias else None
+        self.reset_parameters()
+
+    def reset_parameters(self):
+        # This initialization is equivalent to that of torch.nn.Linear
+        d_in = self.weight.shape[1]
+        bound = 1 / math.sqrt(d_in)
+        nn.init.uniform_(self.weight, -bound, bound)
+        if self.bias is not None:
+            nn.init.uniform_(self.bias, -bound, bound)
+
+    def forward(self, x: Tensor) -> Tensor:
+        if x.ndim != 3:
+            raise ValueError(
+                'The input must have three dimensions (batch_size, n_tokens, d_embedding)'
+            )
+        x = x[..., None] * self.weight[None]
+        x = x.sum(-2)
+        if self.bias is not None:
+            x = x + self.bias[None]
+        return x
