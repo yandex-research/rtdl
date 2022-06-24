@@ -1,69 +1,8 @@
 """Tools for data (pre)processing."""
 
-from typing import Any, Callable, Dict, List, Union
+from typing import List
 
 import numpy as np
-
-_RawSplittedData = Dict[str, Dict[str, Any]]
-
-
-class SplittedData:
-    def __init__(self, data: _RawSplittedData) -> None:
-        self._data = data
-
-    @property
-    def data(self) -> _RawSplittedData:
-        return self._data
-
-    def __getitem__(self, index) -> Dict[str, Any]:
-        if isinstance(index, str):
-            key_data = self.data.get(index)
-            if key_data is None:
-                raise ValueError(
-                    'If the index is one value, then it must be a valid key for the'
-                    f' original data dictionary. Valid keys: [{", ".join(self.data)}]'
-                )
-            return key_data
-        elif isinstance(index, tuple):
-            error = ValueError(
-                'If you access the data like splitted_data[part, idx])'
-                ' then `part` must be a valid key for all second-level dictionaries'
-                ' and `idx` must be a valid index for the corresponding values of all'
-                ' second-level dictionaries'
-            )
-            if len(index) != 2:
-                raise error
-            part, idx = index
-            try:
-                return {key: key_data[part][idx] for key, key_data in self.data.items()}
-            except Exception as err:
-                raise error from err
-        else:
-            raise ValueError(
-                'index must be either one value (string) or two values (string, index)'
-            )
-
-    def map(
-        self,
-        fn: Callable,
-        keys: Union[None, str, List[str]] = None,
-        parts: Union[None, str, List[str]] = None,
-    ) -> 'SplittedData':
-        # TODO: mention that the copy is not deep
-        if keys is None:
-            keys = list(self.data)
-        elif isinstance(keys, str):
-            keys = [keys]
-
-        if isinstance(parts, str):
-            parts = [parts]
-
-        new_data = {k: v.copy() for k, v in self.data.items()}
-        for key in keys:
-            key_parts = self.data[key] if parts is None else parts
-            for part in key_parts:
-                new_data[key][part] = fn(self.data[key][part])
-        return SplittedData(new_data)
 
 
 def get_category_sizes(X: np.ndarray) -> List[int]:
