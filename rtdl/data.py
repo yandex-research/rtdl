@@ -92,12 +92,12 @@ def compute_decision_tree_bin_edges(
 
 
 @overload
-def compute_bin_indices(X: np.ndarray, bin_edges: List[np.ndarray]) -> np.ndarray:
+def compute_bin_indices(X: Tensor, bin_edges: List[Tensor]) -> Tensor:
     ...
 
 
 @overload
-def compute_bin_indices(X: Tensor, bin_edges: List[Tensor]) -> Tensor:
+def compute_bin_indices(X: np.ndarray, bin_edges: List[np.ndarray]) -> np.ndarray:
     ...
 
 
