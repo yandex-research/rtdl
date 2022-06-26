@@ -5,7 +5,6 @@ __all__ = [
     'compute_decision_tree_bin_edges',
     'compute_bin_indices',
     'compute_piecewise_linear_bin_values',
-    'one_hot_encoding',
     'ordinal_binary_encoding',
     'piecewise_linear_encoding',
     'get_category_sizes',
@@ -252,44 +251,6 @@ def _get_scalar_class(dtype: torch.dtype) -> Union[Type[int], Type[float]]:
         raise ValueError('unsupported dtype')
 
 
-def _LVR_binary_encoding(indices, d_encoding, dtype, left):
-    is_torch = isinstance(indices, Tensor)
-    indices = as_tensor(indices)
-    dtype = _get_torch_dtype(dtype)
-
-    Scalar = _get_scalar_class(dtype)
-    encoding = _LVR_encoding(
-        torch.full(indices.shape, 1, dtype=dtype),
-        indices,
-        d_encoding,
-        Scalar(left),
-        Scalar(0),
-    )
-    return encoding if is_torch else encoding.numpy()
-
-
-@overload
-def one_hot_encoding(
-    indices: Tensor,
-    d_encoding: int,
-    dtype: torch.dtype,
-) -> Tensor:
-    ...
-
-
-@overload
-def one_hot_encoding(
-    indices: np.ndarray,
-    d_encoding: int,
-    dtype: Type[np.number],
-) -> np.ndarray:
-    ...
-
-
-def one_hot_encoding(indices, d_encoding: int, dtype):
-    return _LVR_binary_encoding(indices, d_encoding, dtype, 0)
-
-
 @overload
 def ordinal_binary_encoding(indices: Tensor, d_encoding: int, dtype: type) -> Tensor:
     ...
@@ -303,7 +264,19 @@ def ordinal_binary_encoding(
 
 
 def ordinal_binary_encoding(indices, d_encoding: int, dtype):
-    return _LVR_binary_encoding(indices, d_encoding, dtype, 1)
+    is_torch = isinstance(indices, Tensor)
+    indices = as_tensor(indices)
+    dtype = _get_torch_dtype(dtype)
+
+    Scalar = _get_scalar_class(dtype)
+    encoding = _LVR_encoding(
+        torch.full(indices.shape, 1, dtype=dtype),
+        indices,
+        d_encoding,
+        Scalar(1),
+        Scalar(0),
+    )
+    return encoding if is_torch else encoding.numpy()
 
 
 @overload
