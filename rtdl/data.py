@@ -1,10 +1,23 @@
 """Tools for data (pre)processing."""
 
+__all__ = [
+    'compute_quantile_bin_edges',
+    'compute_decision_tree_bin_edges',
+    'compute_bin_indices',
+    'compute_piecewise_linear_bin_values',
+    'one_hot_encoding',
+    'ordinal_binary_encoding',
+    'piecewise_linear_encoding',
+    'get_category_sizes',
+]
+
 import warnings
-from typing import Any, Dict, List
+from typing import Any, Dict, List, TypeVar, Union
 
 import numpy as np
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
+
+Number = TypeVar('Number', int, float)
 
 
 def _adjust_bin_counts(X: np.ndarray, n_bins: int) -> List[int]:
@@ -24,7 +37,9 @@ def _adjust_bin_counts(X: np.ndarray, n_bins: int) -> List[int]:
     return adjusted_bin_counts
 
 
-def build_quantile_bins(X: np.ndarray, n_bins: int) -> List[np.ndarray]:
+def compute_quantile_bin_edges(X: np.ndarray, n_bins: int) -> List[np.ndarray]:
+    if X.ndim != 2:
+        raise ValueError('X must have two dimensions')
     adjusted_bin_counts = _adjust_bin_counts(X, n_bins)
     edges = []
     for column, adjusted_n_bins in zip(X.T, adjusted_bin_counts):
@@ -34,7 +49,7 @@ def build_quantile_bins(X: np.ndarray, n_bins: int) -> List[np.ndarray]:
     return edges
 
 
-def build_decision_tree_bins(
+def compute_decision_tree_bin_edges(
     X: np.ndarray,
     n_bins: int,
     *,
@@ -42,12 +57,15 @@ def build_decision_tree_bins(
     regression: bool,
     tree_kwargs: Dict[str, Any],
 ) -> List[np.ndarray]:
+    if X.ndim != 2:
+        raise ValueError('X must have two dimensions')
     if len(X) != len(y):
         raise ValueError('X and y have different first dimensions')
     if 'max_leaf_nodes' in tree_kwargs:
         raise ValueError(
             'Do not include max_leaf_nodes in tree_kwargs (it will be set equal to n_bins automatically).'
         )
+
     adjusted_bin_counts = _adjust_bin_counts(X, n_bins)
     edges = []
     for column, adjusted_n_bins in zip(X.T, adjusted_bin_counts):
@@ -68,6 +86,123 @@ def build_decision_tree_bins(
         tree_thresholds.append(column.max())
         edges.append(np.array(sorted(set(tree_thresholds))))
     return edges
+
+
+def compute_bin_indices(
+    X: np.ndarray, bin_edges: List[np.ndarray], dtype: Union[str, type] = np.int64
+) -> np.ndarray:
+    if X.ndim != 2:
+        raise ValueError('X must have two dimensions')
+    if X.shape[1] != len(bin_edges):
+        raise ValueError(
+            'The number of columns must be equal to the size of the `bin_edges` list'
+        )
+
+    bin_indices = [
+        np.digitize(column, np.r_[-np.inf, column_bins[1:-1], np.inf]).astype(dtype) - 1
+        for column, column_bins in zip(X.T, bin_edges)
+    ]
+    return np.column_stack(bin_indices)
+
+
+def compute_piecewise_linear_bin_values(
+    X: np.ndarray, indices: np.ndarray, bin_edges: List[np.ndarray]
+) -> np.ndarray:
+    if X.ndim != 2:
+        raise ValueError('X must have two dimensions')
+    if X.shape != indices.shape:
+        raise ValueError('X and indices must be of the same shape')
+    if X.shape[1] != len(bin_edges):
+        raise ValueError(
+            'The number of columns in X must be equal to the number of items in bin_edges'
+        )
+    values = []
+    # "c_" ~ "column_"
+    for c_i, (c_values, c_indices, c_bin_edges) in enumerate(
+        zip(X.T, indices.T, bin_edges)
+    ):
+        if (c_indices + 1 >= len(c_bin_edges)).any():
+            raise ValueError(
+                f'The indices in indices[:, {c_i}] are not compatible with bin_edges[{c_i}]'
+            )
+        c_left_edges = c_bin_edges[c_indices]
+        c_right_edges = c_bin_edges[c_indices + 1]
+        values.append((c_values - c_left_edges) / (c_right_edges - c_left_edges))
+    return np.column_stack(values)
+
+
+# LVR stands for "left-value-right"
+def _LVR_encoding(
+    values: np.ndarray,
+    indices: np.ndarray,
+    d_encoding: int,
+    left: Number,
+    right: Number,
+) -> np.ndarray:
+    if type(left) is not type(right):
+        raise ValueError('left and right must be of the same type')
+    if not str(values.dtype).startswith(str(type(left))):
+        raise ValueError(
+            'The `values` array has dtype incompatible with left and right'
+        )
+    if values.ndim != 2:
+        raise ValueError('values must have two dimensions')
+    if values.shape != indices.shape:
+        raise ValueError('values and indices must be of the same shape')
+    if (indices >= d_encoding).any():
+        raise ValueError('All indices must be less than d_encoding')
+
+    n_objects, n_features = values.shape
+    left_mask = np.arange(d_encoding)[None, None] < indices[:, :, None]
+    encoding = np.where(
+        left_mask, np.array(left, values.dtype), np.array(right, values.dtype)
+    )
+    # object_indices:  [0, 0, 0, ..., 1, 1, 1, ..., 2, 2, 2, ...]
+    # feature_indices: [0, 1, 2, ..., 0, 1, 2, ..., 0, 1, 2, ...]
+    object_indices = np.arange(n_objects).repeat(n_features)
+    feature_indices = np.tile(np.arange(n_features), n_objects)
+    encoding[object_indices, feature_indices, indices.flatten()] = values.flatten()
+    return encoding
+
+
+def one_hot_encoding(indices: np.ndarray, d_encoding: int, dtype: type) -> np.ndarray:
+    return _LVR_encoding(
+        np.full(indices.shape, 1, dtype=dtype), indices, d_encoding, dtype(0), dtype(0)
+    )
+
+
+def ordinal_binary_encoding(
+    indices: np.ndarray, d_encoding: int, dtype: type
+) -> np.ndarray:
+    return _LVR_encoding(
+        np.full(indices.shape, 1, dtype=dtype), indices, d_encoding, dtype(1), dtype(0)
+    )
+
+
+def piecewise_linear_encoding(
+    values: np.ndarray, indices: np.ndarray, d_encoding: int
+) -> np.ndarray:
+    message = (
+        'values do not satisfy requirements for the piecewise linear encoding.'
+        ' Use rtdl.data.compute_piecewise_linear_bin_values to obtain valid values.'
+    )
+
+    lower_bounds = np.zeros_like(values)
+    is_first_bin = indices == 0
+    lower_bounds[is_first_bin] = -np.inf
+    if (values < lower_bounds).any():
+        raise ValueError(message)
+    del lower_bounds
+
+    upper_bounds = np.ones_like(values)
+    is_last_bin = indices + 1 == d_encoding
+    upper_bounds[is_last_bin] = np.inf
+    if (values > upper_bounds).any():
+        raise ValueError(message)
+    del upper_bounds
+
+    dtype = values.dtype
+    return _LVR_encoding(values, indices, d_encoding, dtype(1), dtype(0))
 
 
 def get_category_sizes(X: np.ndarray) -> List[int]:
