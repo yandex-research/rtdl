@@ -11,11 +11,14 @@ __all__ = [
     'get_category_sizes',
 ]
 
+import math
 import warnings
-from typing import Any, Dict, List, TypeVar, Union
+from typing import Any, Dict, List, Type, TypeVar, Union, overload
 
 import numpy as np
+import torch
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
+from torch import Tensor, as_tensor
 
 Number = TypeVar('Number', int, float)
 
@@ -88,26 +91,62 @@ def compute_decision_tree_bin_edges(
     return edges
 
 
-def compute_bin_indices(
-    X: np.ndarray, bin_edges: List[np.ndarray], dtype: Union[str, type] = np.int64
-) -> np.ndarray:
+@overload
+def compute_bin_indices(X: np.ndarray, bin_edges: List[np.ndarray]) -> np.ndarray:
+    ...
+
+
+@overload
+def compute_bin_indices(X: Tensor, bin_edges: List[Tensor]) -> Tensor:
+    ...
+
+
+def compute_bin_indices(X, bin_edges):
+    is_torch = isinstance(X, Tensor)
+    X = as_tensor(X)
+    bin_edges = [as_tensor(x) for x in bin_edges]
+
     if X.ndim != 2:
         raise ValueError('X must have two dimensions')
     if X.shape[1] != len(bin_edges):
         raise ValueError(
-            'The number of columns must be equal to the size of the `bin_edges` list'
+            'The number of columns in X must be equal to the size of the `bin_edges` list'
         )
 
-    bin_indices = [
-        np.digitize(column, np.r_[-np.inf, column_bins[1:-1], np.inf]).astype(dtype) - 1
-        for column, column_bins in zip(X.T, bin_edges)
+    inf = torch.tensor([math.inf], dtype=X.dtype, device=X.device)
+    neg_inf = -inf
+    # NOTE: torch.bucketize(..., right=True) is consistent with np.digitize(..., right=False)
+    bin_indices_list = [
+        torch.bucketize(
+            column, torch.cat((neg_inf, column_bin_edges[1:-1], inf)), right=True
+        )
+        - 1
+        for column, column_bin_edges in zip(X.T, bin_edges)
     ]
-    return np.column_stack(bin_indices)
+    bin_indices = torch.stack(bin_indices_list, 1)
+    return bin_indices if is_torch else bin_indices.numpy()
 
 
+@overload
 def compute_piecewise_linear_bin_values(
     X: np.ndarray, indices: np.ndarray, bin_edges: List[np.ndarray]
 ) -> np.ndarray:
+    ...
+
+
+@overload
+def compute_piecewise_linear_bin_values(
+    X: Tensor, indices: Tensor, bin_edges: List[Tensor]
+) -> Tensor:
+    ...
+
+
+def compute_piecewise_linear_bin_values(X, indices, bin_edges):
+    is_torch = isinstance(X, Tensor)
+    X = as_tensor(X)
+    indices = as_tensor(indices)
+    bin_edges = [as_tensor(x) for x in bin_edges]
+
     if X.ndim != 2:
         raise ValueError('X must have two dimensions')
     if X.shape != indices.shape:
@@ -116,7 +155,8 @@ def compute_piecewise_linear_bin_values(
         raise ValueError(
             'The number of columns in X must be equal to the number of items in bin_edges'
         )
-    values = []
+
+    values_list = []
     # "c_" ~ "column_"
     for c_i, (c_values, c_indices, c_bin_edges) in enumerate(
         zip(X.T, indices.T, bin_edges)
@@ -127,11 +167,23 @@ def compute_piecewise_linear_bin_values(
             )
         c_left_edges = c_bin_edges[c_indices]
         c_right_edges = c_bin_edges[c_indices + 1]
-        values.append((c_values - c_left_edges) / (c_right_edges - c_left_edges))
-    return np.column_stack(values)
+        values_list.append((c_values - c_left_edges) / (c_right_edges - c_left_edges))
+    values = torch.stack(values_list, 1)
+    return values if is_torch else values.numpy()
 
 
-# LVR stands for "left-value-right"
+@overload
+def _LVR_encoding(
+    values: Tensor,
+    indices: Tensor,
+    d_encoding: int,
+    left: Number,
+    right: Number,
+) -> Tensor:
+    ...
+
+
+@overload
 def _LVR_encoding(
     values: np.ndarray,
     indices: np.ndarray,
@@ -139,9 +191,21 @@ def _LVR_encoding(
     left: Number,
     right: Number,
 ) -> np.ndarray:
+    ...
+
+
+def _LVR_encoding(values, indices, d_encoding, left, right):
+    """Left-Value-Right encoding
+
+    f(x) = [left, left, ..., left, <value at the given index>, right, right, ... right]
+    """
+    is_torch = isinstance(values, Tensor)
+    values = as_tensor(values)
+    indices = as_tensor(values)
+
     if type(left) is not type(right):
         raise ValueError('left and right must be of the same type')
-    if not str(values.dtype).startswith(str(type(left))):
+    if str(type(left)) not in str(values.dtype):
         raise ValueError(
             'The `values` array has dtype incompatible with left and right'
         )
@@ -152,57 +216,136 @@ def _LVR_encoding(
     if (indices >= d_encoding).any():
         raise ValueError('All indices must be less than d_encoding')
 
-    n_objects, n_features = values.shape
-    left_mask = np.arange(d_encoding)[None, None] < indices[:, :, None]
-    encoding = np.where(
-        left_mask, np.array(left, values.dtype), np.array(right, values.dtype)
+    dtype = values.dtype
+    device = values.device
+    left_mask = (
+        torch.arange(d_encoding, device=device)[None, None] < indices[:, :, None]
     )
+    encoding = torch.where(
+        left_mask,
+        torch.tensor(left, dtype=dtype, device=device),
+        torch.tensor(right, dtype=dtype, device=device),
+    )
+    n_objects, n_features = values.shape
     # object_indices:  [0, 0, 0, ..., 1, 1, 1, ..., 2, 2, 2, ...]
     # feature_indices: [0, 1, 2, ..., 0, 1, 2, ..., 0, 1, 2, ...]
-    object_indices = np.arange(n_objects).repeat(n_features)
-    feature_indices = np.tile(np.arange(n_features), n_objects)
-    encoding[object_indices, feature_indices, indices.flatten()] = values.flatten()
-    return encoding
-
-
-def one_hot_encoding(indices: np.ndarray, d_encoding: int, dtype: type) -> np.ndarray:
-    return _LVR_encoding(
-        np.full(indices.shape, 1, dtype=dtype), indices, d_encoding, dtype(0), dtype(0)
+    object_indices = (
+        torch.arange(n_objects, device=device)[:, None]
+        .repeat(1, n_features)
+        .reshape(-1)
     )
+    feature_indices = torch.arange(n_features, device=device).repeat(n_objects)
+    encoding[object_indices, feature_indices, indices.flatten()] = values.flatten()
+    return encoding if is_torch else encoding.numpy()
 
 
+def _get_torch_dtype(dtype: Union[Type[np.number], torch.dtype]) -> torch.dtype:
+    return dtype if isinstance(dtype, torch.dtype) else getattr(torch, dtype.__name__)
+
+
+def _get_scalar_class(dtype: torch.dtype) -> Union[Type[int], Type[float]]:
+    if 'int' in str(dtype):
+        return int
+    elif 'float' in str(dtype):
+        return float
+    else:
+        raise ValueError('unsupported dtype')
+
+
+def _LVR_binary_encoding(indices, d_encoding, dtype, left):
+    is_torch = isinstance(indices, Tensor)
+    indices = as_tensor(indices)
+    dtype = _get_torch_dtype(dtype)
+
+    Scalar = _get_scalar_class(dtype)
+    encoding = _LVR_encoding(
+        torch.full(indices.shape, 1, dtype=dtype),
+        indices,
+        d_encoding,
+        Scalar(left),
+        Scalar(0),
+    )
+    return encoding if is_torch else encoding.numpy()
+
+
+@overload
+def one_hot_encoding(
+    indices: Tensor,
+    d_encoding: int,
+    dtype: torch.dtype,
+) -> Tensor:
+    ...
+
+
+@overload
+def one_hot_encoding(
+    indices: np.ndarray,
+    d_encoding: int,
+    dtype: Type[np.number],
+) -> np.ndarray:
+    ...
+
+
+def one_hot_encoding(indices, d_encoding: int, dtype):
+    return _LVR_binary_encoding(indices, d_encoding, dtype, 0)
+
+
+@overload
+def ordinal_binary_encoding(indices: Tensor, d_encoding: int, dtype: type) -> Tensor:
+    ...
+
+
+@overload
 def ordinal_binary_encoding(
     indices: np.ndarray, d_encoding: int, dtype: type
 ) -> np.ndarray:
-    return _LVR_encoding(
-        np.full(indices.shape, 1, dtype=dtype), indices, d_encoding, dtype(1), dtype(0)
-    )
+    ...
 
 
+def ordinal_binary_encoding(indices, d_encoding: int, dtype):
+    return _LVR_binary_encoding(indices, d_encoding, dtype, 1)
+
+
+@overload
+def piecewise_linear_encoding(
+    values: Tensor, indices: Tensor, d_encoding: int
+) -> Tensor:
+    ...
+
+
+@overload
 def piecewise_linear_encoding(
     values: np.ndarray, indices: np.ndarray, d_encoding: int
 ) -> np.ndarray:
+    ...
+
+
+def piecewise_linear_encoding(values, indices, d_encoding: int):
+    is_torch = isinstance(values, Tensor)
+    values = torch.as_tensor(values)
+    indices = torch.as_tensor(indices)
+
     message = (
         'values do not satisfy requirements for the piecewise linear encoding.'
         ' Use rtdl.data.compute_piecewise_linear_bin_values to obtain valid values.'
     )
 
-    lower_bounds = np.zeros_like(values)
+    lower_bounds = torch.zeros_like(values)
     is_first_bin = indices == 0
-    lower_bounds[is_first_bin] = -np.inf
+    lower_bounds[is_first_bin] = -math.inf
     if (values < lower_bounds).any():
         raise ValueError(message)
     del lower_bounds
 
-    upper_bounds = np.ones_like(values)
+    upper_bounds = torch.ones_like(values)
     is_last_bin = indices + 1 == d_encoding
-    upper_bounds[is_last_bin] = np.inf
+    upper_bounds[is_last_bin] = math.inf
     if (values > upper_bounds).any():
         raise ValueError(message)
     del upper_bounds
 
-    dtype = values.dtype
-    return _LVR_encoding(values, indices, d_encoding, dtype(1), dtype(0))
+    encoding = _LVR_encoding(values, indices, d_encoding, 1.0, 0.0)
+    return encoding if is_torch else encoding.numpy()
 
 
 def get_category_sizes(X: np.ndarray) -> List[int]:
