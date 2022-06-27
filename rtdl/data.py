@@ -8,16 +8,32 @@ __all__ = [
     'ordinal_binary_encoding',
     'piecewise_linear_encoding',
     'get_category_sizes',
+    'OrdinalBinaryDiscretizer',
+    'PiecewiseLinearEncoder',
 ]
 
 import math
 import warnings
-from typing import Any, Dict, List, Type, TypeVar, Union, overload
+from copy import deepcopy
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+    overload,
+)
 
 import numpy as np
 import torch
+from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 from torch import Tensor, as_tensor
+from typing_extensions import Literal
 
 Number = TypeVar('Number', int, float)
 
@@ -252,7 +268,9 @@ def _get_scalar_class(dtype: torch.dtype) -> Union[Type[int], Type[float]]:
 
 
 @overload
-def ordinal_binary_encoding(indices: Tensor, d_encoding: int, dtype: type) -> Tensor:
+def ordinal_binary_encoding(
+    indices: Tensor, d_encoding: int, dtype: torch.dtype
+) -> Tensor:
     ...
 
 
@@ -319,6 +337,55 @@ def piecewise_linear_encoding(values, indices, d_encoding: int):
 
     encoding = _LVR_encoding(values, indices, d_encoding, 1.0, 0.0)
     return encoding if is_torch else encoding.numpy()
+
+
+class _BinBasedEncoder(BaseEstimator, TransformerMixin):
+    def __init__(
+        self,
+        bin_edges: Union[
+            Literal['quantile', 'decision_tree'],
+            Callable[..., List[np.ndarray]],
+        ],
+        bin_edges_params: Optional[Dict[str, Any]],
+    ) -> None:
+        self.bin_edges = bin_edges
+        self.bin_edges_params = bin_edges_params
+
+    def fit(
+        self, X: np.ndarray, y: Optional[np.ndarray] = None
+    ) -> Type['_BinBasedEncoder']:
+        if y is not None and len(X) != len(y):
+            raise ValueError('X and y must have the same first dimension')
+        compute_fn = (
+            {
+                'quantile': compute_quantile_bin_edges,
+                'decision_tree': compute_decision_tree_bin_edges,
+            }[self.bin_edges]
+            if isinstance(self.bin_edges, str)
+            else self.bin_edges
+        )
+        y_kwarg = (
+            {} if y is None or compute_fn is compute_quantile_bin_edges else {'y': y}
+        )
+        kwargs = {} if self.bin_edges_params is None else self.bin_edges_params
+        self.bin_edges_ = compute_fn(X, **y_kwarg, **kwargs)
+        self.d_encoding_ = max(map(len, self.bin_edges_)) - 1
+        return self
+
+
+class OrdinalBinaryDiscretizer(_BinBasedEncoder):
+    def transform(self, X: np.ndarray) -> np.ndarray:
+        bin_indices = compute_bin_indices(X, self.bin_edges_)
+        return ordinal_binary_encoding(bin_indices, self.d_encoding_, X.dtype)
+
+
+class PiecewiseLinearEncoder(_BinBasedEncoder):
+    def transform(self, X: np.ndarray) -> np.ndarray:
+        bin_indices = compute_bin_indices(X, self.bin_edges_)
+        bin_values = compute_piecewise_linear_bin_values(
+            X, bin_indices, self.bin_edges_
+        )
+        return piecewise_linear_encoding(bin_values, bin_indices, self.d_encoding_)
 
 
 def get_category_sizes(X: np.ndarray) -> List[int]:
