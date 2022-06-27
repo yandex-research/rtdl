@@ -183,7 +183,7 @@ def compute_bin_linear_ratios(X, indices, bin_edges):
 def _LVR_encoding(
     values: Tensor,
     indices: Tensor,
-    d_encoding: int,
+    d_encoding: Union[int, List[int]],
     left: Number,
     right: Number,
 ) -> Tensor:
@@ -194,16 +194,19 @@ def _LVR_encoding(
 def _LVR_encoding(
     values: np.ndarray,
     indices: np.ndarray,
-    d_encoding: int,
+    d_encoding: Union[int, List[int]],
     left: Number,
     right: Number,
 ) -> np.ndarray:
     ...
 
 
-def _LVR_encoding(values, indices, d_encoding, left, right):
+def _LVR_encoding(
+    values, indices, d_encoding: Union[int, List[int]], left: Number, right: Number
+):
     """Left-Value-Right encoding
 
+    For one feature:
     f(x) = [left, left, ..., left, <value at the given index>, right, right, ... right]
     """
     is_torch = isinstance(values, Tensor)
@@ -220,50 +223,96 @@ def _LVR_encoding(values, indices, d_encoding, left, right):
         raise ValueError('values must have two dimensions')
     if values.shape != indices.shape:
         raise ValueError('values and indices must be of the same shape')
-    if (indices >= d_encoding).any():
-        raise ValueError('All indices must be less than d_encoding')
+
+    if isinstance(d_encoding, int):
+        output_ndim = 2
+        if (indices >= d_encoding).any():
+            raise ValueError('All indices must be less than d_encoding')
+    else:
+        output_ndim = 3
+        if values.shape[1] != len(d_encoding):
+            raise ValueError(
+                'If d_encoding is a list, then its size must be equal to `values.shape[1]`'
+            )
+        if (indices >= np.array(d_encoding)[None]).any():
+            raise ValueError(
+                'All indices must be less than the corresponding d_encoding'
+            )
 
     dtype = values.dtype
     device = values.device
-    left_mask = (
-        torch.arange(d_encoding, device=device)[None, None] < indices[:, :, None]
-    )
-    encoding = torch.where(
-        left_mask,
-        torch.tensor(left, dtype=dtype, device=device),
-        torch.tensor(right, dtype=dtype, device=device),
-    )
     n_objects, n_features = values.shape
-    # object_indices:  [0, 0, 0, ..., 1, 1, 1, ..., 2, 2, 2, ...]
-    # feature_indices: [0, 1, 2, ..., 0, 1, 2, ..., 0, 1, 2, ...]
-    object_indices = (
-        torch.arange(n_objects, device=device)[:, None]
-        .repeat(1, n_features)
-        .reshape(-1)
+    left_tensor = torch.tensor(left, dtype=dtype, device=device)
+    right_tensor = torch.tensor(right, dtype=dtype, device=device)
+
+    shared_d_encoding = (
+        d_encoding
+        if isinstance(d_encoding, int)
+        else d_encoding[0]
+        if all(d == d_encoding[0] for d in d_encoding)
+        else None
     )
-    feature_indices = torch.arange(n_features, device=device).repeat(n_objects)
-    encoding[object_indices, feature_indices, indices.flatten()] = values.flatten()
+
+    if shared_d_encoding is None:
+        encoding_list = []
+        for c_values, c_indices, c_d_encoding in zip(
+            values.T, indices.T, cast(List[int], d_encoding)
+        ):
+            c_left_mask = (
+                torch.arange(c_d_encoding, device=device)[None] < c_indices[:, None]
+            )
+            c_encoding = torch.where(c_left_mask, left_tensor, right_tensor)
+            c_encoding[torch.arange(n_objects, device=device), c_indices] = c_values
+            encoding_list.append(c_encoding)
+        encoding = torch.cat(encoding_list, 1)
+    else:
+        left_mask = (
+            torch.arange(shared_d_encoding, device=device)[None, None]
+            < indices[:, :, None]
+        )
+        encoding = torch.where(left_mask, left_tensor, right_tensor)
+        # object_indices:  [0, 0, 0, ..., 1, 1, 1, ..., 2, 2, 2, ...]
+        # feature_indices: [0, 1, 2, ..., 0, 1, 2, ..., 0, 1, 2, ...]
+        object_indices = (
+            torch.arange(n_objects, device=device)[:, None]
+            .repeat(1, n_features)
+            .reshape(-1)
+        )
+        feature_indices = torch.arange(n_features, device=device).repeat(n_objects)
+        encoding[object_indices, feature_indices, indices.flatten()] = values.flatten()
+        if output_ndim == 2:
+            encoding = encoding.reshape(n_objects, -1)
     return encoding if is_torch else encoding.numpy()
 
 
 @overload
 def piecewise_linear_encoding(
-    ratios: Tensor, indices: Tensor, d_encoding: int
+    ratios: Tensor, indices: Tensor, d_encoding: Union[int, List[int]]
 ) -> Tensor:
     ...
 
 
 @overload
 def piecewise_linear_encoding(
-    ratios: np.ndarray, indices: np.ndarray, d_encoding: int
+    ratios: np.ndarray, indices: np.ndarray, d_encoding: Union[int, List[int]]
 ) -> np.ndarray:
     ...
 
 
-def piecewise_linear_encoding(ratios, indices, d_encoding: int):
+def piecewise_linear_encoding(ratios, indices, d_encoding: Union[int, List[int]]):
     is_torch = isinstance(ratios, Tensor)
     ratios = torch.as_tensor(ratios)
     indices = torch.as_tensor(indices)
+
+    if ratios.ndim != 2:
+        raise ValueError('ratios must have two dimensions')
+    if ratios.shape != indices.shape:
+        raise ValueError('rations and indices must be of the same shape')
+
+    if isinstance(d_encoding, list) and ratios.shape[1] != len(d_encoding):
+        raise ValueError(
+            'the number of columns in ratios must be equal to the size of d_encoding'
+        )
 
     message = (
         'ratios do not satisfy requirements for the piecewise linear encoding.'
@@ -278,7 +327,11 @@ def piecewise_linear_encoding(ratios, indices, d_encoding: int):
     del lower_bounds
 
     upper_bounds = torch.ones_like(ratios)
-    is_last_bin = indices + 1 == d_encoding
+    is_last_bin = indices + 1 == (
+        d_encoding
+        if isinstance(d_encoding, int)
+        else torch.as_tensor(d_encoding, dtype=indices.dtype, device=indices.device)
+    )
     upper_bounds[is_last_bin] = math.inf
     if (ratios > upper_bounds).any():
         raise ValueError(message)
@@ -290,24 +343,26 @@ def piecewise_linear_encoding(ratios, indices, d_encoding: int):
 
 @overload
 def compute_piecewise_linear_encoding(
-    X: Tensor, bin_edges: List[Tensor], d_encoding: Optional[int] = None
+    X: Tensor, bin_edges: List[Tensor], *, optimize_shape: bool
 ) -> Tensor:
     ...
 
 
 @overload
 def compute_piecewise_linear_encoding(
-    X: np.ndarray, bin_edges: List[np.ndarray], d_encoding: Optional[int] = None
+    X: np.ndarray, bin_edges: List[np.ndarray], *, optimize_shape: bool
 ) -> np.ndarray:
     ...
 
 
-def compute_piecewise_linear_encoding(X, bin_edges, d_encoding=None):
+def compute_piecewise_linear_encoding(X, bin_edges, *, optimize_shape: bool):
     bin_indices = compute_bin_indices(X, bin_edges)
     bin_ratios = compute_bin_linear_ratios(X, bin_indices, bin_edges)
-    if d_encoding is None:
-        d_encoding = max(map(len, bin_edges)) - 1
-    return piecewise_linear_encoding(bin_ratios, bin_indices, d_encoding)
+    bin_counts = [len(x) - 1 for x in bin_edges]
+    max_n_bins = max(bin_counts)
+    return piecewise_linear_encoding(
+        bin_ratios, bin_indices, d_encoding=bin_counts if optimize_shape else max_n_bins
+    )
 
 
 class PiecewiseLinearEncoder(BaseEstimator, TransformerMixin):
@@ -318,9 +373,11 @@ class PiecewiseLinearEncoder(BaseEstimator, TransformerMixin):
             Callable[..., List[np.ndarray]],
         ],
         bin_edges_params: Optional[Dict[str, Any]],
+        optimize_shape: bool,
     ) -> None:
         self.bin_edges = bin_edges
         self.bin_edges_params = bin_edges_params
+        self.optimize_shape = optimize_shape
 
     def fit(
         self, X: np.ndarray, y: Optional[np.ndarray] = None
@@ -346,7 +403,9 @@ class PiecewiseLinearEncoder(BaseEstimator, TransformerMixin):
         return self
 
     def transform(self, X: np.ndarray) -> np.ndarray:
-        return compute_piecewise_linear_encoding(X, self.bin_edges_)
+        return compute_piecewise_linear_encoding(
+            X, self.bin_edges_, optimize_shape=self.optimize_shape
+        )
 
 
 def get_category_sizes(X: np.ndarray) -> List[int]:
