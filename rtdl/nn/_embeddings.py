@@ -6,6 +6,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
 
+from .._utils import INTERNAL_ERROR_MESSAGE
 from ..data import compute_piecewise_linear_encoding, piecewise_linear_encoding
 
 
@@ -244,3 +245,29 @@ class ELinear(nn.Module):
         if self.bias is not None:
             x = x + self.bias[None]
         return x
+
+
+def make_lr_embeddings(n_features: int, d_embedding: int) -> nn.Module:
+    return nn.Sequential(
+        LinearEmbeddings(n_features, d_embedding),
+        nn.ReLU(),
+    )
+
+
+def make_ple_lr_embeddings(bin_edges: List[Tensor], d_embedding: int) -> nn.Module:
+    n_features = len(bin_edges)
+    embeddings = PiecewiseLinearEncoder(bin_edges, False)
+    assert isinstance(embeddings.d_encoding, int), INTERNAL_ERROR_MESSAGE
+    return nn.Sequential(
+        embeddings,
+        ELinear(embeddings.d_encoding, d_embedding, n_features),
+        nn.ReLU(),
+    )
+
+
+def make_plr_embeddings(n_features: int, d_embedding: int, sigma: float) -> nn.Module:
+    return nn.Sequential(
+        PeriodicEmbeddings(n_features, d_embedding, sigma),
+        ELinear(d_embedding, d_embedding, n_features),
+        nn.ReLU(),
+    )
