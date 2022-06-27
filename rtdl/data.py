@@ -5,27 +5,14 @@ __all__ = [
     'compute_decision_tree_bin_edges',
     'compute_bin_indices',
     'compute_bin_linear_ratios',
-    'ordinal_binary_encoding',
     'piecewise_linear_encoding',
-    'get_category_sizes',
-    'OrdinalBinaryEncoder',
     'PiecewiseLinearEncoder',
+    'get_category_sizes',
 ]
 
 import math
 import warnings
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Type,
-    TypeVar,
-    Union,
-    cast,
-    overload,
-)
+from typing import Any, Callable, Dict, List, Optional, TypeVar, Union, cast, overload
 
 import numpy as np
 import torch
@@ -259,71 +246,6 @@ def _LVR_encoding(values, indices, d_encoding, left, right):
     return encoding if is_torch else encoding.numpy()
 
 
-def _get_torch_dtype(dtype: Union[Type[np.number], torch.dtype]) -> torch.dtype:
-    return dtype if isinstance(dtype, torch.dtype) else getattr(torch, dtype.__name__)
-
-
-def _get_scalar_class(dtype: torch.dtype) -> Union[Type[int], Type[float]]:
-    if 'int' in str(dtype):
-        return int
-    elif 'float' in str(dtype):
-        return float
-    else:
-        raise ValueError('unsupported dtype')
-
-
-@overload
-def ordinal_binary_encoding(
-    indices: Tensor, d_encoding: int, dtype: torch.dtype
-) -> Tensor:
-    ...
-
-
-@overload
-def ordinal_binary_encoding(
-    indices: np.ndarray, d_encoding: int, dtype: type
-) -> np.ndarray:
-    ...
-
-
-def ordinal_binary_encoding(indices, d_encoding: int, dtype):
-    is_torch = isinstance(indices, Tensor)
-    indices = as_tensor(indices)
-    dtype = _get_torch_dtype(dtype)
-
-    Scalar = _get_scalar_class(dtype)
-    encoding = _LVR_encoding(
-        torch.full(indices.shape, 1, dtype=dtype),
-        indices,
-        d_encoding,
-        Scalar(1),
-        Scalar(0),
-    )
-    return encoding if is_torch else encoding.numpy()
-
-
-@overload
-def compute_ordinal_binary_encoding(
-    X: Tensor, bin_edges: List[Tensor], *, dtype: Optional[torch.dtype] = None
-) -> Tensor:
-    ...
-
-
-@overload
-def compute_ordinal_binary_encoding(
-    X: np.ndarray, bin_edges: List[np.ndarray], *, dtype: Optional[type] = None
-) -> np.ndarray:
-    ...
-
-
-def compute_ordinal_binary_encoding(X, bin_edges, *, dtype=None):
-    bin_indices = compute_bin_indices(X, bin_edges)
-    d_encoding = max(map(len, bin_edges)) - 1
-    return ordinal_binary_encoding(
-        bin_indices, d_encoding, X.dtype if dtype is None else dtype
-    )
-
-
 @overload
 def piecewise_linear_encoding(
     ratios: Tensor, indices: Tensor, d_encoding: int
@@ -367,25 +289,28 @@ def piecewise_linear_encoding(ratios, indices, d_encoding: int):
 
 
 @overload
-def compute_piecewise_linear_encoding(X: Tensor, bin_edges: List[Tensor]) -> Tensor:
+def compute_piecewise_linear_encoding(
+    X: Tensor, bin_edges: List[Tensor], d_encoding: Optional[int] = None
+) -> Tensor:
     ...
 
 
 @overload
 def compute_piecewise_linear_encoding(
-    X: np.ndarray, bin_edges: List[np.ndarray]
+    X: np.ndarray, bin_edges: List[np.ndarray], d_encoding: Optional[int] = None
 ) -> np.ndarray:
     ...
 
 
-def compute_piecewise_linear_encoding(X, bin_edges):
+def compute_piecewise_linear_encoding(X, bin_edges, d_encoding=None):
     bin_indices = compute_bin_indices(X, bin_edges)
     bin_ratios = compute_bin_linear_ratios(X, bin_indices, bin_edges)
-    d_encoding = max(map(len, bin_edges)) - 1
+    if d_encoding is None:
+        d_encoding = max(map(len, bin_edges)) - 1
     return piecewise_linear_encoding(bin_ratios, bin_indices, d_encoding)
 
 
-class _BinBasedEncoder(BaseEstimator, TransformerMixin):
+class PiecewiseLinearEncoder(BaseEstimator, TransformerMixin):
     def __init__(
         self,
         bin_edges: Union[
@@ -399,7 +324,7 @@ class _BinBasedEncoder(BaseEstimator, TransformerMixin):
 
     def fit(
         self, X: np.ndarray, y: Optional[np.ndarray] = None
-    ) -> Type['_BinBasedEncoder']:
+    ) -> 'PiecewiseLinearEncoder':
         if y is not None and len(X) != len(y):
             raise ValueError('X and y must have the same first dimension')
         compute_fn = cast(
@@ -420,13 +345,6 @@ class _BinBasedEncoder(BaseEstimator, TransformerMixin):
         self.bin_edges_ = compute_fn(X, **y_kwarg, **kwargs)
         return self
 
-
-class OrdinalBinaryEncoder(_BinBasedEncoder):
-    def transform(self, X: np.ndarray) -> np.ndarray:
-        return compute_ordinal_binary_encoding(X, self.bin_edges_)
-
-
-class PiecewiseLinearEncoder(_BinBasedEncoder):
     def transform(self, X: np.ndarray) -> np.ndarray:
         return compute_piecewise_linear_encoding(X, self.bin_edges_)
 
