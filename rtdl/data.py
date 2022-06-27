@@ -4,17 +4,16 @@ __all__ = [
     'compute_quantile_bin_edges',
     'compute_decision_tree_bin_edges',
     'compute_bin_indices',
-    'compute_piecewise_linear_bin_values',
+    'compute_bin_linear_ratios',
     'ordinal_binary_encoding',
     'piecewise_linear_encoding',
     'get_category_sizes',
-    'OrdinalBinaryDiscretizer',
+    'OrdinalBinaryEncoder',
     'PiecewiseLinearEncoder',
 ]
 
 import math
 import warnings
-from copy import deepcopy
 from typing import (
     Any,
     Callable,
@@ -129,11 +128,10 @@ def compute_bin_indices(X, bin_edges):
         )
 
     inf = torch.tensor([math.inf], dtype=X.dtype, device=X.device)
-    neg_inf = -inf
     # NOTE: torch.bucketize(..., right=True) is consistent with np.digitize(..., right=False)
     bin_indices_list = [
         torch.bucketize(
-            column, torch.cat((neg_inf, column_bin_edges[1:-1], inf)), right=True
+            column, torch.cat((-inf, column_bin_edges[1:-1], inf)), right=True
         )
         - 1
         for column, column_bin_edges in zip(X.T, bin_edges)
@@ -143,20 +141,20 @@ def compute_bin_indices(X, bin_edges):
 
 
 @overload
-def compute_piecewise_linear_bin_values(
+def compute_bin_linear_ratios(
     X: np.ndarray, indices: np.ndarray, bin_edges: List[np.ndarray]
 ) -> np.ndarray:
     ...
 
 
 @overload
-def compute_piecewise_linear_bin_values(
+def compute_bin_linear_ratios(
     X: Tensor, indices: Tensor, bin_edges: List[Tensor]
 ) -> Tensor:
     ...
 
 
-def compute_piecewise_linear_bin_values(X, indices, bin_edges):
+def compute_bin_linear_ratios(X, indices, bin_edges):
     is_torch = isinstance(X, Tensor)
     X = as_tensor(X)
     indices = as_tensor(indices)
@@ -171,6 +169,7 @@ def compute_piecewise_linear_bin_values(X, indices, bin_edges):
             'The number of columns in X must be equal to the number of items in bin_edges'
         )
 
+    inf = torch.tensor([math.inf], dtype=X.dtype, device=X.device)
     values_list = []
     # "c_" ~ "column_"
     for c_i, (c_values, c_indices, c_bin_edges) in enumerate(
@@ -180,6 +179,12 @@ def compute_piecewise_linear_bin_values(X, indices, bin_edges):
             raise ValueError(
                 f'The indices in indices[:, {c_i}] are not compatible with bin_edges[{c_i}]'
             )
+        effective_c_bin_edges = torch.cat((-inf, c_bin_edges[1:-1], inf))
+        if (
+            (c_values < effective_c_bin_edges[c_indices]).any()
+            or (c_values > effective_c_bin_edges[c_indices + 1])
+        ).any():
+            raise ValueError('Values in X do not satisfy the provided bin edges.')
         c_left_edges = c_bin_edges[c_indices]
         c_right_edges = c_bin_edges[c_indices + 1]
         values_list.append((c_values - c_left_edges) / (c_right_edges - c_left_edges))
@@ -298,45 +303,86 @@ def ordinal_binary_encoding(indices, d_encoding: int, dtype):
 
 
 @overload
+def compute_ordinal_binary_encoding(
+    X: Tensor, bin_edges: List[Tensor], *, dtype: Optional[torch.dtype] = None
+) -> Tensor:
+    ...
+
+
+@overload
+def compute_ordinal_binary_encoding(
+    X: np.ndarray, bin_edges: List[np.ndarray], *, dtype: Optional[type] = None
+) -> np.ndarray:
+    ...
+
+
+def compute_ordinal_binary_encoding(X, bin_edges, *, dtype=None):
+    bin_indices = compute_bin_indices(X, bin_edges)
+    d_encoding = max(map(len, bin_edges)) - 1
+    return ordinal_binary_encoding(
+        bin_indices, d_encoding, X.dtype if dtype is None else dtype
+    )
+
+
+@overload
 def piecewise_linear_encoding(
-    values: Tensor, indices: Tensor, d_encoding: int
+    ratios: Tensor, indices: Tensor, d_encoding: int
 ) -> Tensor:
     ...
 
 
 @overload
 def piecewise_linear_encoding(
-    values: np.ndarray, indices: np.ndarray, d_encoding: int
+    ratios: np.ndarray, indices: np.ndarray, d_encoding: int
 ) -> np.ndarray:
     ...
 
 
-def piecewise_linear_encoding(values, indices, d_encoding: int):
-    is_torch = isinstance(values, Tensor)
-    values = torch.as_tensor(values)
+def piecewise_linear_encoding(ratios, indices, d_encoding: int):
+    is_torch = isinstance(ratios, Tensor)
+    ratios = torch.as_tensor(ratios)
     indices = torch.as_tensor(indices)
 
     message = (
-        'values do not satisfy requirements for the piecewise linear encoding.'
-        ' Use rtdl.data.compute_piecewise_linear_bin_values to obtain valid values.'
+        'ratios do not satisfy requirements for the piecewise linear encoding.'
+        ' Use rtdl.data.compute_bin_linear_ratios to obtain valid values.'
     )
 
-    lower_bounds = torch.zeros_like(values)
+    lower_bounds = torch.zeros_like(ratios)
     is_first_bin = indices == 0
     lower_bounds[is_first_bin] = -math.inf
-    if (values < lower_bounds).any():
+    if (ratios < lower_bounds).any():
         raise ValueError(message)
     del lower_bounds
 
-    upper_bounds = torch.ones_like(values)
+    upper_bounds = torch.ones_like(ratios)
     is_last_bin = indices + 1 == d_encoding
     upper_bounds[is_last_bin] = math.inf
-    if (values > upper_bounds).any():
+    if (ratios > upper_bounds).any():
         raise ValueError(message)
     del upper_bounds
 
-    encoding = _LVR_encoding(values, indices, d_encoding, 1.0, 0.0)
+    encoding = _LVR_encoding(ratios, indices, d_encoding, 1.0, 0.0)
     return encoding if is_torch else encoding.numpy()
+
+
+@overload
+def compute_piecewise_linear_encoding(X: Tensor, bin_edges: List[Tensor]) -> Tensor:
+    ...
+
+
+@overload
+def compute_piecewise_linear_encoding(
+    X: np.ndarray, bin_edges: List[np.ndarray]
+) -> np.ndarray:
+    ...
+
+
+def compute_piecewise_linear_encoding(X, bin_edges):
+    bin_indices = compute_bin_indices(X, bin_edges)
+    bin_ratios = compute_bin_linear_ratios(X, bin_indices, bin_edges)
+    d_encoding = max(map(len, bin_edges)) - 1
+    return piecewise_linear_encoding(bin_ratios, bin_indices, d_encoding)
 
 
 class _BinBasedEncoder(BaseEstimator, TransformerMixin):
@@ -356,36 +402,33 @@ class _BinBasedEncoder(BaseEstimator, TransformerMixin):
     ) -> Type['_BinBasedEncoder']:
         if y is not None and len(X) != len(y):
             raise ValueError('X and y must have the same first dimension')
-        compute_fn = (
-            {
-                'quantile': compute_quantile_bin_edges,
-                'decision_tree': compute_decision_tree_bin_edges,
-            }[self.bin_edges]
-            if isinstance(self.bin_edges, str)
-            else self.bin_edges
+        compute_fn = cast(
+            Callable[..., List[np.ndarray]],
+            (
+                {
+                    'quantile': compute_quantile_bin_edges,
+                    'decision_tree': compute_decision_tree_bin_edges,
+                }[self.bin_edges]
+                if isinstance(self.bin_edges, str)
+                else self.bin_edges
+            ),
         )
         y_kwarg = (
             {} if y is None or compute_fn is compute_quantile_bin_edges else {'y': y}
         )
         kwargs = {} if self.bin_edges_params is None else self.bin_edges_params
         self.bin_edges_ = compute_fn(X, **y_kwarg, **kwargs)
-        self.d_encoding_ = max(map(len, self.bin_edges_)) - 1
         return self
 
 
-class OrdinalBinaryDiscretizer(_BinBasedEncoder):
+class OrdinalBinaryEncoder(_BinBasedEncoder):
     def transform(self, X: np.ndarray) -> np.ndarray:
-        bin_indices = compute_bin_indices(X, self.bin_edges_)
-        return ordinal_binary_encoding(bin_indices, self.d_encoding_, X.dtype)
+        return compute_ordinal_binary_encoding(X, self.bin_edges_)
 
 
 class PiecewiseLinearEncoder(_BinBasedEncoder):
     def transform(self, X: np.ndarray) -> np.ndarray:
-        bin_indices = compute_bin_indices(X, self.bin_edges_)
-        bin_values = compute_piecewise_linear_bin_values(
-            X, bin_indices, self.bin_edges_
-        )
-        return piecewise_linear_encoding(bin_values, bin_indices, self.d_encoding_)
+        return compute_piecewise_linear_encoding(X, self.bin_edges_)
 
 
 def get_category_sizes(X: np.ndarray) -> List[int]:
