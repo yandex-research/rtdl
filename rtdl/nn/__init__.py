@@ -9,6 +9,7 @@ from ._embeddings import (  # noqa
     LinearEmbeddings,
     OneHotEncoder,
     PeriodicEmbeddings,
+    PiecewiseLinearEncoder,
 )
 from ._models import make_ft_transformer, make_ft_transformer_default  # noqa
 from ._utils import ReGLU  # noqa

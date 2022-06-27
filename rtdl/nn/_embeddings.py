@@ -1,10 +1,12 @@
 import math
-from typing import List
+from typing import List, Optional, Union
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
+
+from ..data import compute_piecewise_linear_encoding, piecewise_linear_encoding
 
 
 def _initialize_embeddings(weight: Tensor, d: int) -> None:
@@ -169,6 +171,33 @@ class LinearEmbeddings(nn.Module):
         if self.bias is not None:
             x = x + self.bias[None]
         return x
+
+
+class PiecewiseLinearEncoder(nn.Module):
+    bin_edges: Tensor
+    d_encoding: Union[int, List[int]]
+
+    def __init__(self, bin_edges: List[Tensor], optimize_shape: bool) -> None:
+        super().__init__()
+        self.register_buffer('bin_edges', torch.cat(bin_edges), False)
+        self.edge_counts = [len(x) for x in bin_edges]
+        self.optimize_shape = optimize_shape
+        self.d_encoding = (
+            [x - 1 for x in self.edge_counts]
+            if self.optimize_shape
+            else max(self.edge_counts) - 1
+        )
+
+    def forward(self, x: Tensor, indices: Optional[Tensor]) -> Tensor:
+        if indices is None:
+            # x represents raw values
+            bin_edges = self.bin_edges.split(self.edge_counts)
+            return compute_piecewise_linear_encoding(
+                x, bin_edges, optimize_shape=self.optimize_shape
+            )
+        else:
+            # x represents ratios
+            return piecewise_linear_encoding(x, indices, self.d_encoding)
 
 
 class PeriodicEmbeddings(nn.Module):
