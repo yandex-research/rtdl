@@ -5,9 +5,11 @@ from typing import List, Optional, Union
 
 import torch.nn as nn
 from torch import Tensor
+from typing_extensions import Literal, get_args
 
 from .._utils import INTERNAL_ERROR_MESSAGE, all_or_none
 from ._attention import MultiheadAttention
+from ._embeddings import CLSEmbedding
 from ._utils import ModuleType, ModuleType0, ReGLU, make_nn_module
 
 
@@ -360,6 +362,9 @@ def _is_reglu(module: ModuleType) -> bool:
     return isinstance(module, str) and module == 'ReGLU' or module is ReGLU
 
 
+Pooling = Literal['cls', 'avg', 'first-token']
+
+
 class Transformer(nn.Module):
     """Transformer with extra features.
 
@@ -387,11 +392,11 @@ class Transformer(nn.Module):
             ffn_residual_dropout: float,
             ffn_skip_connection: bool,
             prenormalization: bool,
-            cls_token_index: Optional[int],
+            pooling_index: Optional[int],
         ):
             super().__init__()
             self.prenormalization = prenormalization
-            self.cls_token_index = cls_token_index
+            self.pooling_index = pooling_index
 
             self.attention_normalization = make_nn_module(
                 attention_normalization, d_embedding
@@ -435,12 +440,16 @@ class Transformer(nn.Module):
 
                 # apply the module
                 if stage == 'attention':
-                    if self.cls_token_index is None:
+                    if self.pooling_index is None:
                         x_residual = self.attention(x_residual, x_residual)
                     else:
-                        cls_idx = slice(self.cls_token_index, self.cls_token_index + 1)
-                        x_residual = self.attention(x_residual[:, cls_idx], x_residual)
-                        x = x[:, cls_idx]
+                        pooling_slice = slice(
+                            self.pooling_index, self.pooling_index + 1
+                        )
+                        x_residual = self.attention(
+                            x_residual[:, pooling_slice], x_residual
+                        )
+                        x = x[:, pooling_slice]
                 else:
                     x_residual = self.ffn(x_residual)
 
@@ -496,9 +505,8 @@ class Transformer(nn.Module):
         prenormalization: bool,
         first_prenormalization: bool,
         # inference
-        pooling: Optional[str],
-        cls_token_index: Optional[int],
-        last_block_cls_only: bool,
+        pooling: Optional[Pooling],
+        last_block_pooling_token_only: bool,
         # head
         head_activation: Optional[ModuleType0],
         head_normalization: Optional[ModuleType],
@@ -510,17 +518,11 @@ class Transformer(nn.Module):
         super().__init__()
         if n_blocks < 1:
             raise ValueError('n_blocks must be positive')
-        if pooling == 'cls':
-            if cls_token_index is None:
-                raise ValueError(
-                    'if pooling == "cls", then cls_token_index must be provided'
-                )
-        else:
-            if last_block_cls_only:
-                raise ValueError(
-                    'if pooling != "cls", then last_block_cls_only must be False'
-                )
-        pooling_valid_values = ['cls', 'avg']
+        if pooling == 'avg' and last_block_pooling_token_only:
+            raise ValueError(
+                'if pooling == "avg", then last_block_pooling_token_only must be False'
+            )
+        pooling_valid_values = get_args(Pooling)
         if pooling not in pooling_valid_values:
             raise ValueError(f'pooling must be one of: {pooling_valid_values}')
         if not all_or_none([d_out, pooling, head_activation, head_normalization]):
@@ -556,6 +558,10 @@ class Transformer(nn.Module):
             )
             time.sleep(3)
 
+        self.pooling = pooling
+        self.pooling_index = None if pooling == 'avg' else 0
+        self.cls_embedding = CLSEmbedding(d_embedding) if pooling == 'cls' else None
+
         self.blocks = nn.Sequential(
             *[
                 Transformer.Block(
@@ -581,16 +587,15 @@ class Transformer(nn.Module):
                     ffn_residual_dropout=ffn_residual_dropout,
                     ffn_skip_connection=True,
                     prenormalization=prenormalization,
-                    cls_token_index=(
-                        cls_token_index
-                        if last_block_cls_only and block_idx == n_blocks - 1
+                    pooling_index=(
+                        self.pooling_index
+                        if last_block_pooling_token_only and block_idx == n_blocks - 1
                         else None
                     ),
                 )
                 for block_idx in range(n_blocks)
             ]
         )
-        self.pooling = pooling
         self.head = (
             None
             if d_out is None
@@ -616,9 +621,8 @@ class Transformer(nn.Module):
         ffn_dropout: float,
         activation: str,
         residual_dropout: float,
-        pooling: Optional[str],
-        cls_token_index: Optional[int],
-        last_block_cls_only: bool,
+        pooling: Optional[Pooling],
+        last_block_pooling_token_only: bool,
         linformer_compression_ratio: Optional[float] = None,
         linformer_sharing_policy: Optional[str] = None,
         n_tokens: Optional[int] = None,
@@ -640,9 +644,8 @@ class Transformer(nn.Module):
             prenormalization=True,
             first_prenormalization=False,
             pooling=pooling,
-            cls_token_index=cls_token_index,
-            last_block_cls_only=last_block_cls_only,
-            head_activation='ReLU' if _is_reglu(activation) else activation,
+            last_block_pooling_token_only=last_block_pooling_token_only,
+            head_activation='ReLU',
             head_normalization=normalization,
             linformer_compression_ratio=linformer_compression_ratio,
             linformer_sharing_policy=linformer_sharing_policy,
@@ -654,13 +657,13 @@ class Transformer(nn.Module):
             x.ndim == 3
         ), 'The input must have 3 dimensions: (n_objects, n_tokens, d_embedding)'
 
+        if self.cls_embedding is not None:
+            x = self.cls_embedding(x)
         x = self.blocks(x)
-        if self.pooling == 'cls':
-            # the last block is responsible for keeping only the cls token
-            assert x.shape[1] == 1, INTERNAL_ERROR_MESSAGE
-            x = x.squeeze(1)
-        elif self.pooling == 'avg':
+        if self.pooling == 'avg':
             x = x.mean(1)
+        elif self.pooling in ('cls', 'first-token'):
+            x = x[:, 0 if x.shape[1] == 1 else self.pooling_index]
         else:
             assert False, INTERNAL_ERROR_MESSAGE
         if self.head is not None:

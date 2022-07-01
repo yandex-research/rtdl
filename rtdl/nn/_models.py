@@ -20,7 +20,7 @@ import torch.optim
 from .._utils import INTERNAL_ERROR_MESSAGE
 from ..optim import get_parameter_groups
 from ._backbones import MLP, ResNet, Transformer
-from ._embeddings import CatEmbeddings, CLSEmbedding, LinearEmbeddings
+from ._embeddings import CatEmbeddings, LinearEmbeddings
 
 
 class _Lambda(nn.Module):
@@ -270,7 +270,7 @@ def make_ft_transformer(
     ffn_d_hidden: int,
     ffn_dropout: float,
     residual_dropout: float,
-    last_block_cls_only: bool = True,
+    last_block_pooling_token_only: bool = True,
     linformer_compression_ratio: Optional[float] = None,
     linformer_sharing_policy: Optional[str] = None,
 ) -> SimpleModel:
@@ -296,8 +296,7 @@ def make_ft_transformer(
         activation=_FT_TRANSFORMER_ACTIVATION,
         residual_dropout=residual_dropout,
         pooling='cls',
-        cls_token_index=0,
-        last_block_cls_only=last_block_cls_only,
+        last_block_pooling_token_only=last_block_pooling_token_only,
         linformer_compression_ratio=linformer_compression_ratio,
         linformer_sharing_policy=linformer_sharing_policy,
         n_tokens=(
@@ -308,7 +307,7 @@ def make_ft_transformer(
     )
     return make_simple_model(
         input_modules,  # type: ignore
-        nn.Sequential(CLSEmbedding(d_embedding), m_main),
+        m_main,
     )
 
 
@@ -318,7 +317,7 @@ def make_ft_transformer_default(
     cat_cardinalities: List[int],
     d_out: Optional[int],
     n_blocks: int = 3,
-    last_block_cls_only: bool = True,
+    last_block_pooling_token_only: bool = True,
     linformer_compression_ratio: Optional[float] = None,
     linformer_sharing_policy: Optional[str] = None,
 ) -> Tuple[SimpleModel, torch.optim.Optimizer]:
@@ -340,7 +339,7 @@ def make_ft_transformer_default(
         ffn_dropout=[0.0, 0.05, 0.1, 0.15, 0.2, 0.25][default_value_index],
         ffn_d_hidden=int(d_embedding * ffn_d_hidden_factor),
         residual_dropout=0.0,
-        last_block_cls_only=last_block_cls_only,
+        last_block_pooling_token_only=last_block_pooling_token_only,
         linformer_compression_ratio=linformer_compression_ratio,
         linformer_sharing_policy=linformer_sharing_policy,
     )
