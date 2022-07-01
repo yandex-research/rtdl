@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
+from torch.nn.parameter import Parameter
 
 from .._utils import INTERNAL_ERROR_MESSAGE
 from ..data import compute_piecewise_linear_encoding, piecewise_linear_encoding
@@ -49,7 +50,7 @@ class CLSEmbedding(nn.Module):
             d_embedding: the size of the embedding
         """
         super().__init__()
-        self.weight = nn.Parameter(Tensor(d_embedding))
+        self.weight = Parameter(Tensor(d_embedding))
         self.reset_parameters()
 
     def reset_parameters(self) -> None:
@@ -133,9 +134,7 @@ class CatEmbeddings(nn.Module):
         category_offsets = torch.tensor([0] + cardinalities[:-1]).cumsum(0)
         self.register_buffer('category_offsets', category_offsets)
         self.embeddings = nn.Embedding(sum(cardinalities), d_embedding)
-        self.bias = (
-            nn.Parameter(Tensor(len(cardinalities), d_embedding)) if bias else None
-        )
+        self.bias = Parameter(Tensor(len(cardinalities), d_embedding)) if bias else None
         self.reset_parameters()
 
     def reset_parameters(self) -> None:
@@ -156,8 +155,8 @@ class LinearEmbeddings(nn.Module):
     """Linear embeddings for numerical features."""
 
     def __init__(self, n_features: int, d_embedding: int, bias: bool = True):
-        self.weight = nn.Parameter(Tensor(n_features, d_embedding))
-        self.bias = nn.Parameter(Tensor(n_features, d_embedding)) if bias else None
+        self.weight = Parameter(Tensor(n_features, d_embedding))
+        self.bias = Parameter(Tensor(n_features, d_embedding)) if bias else None
         self.reset_parameters()
 
     def reset_parameters(self) -> None:
@@ -207,7 +206,7 @@ class PeriodicEmbeddings(nn.Module):
         if d_embedding % 2:
             raise ValueError('d_embedding must be even')
         self.sigma = sigma
-        self.coefficients = nn.Parameter(Tensor(n_features, d_embedding // 2))
+        self.coefficients = Parameter(Tensor(n_features, d_embedding // 2))
         self.reset_parameters()
 
     def reset_parameters(self):
@@ -223,8 +222,8 @@ class PeriodicEmbeddings(nn.Module):
 class ELinear(nn.Module):
     def __init__(self, d_in: int, d_out: int, n_tokens: int, bias: bool = True) -> None:
         super().__init__()
-        self.weight = nn.Parameter(Tensor(n_tokens, d_in, d_out))
-        self.bias = nn.Parameter(Tensor(n_tokens, d_out)) if bias else None
+        self.weight = Parameter(Tensor(n_tokens, d_in, d_out))
+        self.bias = Parameter(Tensor(n_tokens, d_out)) if bias else None
         self.reset_parameters()
 
     def reset_parameters(self):

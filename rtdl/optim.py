@@ -1,6 +1,7 @@
 from typing import Any, Dict, List
 
 import torch.nn as nn
+from torch.nn.parameter import Parameter
 
 from ._utils import INTERNAL_ERROR_MESSAGE
 from .nn import CatEmbeddings, CLSEmbedding, LinearEmbeddings, PeriodicEmbeddings
@@ -10,7 +11,7 @@ def default_no_weight_decay_condition(
     module_name: str,
     module: nn.Module,
     parameter_name: str,
-    parameter: nn.Parameter,
+    parameter: Parameter,
 ) -> bool:
     del module_name, parameter
     return (
