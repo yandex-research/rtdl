@@ -1,5 +1,5 @@
 import math
-from typing import List, Optional, Union
+from typing import List, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
@@ -122,7 +122,7 @@ class OneHotEncoder(nn.Module):
 class CatEmbeddings(nn.Module):
     """Embeddings for categorical features."""
 
-    category_offsets: Tensor
+    offsets: Tensor
 
     def __init__(self, cardinalities: List[int], d_embedding: int, bias: bool) -> None:
         super().__init__()
@@ -131,8 +131,8 @@ class CatEmbeddings(nn.Module):
         if d_embedding < 1:
             raise ValueError('d_embedding must be positive')
 
-        category_offsets = torch.tensor([0] + cardinalities[:-1]).cumsum(0)
-        self.register_buffer('category_offsets', category_offsets)
+        offsets = torch.tensor([0] + cardinalities[:-1]).cumsum(0)
+        self.register_buffer('offsets', offsets)
         self.embeddings = nn.Embedding(sum(cardinalities), d_embedding)
         self.bias = Parameter(Tensor(len(cardinalities), d_embedding)) if bias else None
         self.reset_parameters()
@@ -142,10 +142,37 @@ class CatEmbeddings(nn.Module):
             if parameter is not None:
                 _initialize_embeddings(parameter, parameter.shape[-1])
 
+    def get_weights(self, feature_idx: int) -> Tuple[Tensor, Optional[Tensor]]:
+        if feature_idx < 0:
+            raise ValueError('feature_idx must be positive')
+        if feature_idx >= len(self.offsets):
+            raise ValueError(
+                f'feature_idx must be in the range(0, {len(self.offsets)}).'
+                f' The provided value is {feature_idx}.'
+            )
+        slice_ = slice(
+            self.offsets[feature_idx],
+            (
+                self.offsets[feature_idx + 1]
+                if feature_idx + 1 < len(self.offsets)
+                else None
+            ),
+        )
+        return (
+            self.embeddings.weight[slice_],
+            None if self.bias is None else self.bias[feature_idx],
+        )
+
+    def get_embeddings(self, feature_idx: int) -> Tensor:
+        A, b = self.get_weights(feature_idx)
+        if b is not None:
+            A = A + b[None]
+        return A
+
     def forward(self, x: Tensor) -> Tensor:
         if x.ndim != 2:
             raise ValueError('The input must have two dimensions')
-        x = self.embeddings(x + self.category_offsets[None])
+        x = self.embeddings(x + self.offsets[None])
         if self.bias is not None:
             x = x + self.bias[None]
         return x
