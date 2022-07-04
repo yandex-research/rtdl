@@ -284,7 +284,9 @@ def make_ft_transformer(
     if n_num_features:
         input_modules['x_num'] = LinearEmbeddings(n_num_features, d_embedding)
     if cat_cardinalities:
-        input_modules['x_cat'] = CatEmbeddings(cat_cardinalities, d_embedding, True)
+        input_modules['x_cat'] = CatEmbeddings(
+            cat_cardinalities, d_embedding, stack=True, bias=True
+        )
     m_main = Transformer.make_baseline(
         d_embedding=d_embedding,
         d_out=d_out,

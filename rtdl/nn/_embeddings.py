@@ -1,5 +1,7 @@
+import collections.abc
+import itertools
 import math
-from typing import List, Optional, Tuple, Union
+from typing import List, Optional, Tuple, Union, cast
 
 import torch
 import torch.nn as nn
@@ -120,62 +122,73 @@ class OneHotEncoder(nn.Module):
 
 
 class CatEmbeddings(nn.Module):
-    """Embeddings for categorical features."""
+    def __init__(
+        self,
+        _cardinalities_and_maybe_dimensions: Union[List[int], List[Tuple[int, int]]],
+        d_embedding: Optional[int] = None,
+        *,
+        stack: bool = False,
+        bias: bool = False,
+    ) -> None:
+        spec = _cardinalities_and_maybe_dimensions
+        if not spec:
+            raise ValueError('The first argument must be non-empty')
+        if (d_embedding is None) ^ isinstance(spec[0], int):
+            raise ValueError(
+                'Invalid arguments. Valid combinations are:'
+                ' (1) spec is a list of tuples (cardinality, d_embedding) AND d_embedding is None'
+                ' (2) spec is a list of cardinalities AND d_embedding is an integer'
+            )
+        if stack and d_embedding is None:
+            raise ValueError('stack can be True only when d_embedding is not None')
 
-    offsets: Tensor
-
-    def __init__(self, cardinalities: List[int], d_embedding: int, bias: bool) -> None:
-        super().__init__()
-        if not cardinalities:
-            raise ValueError('cardinalities must be non-empty')
-        if d_embedding < 1:
-            raise ValueError('d_embedding must be positive')
-
-        offsets = torch.tensor([0] + cardinalities[:-1]).cumsum(0)
-        self.register_buffer('offsets', offsets)
-        self.embeddings = nn.Embedding(sum(cardinalities), d_embedding)
-        self.bias = Parameter(Tensor(len(cardinalities), d_embedding)) if bias else None
+        spec_ = cast(
+            List[Tuple[int, int]],
+            spec if d_embedding is None else [(x, d_embedding) for x in spec],
+        )
+        self._embeddings = nn.ModuleList()
+        for cardinality, d_embedding in spec_:
+            self._embeddings.append(nn.Embedding(cardinality, d_embedding))
+        self._biases = (
+            nn.ParameterList(Parameter(Tensor(d)) for _, d in spec_) if bias else None
+        )
+        self.stack = stack
         self.reset_parameters()
 
     def reset_parameters(self) -> None:
-        for parameter in [self.embeddings.weight, self.bias]:
-            if parameter is not None:
-                _initialize_embeddings(parameter, parameter.shape[-1])
-
-    def get_weights(self, feature_idx: int) -> Tuple[Tensor, Optional[Tensor]]:
-        if feature_idx < 0:
-            raise ValueError('feature_idx must be positive')
-        if feature_idx >= len(self.offsets):
-            raise ValueError(
-                f'feature_idx must be in the range(0, {len(self.offsets)}).'
-                f' The provided value is {feature_idx}.'
-            )
-        slice_ = slice(
-            self.offsets[feature_idx],
-            (
-                self.offsets[feature_idx + 1]
-                if feature_idx + 1 < len(self.offsets)
-                else None
-            ),
-        )
-        return (
-            self.embeddings.weight[slice_],
-            None if self.bias is None else self.bias[feature_idx],
-        )
+        for module in self._embeddings:
+            _initialize_embeddings(module.weight, module.weight.shape[-1])
+        if self._biases is not None:
+            for x in self._biases:
+                _initialize_embeddings(x, x.shape[-1])
 
     def get_embeddings(self, feature_idx: int) -> Tensor:
-        A, b = self.get_weights(feature_idx)
-        if b is not None:
-            A = A + b[None]
-        return A
+        if feature_idx < 0 or feature_idx >= len(self._embeddings):
+            raise ValueError(
+                f'feature_idx must be in the range(0, {len(self._embeddings)}).'
+                f' The provided value is {feature_idx}.'
+            )
+        x = self._embeddings[feature_idx].weight
+        if self._biases is not None:
+            x = x + self._biases[feature_idx][None]
+        return x
 
     def forward(self, x: Tensor) -> Tensor:
         if x.ndim != 2:
-            raise ValueError('The input must have two dimensions')
-        x = self.embeddings(x + self.offsets[None])
-        if self.bias is not None:
-            x = x + self.bias[None]
-        return x
+            raise ValueError('x must have two dimensions')
+        if x.shape[1] != len(self._embeddings):
+            raise ValueError(
+                f'x has {x.shape[1]} columns, but it must have {len(self._embeddings)} columns.'
+            )
+        out = []
+        biases = itertools.repeat(None) if self._biases is None else self._biases
+        assert isinstance(biases, collections.abc.Iterable)  # hint for mypy
+        for module, bias, column in zip(self._embeddings, biases, x.T):
+            x = module(column)
+            if bias is not None:
+                x = x + bias[None]
+            out.append(x)
+        return torch.stack(out, 1) if self.stack else torch.cat(out, 1)
 
 
 class LinearEmbeddings(nn.Module):
