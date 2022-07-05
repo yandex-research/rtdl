@@ -67,6 +67,19 @@ def compute_quantile_bin_edges(X, n_bins: int):
     return edges if is_torch else [x.numpy() for x in edges]
 
 
+@overload
+def compute_decision_tree_bin_edges(
+    X: Tensor,
+    n_bins: int,
+    *,
+    y: Tensor,
+    regression: bool,
+    tree_kwargs: Dict[str, Any],
+) -> List[Tensor]:
+    ...
+
+
+@overload
 def compute_decision_tree_bin_edges(
     X: np.ndarray,
     n_bins: int,
@@ -75,6 +88,35 @@ def compute_decision_tree_bin_edges(
     regression: bool,
     tree_kwargs: Dict[str, Any],
 ) -> List[np.ndarray]:
+    ...
+
+
+def compute_decision_tree_bin_edges(
+    X,
+    n_bins: int,
+    *,
+    y,
+    regression: bool,
+    tree_kwargs: Dict[str, Any],
+):
+    # The implementation relies on scikit-learn, so all the computations are performed
+    # in terms of numpy arrays.
+    if isinstance(X, Tensor):
+        is_torch = True
+        X_device = X.device
+        if X_device.type != 'cpu':
+            warnings.warn(
+                'One of the input tensors is not located on CPU.'
+                ' This will cause data movements between devices.'
+            )
+        X = X.cpu().numpy()
+        y = y.cpu().numpy()
+    else:
+        is_torch = False
+        X_device = None
+    X = cast(np.ndarray, X)
+    y = cast(np.ndarray, y)
+
     if X.ndim != 2:
         raise ValueError('X must have two dimensions')
     if len(X) != len(y):
@@ -103,7 +145,7 @@ def compute_decision_tree_bin_edges(
         tree_thresholds.append(column.min())
         tree_thresholds.append(column.max())
         edges.append(np.array(sorted(set(tree_thresholds))))
-    return edges
+    return [as_tensor(x, device=X_device) for x in edges] if is_torch else edges
 
 
 @overload
