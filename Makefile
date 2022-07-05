@@ -40,7 +40,7 @@ lint:
 	flake8 rtdl
 
 # the order is important: clean must be first, docs must precede dtest
-pre-commit: clean lint test docs dtest spelling typecheck
+pre-commit: clean lint typecheck test docs dtest spelling
 
 test:
 	PYTHONPATH='.' $(PYTEST_CMD) $(ARGV)
