@@ -24,12 +24,13 @@ from typing_extensions import Literal
 Number = TypeVar('Number', int, float)
 
 
-def _adjust_bin_counts(X: np.ndarray, n_bins: int) -> List[int]:
+def _adjust_bin_counts(X: Union[Tensor, np.ndarray], n_bins: int) -> List[int]:
     if n_bins < 2:
         raise ValueError('n_bins must be greater than 1')
+    unique_fn = torch.unique if isinstance(X, Tensor) else np.unique
     adjusted_bin_counts = []
     for i, column in enumerate(X.T):
-        n_unique = len(np.unique(column))
+        n_unique = len(unique_fn(column))
         if n_unique < 2:
             raise ValueError(f'All elements in the column {i} are the same')
         if n_unique < n_bins:
@@ -41,16 +42,29 @@ def _adjust_bin_counts(X: np.ndarray, n_bins: int) -> List[int]:
     return adjusted_bin_counts
 
 
+@overload
+def compute_quantile_bin_edges(X: Tensor, n_bins: int) -> List[Tensor]:
+    ...
+
+
+@overload
 def compute_quantile_bin_edges(X: np.ndarray, n_bins: int) -> List[np.ndarray]:
+    ...
+
+
+def compute_quantile_bin_edges(X, n_bins: int):
+    is_torch = isinstance(X, Tensor)
+    X = as_tensor(X)
+
     if X.ndim != 2:
         raise ValueError('X must have two dimensions')
     adjusted_bin_counts = _adjust_bin_counts(X, n_bins)
     edges = []
     for column, adjusted_n_bins in zip(X.T, adjusted_bin_counts):
         # quantiles include 0.0 and 1.0
-        quantiles = np.linspace(0.0, 1.0, adjusted_n_bins + 1)
-        edges.append(np.unique(np.quantile(column, quantiles)))
-    return edges
+        quantiles = torch.linspace(0.0, 1.0, adjusted_n_bins + 1)
+        edges.append(torch.sort(torch.unique(torch.quantile(column, quantiles))).values)
+    return edges if is_torch else [x.numpy() for x in edges]
 
 
 def compute_decision_tree_bin_edges(
