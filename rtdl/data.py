@@ -242,6 +242,8 @@ def _LVR_encoding(
     d_encoding: Union[int, List[int]],
     left: Number,
     right: Number,
+    *,
+    stack: bool,
 ) -> Tensor:
     ...
 
@@ -253,12 +255,20 @@ def _LVR_encoding(
     d_encoding: Union[int, List[int]],
     left: Number,
     right: Number,
+    *,
+    stack: bool,
 ) -> np.ndarray:
     ...
 
 
 def _LVR_encoding(
-    values, indices, d_encoding: Union[int, List[int]], left: Number, right: Number
+    values,
+    indices,
+    d_encoding: Union[int, List[int]],
+    left: Number,
+    right: Number,
+    *,
+    stack: bool,
 ):
     """Left-Value-Right encoding
 
@@ -280,12 +290,12 @@ def _LVR_encoding(
     if values.shape != indices.shape:
         raise ValueError('values and indices must be of the same shape')
 
+    if stack and not isinstance(d_encoding, int):
+        raise ValueError('stack can be True only if d_encoding is an integer')
     if isinstance(d_encoding, int):
-        output_ndim = 2
         if (indices >= d_encoding).any():
             raise ValueError('All indices must be less than d_encoding')
     else:
-        output_ndim = 3
         if values.shape[1] != len(d_encoding):
             raise ValueError(
                 'If d_encoding is a list, then its size must be equal to `values.shape[1]`'
@@ -336,26 +346,40 @@ def _LVR_encoding(
         )
         feature_indices = torch.arange(n_features, device=device).repeat(n_objects)
         encoding[object_indices, feature_indices, indices.flatten()] = values.flatten()
-        if output_ndim == 2:
+        if not stack:
             encoding = encoding.reshape(n_objects, -1)
     return encoding if is_torch else encoding.numpy()
 
 
 @overload
 def piecewise_linear_encoding(
-    ratios: Tensor, indices: Tensor, d_encoding: Union[int, List[int]]
+    ratios: Tensor,
+    indices: Tensor,
+    d_encoding: Union[int, List[int]],
+    *,
+    stack: bool = False,
 ) -> Tensor:
     ...
 
 
 @overload
 def piecewise_linear_encoding(
-    ratios: np.ndarray, indices: np.ndarray, d_encoding: Union[int, List[int]]
+    ratios: np.ndarray,
+    indices: np.ndarray,
+    d_encoding: Union[int, List[int]],
+    *,
+    stack: bool = False,
 ) -> np.ndarray:
     ...
 
 
-def piecewise_linear_encoding(ratios, indices, d_encoding: Union[int, List[int]]):
+def piecewise_linear_encoding(
+    ratios,
+    indices,
+    d_encoding: Union[int, List[int]],
+    *,
+    stack: bool = False,
+):
     is_torch = isinstance(ratios, Tensor)
     ratios = torch.as_tensor(ratios)
     indices = torch.as_tensor(indices)
@@ -393,31 +417,32 @@ def piecewise_linear_encoding(ratios, indices, d_encoding: Union[int, List[int]]
         raise ValueError(message)
     del upper_bounds
 
-    encoding = _LVR_encoding(ratios, indices, d_encoding, 1.0, 0.0)
+    encoding = _LVR_encoding(ratios, indices, d_encoding, 1.0, 0.0, stack=stack)
     return encoding if is_torch else encoding.numpy()
 
 
 @overload
 def compute_piecewise_linear_encoding(
-    X: Tensor, bin_edges: List[Tensor], *, optimize_shape: bool
+    X: Tensor, bin_edges: List[Tensor], *, stack: bool
 ) -> Tensor:
     ...
 
 
 @overload
 def compute_piecewise_linear_encoding(
-    X: np.ndarray, bin_edges: List[np.ndarray], *, optimize_shape: bool
+    X: np.ndarray, bin_edges: List[np.ndarray], *, stack: bool
 ) -> np.ndarray:
     ...
 
 
-def compute_piecewise_linear_encoding(X, bin_edges, *, optimize_shape: bool):
+def compute_piecewise_linear_encoding(X, bin_edges, *, stack: bool):
     bin_indices = compute_bin_indices(X, bin_edges)
     bin_ratios = compute_bin_linear_ratios(X, bin_indices, bin_edges)
     bin_counts = [len(x) - 1 for x in bin_edges]
-    max_n_bins = max(bin_counts)
     return piecewise_linear_encoding(
-        bin_ratios, bin_indices, d_encoding=bin_counts if optimize_shape else max_n_bins
+        bin_ratios,
+        bin_indices,
+        d_encoding=max(bin_counts) if stack else bin_counts,
     )
 
 
@@ -429,11 +454,12 @@ class PiecewiseLinearEncoder(BaseEstimator, TransformerMixin):
             Callable[..., List[np.ndarray]],
         ],
         bin_edges_params: Optional[Dict[str, Any]],
-        optimize_shape: bool,
+        *,
+        stack: bool,
     ) -> None:
         self.bin_edges = bin_edges
         self.bin_edges_params = bin_edges_params
-        self.optimize_shape = optimize_shape
+        self.stack = stack
 
     def fit(
         self, X: np.ndarray, y: Optional[np.ndarray] = None
@@ -459,9 +485,7 @@ class PiecewiseLinearEncoder(BaseEstimator, TransformerMixin):
         return self
 
     def transform(self, X: np.ndarray) -> np.ndarray:
-        return compute_piecewise_linear_encoding(
-            X, self.bin_edges_, optimize_shape=self.optimize_shape
-        )
+        return compute_piecewise_linear_encoding(X, self.bin_edges_, stack=self.stack)
 
 
 def get_category_sizes(X: np.ndarray) -> List[int]:

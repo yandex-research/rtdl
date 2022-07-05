@@ -217,24 +217,22 @@ class PiecewiseLinearEncoder(nn.Module):
     bin_edges: Tensor
     d_encoding: Union[int, List[int]]
 
-    def __init__(self, bin_edges: List[Tensor], optimize_shape: bool) -> None:
+    def __init__(self, bin_edges: List[Tensor], *, stack: bool) -> None:
         super().__init__()
         self.register_buffer('bin_edges', torch.cat(bin_edges), False)
         self.edge_counts = [len(x) for x in bin_edges]
-        self.optimize_shape = optimize_shape
+        self.stack = stack
         self.d_encoding = (
-            [x - 1 for x in self.edge_counts]
-            if self.optimize_shape
-            else max(self.edge_counts) - 1
+            max(self.edge_counts) - 1
+            if self.stack
+            else [x - 1 for x in self.edge_counts]
         )
 
     def forward(self, x: Tensor, indices: Optional[Tensor]) -> Tensor:
         if indices is None:
             # x represents raw values
             bin_edges = self.bin_edges.split(self.edge_counts)
-            return compute_piecewise_linear_encoding(
-                x, bin_edges, optimize_shape=self.optimize_shape
-            )
+            return compute_piecewise_linear_encoding(x, bin_edges, stack=self.stack)
         else:
             # x represents ratios
             return piecewise_linear_encoding(x, indices, self.d_encoding)
@@ -295,7 +293,7 @@ def make_lr_embeddings(n_features: int, d_embedding: int) -> nn.Module:
 
 def make_ple_lr_embeddings(bin_edges: List[Tensor], d_embedding: int) -> nn.Module:
     n_features = len(bin_edges)
-    embeddings = PiecewiseLinearEncoder(bin_edges, False)
+    embeddings = PiecewiseLinearEncoder(bin_edges, stack=True)
     assert isinstance(embeddings.d_encoding, int), INTERNAL_ERROR_MESSAGE
     return nn.Sequential(
         embeddings,
