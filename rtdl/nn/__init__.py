@@ -19,4 +19,3 @@ from ._models import (  # noqa
     make_ft_transformer_default,
     make_simple_model,
 )
-from ._utils import ReGLU  # noqa

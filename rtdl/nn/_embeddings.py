@@ -285,6 +285,42 @@ class ELinear(nn.Module):
 
 
 def make_lr_embeddings(n_features: int, d_embedding: int) -> nn.Module:
+    """The LR embeddings for numerical features from [1].
+
+    This embedding module is easy to use, and it usually provides performance gain over
+    the embeddings-free approach (given the same backbone architecture). Depending on a
+    task, however, one may try to achieve better performance with more advanced modules.
+
+    This embedding consists of two parts:
+
+    * (L) Linear embeddings (via `LinearEmbeddings`)
+    * (R) ReLU activation
+
+    In [1], the following models used these embeddings: MLP-LR, ResNet-LR, Transformer-LR.
+
+    Args:
+        n_features: the number of features
+        d_embedding: the embedding size
+    Returns:
+        embeddings: the embedding module
+
+    See also:
+        `make_ple_lr_embeddings`
+        `make_plr_embeddings`
+
+    References:
+        * [1] Yury Gorishniy, Ivan Rubachev, Artem Babenko, "On Embeddings for Numerical Features in Tabular Deep Learning", 2022
+
+    Examples:
+        .. testcode::
+
+            batch_size = 2
+            n_features = 3
+            d_embedding = 4
+            x = torch.randn(batch_size, n_features)
+            m = make_lr_embeddings(n_features, d_embedding)
+            assert m(x).shape == (batch_size, n_features, d_embedding)
+    """
     return nn.Sequential(
         LinearEmbeddings(n_features, d_embedding),
         nn.ReLU(),
