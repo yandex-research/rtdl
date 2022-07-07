@@ -109,6 +109,7 @@ class OneHotEncoder(nn.Module):
     cardinalities: Tensor
 
     def __init__(self, cardinalities: List[int]) -> None:
+        super().__init__()
         self.register_buffer('cardinalities', torch.tensor(cardinalities))
 
     def forward(self, x: Tensor) -> Tensor:
@@ -142,6 +143,7 @@ class CatEmbeddings(nn.Module):
         if stack and d_embedding is None:
             raise ValueError('stack can be True only when d_embedding is not None')
 
+        super().__init__()
         spec_ = cast(
             List[Tuple[int, int]],
             spec if d_embedding is None else [(x, d_embedding) for x in spec],
@@ -195,6 +197,7 @@ class LinearEmbeddings(nn.Module):
     """Linear embeddings for numerical features."""
 
     def __init__(self, n_features: int, d_embedding: int, bias: bool = True):
+        super().__init__()
         self.weight = Parameter(Tensor(n_features, d_embedding))
         self.bias = Parameter(Tensor(n_features, d_embedding)) if bias else None
         self.reset_parameters()
@@ -245,6 +248,8 @@ class PeriodicEmbeddings(nn.Module):
     def __init__(self, n_features: int, d_embedding: int, sigma: float) -> None:
         if d_embedding % 2:
             raise ValueError('d_embedding must be even')
+
+        super().__init__()
         self.sigma = sigma
         self.coefficients = Parameter(Tensor(n_features, d_embedding // 2))
         self.reset_parameters()
