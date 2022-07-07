@@ -25,6 +25,7 @@ from ._embeddings import CatEmbeddings, LinearEmbeddings
 
 class _Lambda(nn.Module):
     def __init__(self, fn: Callable):
+        super().__init__()
         self.fn = fn
 
     def forward(self, *args, **kwargs):
@@ -51,6 +52,7 @@ class SimpleModel(nn.Module, Generic[MainModule]):
         # let's check this important condition again
         assert main_input_ndim in (2, 3), INTERNAL_ERROR_MESSAGE
 
+        super().__init__()
         input_modules = {}
         input_args: Dict[str, Union[Tuple[str, ...], List[Tuple[str, ...]]]] = {}
         for name, spec in input.items():
