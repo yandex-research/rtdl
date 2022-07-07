@@ -53,6 +53,44 @@ def compute_quantile_bin_edges(X: np.ndarray, n_bins: int) -> List[np.ndarray]:
 
 
 def compute_quantile_bin_edges(X, n_bins: int):
+    """Compute bin edges using decision trees as described in [1].
+
+    The output of this function can be passed as input to:
+
+        * `compute_bin_indices`
+        * `compute_bin_linear_ratios`
+        * `compute_piecewise_linear_encoding`
+        * `PiecewiseLinearEncoder`
+        * `rtdl.nn.PiecewiseLinearEncoder`
+
+    For each column, the bin edges are computed as ``n_bins + 1`` quantiles (including 0.0 and 1.0).
+
+    Args:
+        X: the feature matrix. Shape: ``(n_objects, n_features)``.
+        n_bins: the number of bins to compute
+    Returns:
+        bin edges: a list of size ``n_features``;
+            the i-th entry contains the bin edges for i-th feature. The edges are returned
+            in sorted order with duplicates removed (i.e. for a feature with less then
+            ``n_bins`` unique values, the number of edges will be less than ``n_bins + 1``).
+    Raises:
+        ValueError: for invalid inputs
+
+    References:
+        * [1] Yury Gorishniy, Ivan Rubachev, Artem Babenko, "On Embeddings for Numerical Features in Tabular Deep Learning", 2022
+
+    Examples:
+        .. testcode::
+
+            n_objects = 100
+            n_features = 4
+            X = torch.randn(n_objects, n_features)
+            n_bins = 3
+            bin_edges = compute_quantile_bin_edges(X, n_bins)
+            assert len(bin_edges) == n_features
+            for x in bin_edges:
+                assert len(x) == n_bins + 1
+    """
     is_torch = isinstance(X, Tensor)
     X = as_tensor(X)
 
@@ -99,6 +137,64 @@ def compute_decision_tree_bin_edges(
     regression: bool,
     tree_kwargs: Dict[str, Any],
 ):
+    """Compute bin edges using decision trees as described in [1].
+
+    The output of this function can be passed as input to:
+
+        * `compute_bin_indices`
+        * `compute_bin_linear_ratios`
+        * `compute_piecewise_linear_encoding`
+        * `PiecewiseLinearEncoder`
+        * `rtdl.nn.PiecewiseLinearEncoder`
+
+    For each column, a decision tree is built, which uses for growing only this one
+    feature and the provided target. The regions corresponding to the leaves form
+    the bin edges (see the illustration below). Additionally, the leftmost and the
+    rightmost bin edges are computed as the minimum and maximum values, respectively.
+
+    .. image:: ../images/decision_tree_bins.png
+        :scale: 25%
+        :alt: obtaining bins from decision trees
+
+    Warning:
+        This function performs the computations in terms of numpy arrays. For
+        PyTorch-based inputs located on non-CPU devices, data transfer happens.
+
+    Args:
+        X: the feature matrix. Shape: ``(n_objects, n_features)``.
+        n_bins: the number of bins to compute
+        y: the classification or regression target for building the decision trees
+        regression: if True, `sklearn.tree.DecisionTreeRegressor` is used for building trees.
+            otherwise, `sklearn.tree.DecisionTreeClassifier` is used.
+        tree_kwargs: keyword arguments for the corresponding Scikit-learn decision tree class.
+            It must not contain "max_leaf_nodes", since this parameter is set to be ``n_bins``.
+    Returns:
+        bin edges: a list of size ``n_features``;
+            the i-th entry contains the bin edges for i-th feature. The edges are returned
+            in sorted order with duplicates removed (i.e. for a feature with less then
+            ``n_bins`` unique values, the number of edges will be less than ``n_bins + 1``).
+    Raises:
+        ValueError: for invalid inputs
+
+    References:
+        * [1] Yury Gorishniy, Ivan Rubachev, Artem Babenko, "On Embeddings for Numerical Features in Tabular Deep Learning", 2022
+
+    Examples:
+        .. testcode::
+
+            n_objects = 100
+            n_features = 4
+            X = torch.randn(n_objects, n_features)
+            y = torch.randn(n_objects)
+            n_bins = 3
+            bin_edges = compute_decision_tree_bin_edges(
+                X, n_bins, y=y, regression=True, tree_kwargs={'min_samples_leaf': 16}
+            )
+            assert len(bin_edges) == n_features
+            for x in bin_edges:
+                assert len(x) == n_bins + 1
+
+    """
     # The implementation relies on scikit-learn, so all the computations are performed
     # in terms of numpy arrays.
     if isinstance(X, Tensor):
@@ -159,6 +255,36 @@ def compute_bin_indices(X: np.ndarray, bin_edges: List[np.ndarray]) -> np.ndarra
 
 
 def compute_bin_indices(X, bin_edges):
+    """Compute bin indices for the given feature values.
+
+    The output of this function can be passed as input to:
+
+        * `compute_bin_linear_ratios`
+        * `piecewise_linear_encoding`
+        * `rtdl.nn.PiecewiseLinearEncoder` (to the forward method)
+
+    For ``X[i][j]``, compute the index ``k`` of the bin in ``bin_edges[j]`` such that
+    ``bin_edges[j][k] <= X[i][j] < bin_edges[j][k + 1]``. If the value is less than the
+    leftmost bin edge, ``0`` is returned. If the value is greater or equal than the rightmost
+    bin edge, ``len(bin_edges[j]) - 1`` is returned.
+
+    Args:
+        X: the feature matrix. Shape: ``(n_objects, n_features)``.
+        bin_edges: the bin edges for each features. Can be obtained from
+            `compute_quantile_bin_edges` or `compute_decision_tree_bin_edges`.
+    Return:
+        bin indices: Shape: ``(n_objects, n_features)``.
+
+    Examples:
+        .. testcode::
+
+            n_objects = 100
+            n_features = 4
+            X = torch.randn(n_objects, n_features)
+            n_bins = 3
+            bin_edges = compute_quantile_bin_edges(X, n_bins)
+            bin_indices = compute_bin_indices(X, bin_edges)
+    """
     is_torch = isinstance(X, Tensor)
     X = as_tensor(X)
     bin_edges = [as_tensor(x) for x in bin_edges]
@@ -185,28 +311,59 @@ def compute_bin_indices(X, bin_edges):
 
 @overload
 def compute_bin_linear_ratios(
-    X: np.ndarray, indices: np.ndarray, bin_edges: List[np.ndarray]
+    X: np.ndarray, bin_indices: np.ndarray, bin_edges: List[np.ndarray]
 ) -> np.ndarray:
     ...
 
 
 @overload
 def compute_bin_linear_ratios(
-    X: Tensor, indices: Tensor, bin_edges: List[Tensor]
+    X: Tensor, bin_indices: Tensor, bin_edges: List[Tensor]
 ) -> Tensor:
     ...
 
 
-def compute_bin_linear_ratios(X, indices, bin_edges):
+def compute_bin_linear_ratios(X, bin_indices, bin_edges):
+    """Compute the ratios for piecewise linear encoding as described in [1].
+
+    The output of this function can be passed as input to:
+
+        * `piecewise_linear_encoding`
+        * `rtdl.nn.PiecewiseLinearEncoder` (to the forward method)
+
+    For details, see the section "Piecewise linear encoding" in [1].
+
+    Args:
+        X: the feature matrix. Shape: ``(n_objects, n_features)``.
+        bin_edges: the bin edges for each features. Size: ``n_features``. Can be obtained from
+            `compute_quantile_bin_edges` or `compute_decision_tree_bin_edges`.
+        bin_indices: the bin indices (can be computed via `compute_bin_indices`)
+    Return:
+        ratios
+
+    References:
+        * [1] Yury Gorishniy, Ivan Rubachev, Artem Babenko, "On Embeddings for Numerical Features in Tabular Deep Learning", 2022
+
+    Examples:
+        .. testcode::
+
+            n_objects = 100
+            n_features = 4
+            X = torch.randn(n_objects, n_features)
+            n_bins = 3
+            bin_edges = compute_quantile_bin_edges(X, n_bins)
+            bin_indices = compute_bin_indices(X, bin_edges)
+            bin_ratios = compute_bin_linear_ratios(X, bin_indices, bin_edges)
+    """
     is_torch = isinstance(X, Tensor)
     X = as_tensor(X)
-    indices = as_tensor(indices)
+    bin_indices = as_tensor(bin_indices)
     bin_edges = [as_tensor(x) for x in bin_edges]
 
     if X.ndim != 2:
         raise ValueError('X must have two dimensions')
-    if X.shape != indices.shape:
-        raise ValueError('X and indices must be of the same shape')
+    if X.shape != bin_indices.shape:
+        raise ValueError('X and bin_indices must be of the same shape')
     if X.shape[1] != len(bin_edges):
         raise ValueError(
             'The number of columns in X must be equal to the number of items in bin_edges'
@@ -216,7 +373,7 @@ def compute_bin_linear_ratios(X, indices, bin_edges):
     values_list = []
     # "c_" ~ "column_"
     for c_i, (c_values, c_indices, c_bin_edges) in enumerate(
-        zip(X.T, indices.T, bin_edges)
+        zip(X.T, bin_indices.T, bin_edges)
     ):
         if (c_indices + 1 >= len(c_bin_edges)).any():
             raise ValueError(
@@ -227,7 +384,9 @@ def compute_bin_linear_ratios(X, indices, bin_edges):
             (c_values < effective_c_bin_edges[c_indices]).any()
             or (c_values > effective_c_bin_edges[c_indices + 1])
         ).any():
-            raise ValueError('Values in X do not satisfy the provided bin edges.')
+            raise ValueError(
+                'Values in X are not consistent with the provided bin indices and edges.'
+            )
         c_left_edges = c_bin_edges[c_indices]
         c_right_edges = c_bin_edges[c_indices + 1]
         values_list.append((c_values - c_left_edges) / (c_right_edges - c_left_edges))
@@ -353,71 +512,108 @@ def _LVR_encoding(
 
 @overload
 def piecewise_linear_encoding(
-    ratios: Tensor,
-    indices: Tensor,
+    bin_ratios: Tensor,
+    bin_indices: Tensor,
     d_encoding: Union[int, List[int]],
     *,
-    stack: bool = False,
+    stack: bool,
 ) -> Tensor:
     ...
 
 
 @overload
 def piecewise_linear_encoding(
-    ratios: np.ndarray,
-    indices: np.ndarray,
+    bin_ratios: np.ndarray,
+    bin_indices: np.ndarray,
     d_encoding: Union[int, List[int]],
     *,
-    stack: bool = False,
+    stack: bool,
 ) -> np.ndarray:
     ...
 
 
 def piecewise_linear_encoding(
-    ratios,
-    indices,
-    d_encoding: Union[int, List[int]],
-    *,
-    stack: bool = False,
+    bin_ratios, bin_indices, d_encoding: Union[int, List[int]], *, stack: bool
 ):
-    is_torch = isinstance(ratios, Tensor)
-    ratios = torch.as_tensor(ratios)
-    indices = torch.as_tensor(indices)
+    """Construct piecewise linear encoding as described in [1].
 
-    if ratios.ndim != 2:
-        raise ValueError('ratios must have two dimensions')
-    if ratios.shape != indices.shape:
-        raise ValueError('rations and indices must be of the same shape')
+    See `compute_piecewise_linear_encoding` for details.
 
-    if isinstance(d_encoding, list) and ratios.shape[1] != len(d_encoding):
+    Note:
+        To compute the encoding from the original feature valies, see
+        `compute_piecewise_linear_encoding`.
+
+    Args:
+        bin_ratios: linear ratios (can be computed via `compute_bin_linear_ratios`).
+            Shape: ``(n_objects, n_features)``.
+        bin_indices: bin indices (can be computed via `compute_bin_indices`).
+            Shape: ``(n_objects, n_features)``.
+        d_encoding: the encoding sizes for all features (if an integer, it is used for
+            all the features)
+        stack: if `True`, then d_encoding must be an integer, and the output shape is
+            ``(n_objects, n_features, d_encoding)``. Otherwise, the output shape is
+            ``(n_objects, sum(d_encoding))``.
+    Returns:
+        encoded input
+    Raises:
+        ValueError: for invalid input
+
+    References:
+        * [1] Yury Gorishniy, Ivan Rubachev, Artem Babenko, "On Embeddings for Numerical Features in Tabular Deep Learning", 2022
+
+    Examples:
+        .. testcode::
+
+            n_objects = 100
+            n_features = 4
+            X = torch.randn(n_objects, n_features)
+            n_bins = 3
+            bin_edges = compute_quantile_bin_edges(X, n_bins)
+            bin_indices = compute_bin_indices(X, bin_edges)
+            bin_ratios = compute_bin_linear_ratios(X, bin_indices, bin_edges)
+            bin_counts = [len(x) - 1 for x in bin_edges]
+            X_ple = piecewise_linear_encoding(bin_ratios, bin_indices, bin_counts, stack=True)
+    """
+    is_torch = isinstance(bin_ratios, Tensor)
+    bin_ratios = torch.as_tensor(bin_ratios)
+    bin_indices = torch.as_tensor(bin_indices)
+
+    if bin_ratios.ndim != 2:
+        raise ValueError('bin_ratios must have two dimensions')
+    if bin_ratios.shape != bin_indices.shape:
+        raise ValueError('rations and bin_indices must be of the same shape')
+
+    if isinstance(d_encoding, list) and bin_ratios.shape[1] != len(d_encoding):
         raise ValueError(
-            'the number of columns in ratios must be equal to the size of d_encoding'
+            'the number of columns in bin_ratios must be equal to the size of d_encoding'
         )
 
     message = (
-        'ratios do not satisfy requirements for the piecewise linear encoding.'
+        'bin_ratios do not satisfy requirements for the piecewise linear encoding.'
         ' Use rtdl.data.compute_bin_linear_ratios to obtain valid values.'
     )
 
-    lower_bounds = torch.zeros_like(ratios)
-    is_first_bin = indices == 0
+    lower_bounds = torch.zeros_like(bin_ratios)
+    is_first_bin = bin_indices == 0
     lower_bounds[is_first_bin] = -math.inf
-    if (ratios < lower_bounds).any():
+    if (bin_ratios < lower_bounds).any():
         raise ValueError(message)
     del lower_bounds
 
-    upper_bounds = torch.ones_like(ratios)
-    is_last_bin = indices + 1 == (
+    upper_bounds = torch.ones_like(bin_ratios)
+    is_last_bin = bin_indices + 1 == (
         d_encoding
         if isinstance(d_encoding, int)
-        else torch.as_tensor(d_encoding, dtype=indices.dtype, device=indices.device)
+        else torch.as_tensor(
+            d_encoding, dtype=bin_indices.dtype, device=bin_indices.device
+        )
     )
     upper_bounds[is_last_bin] = math.inf
-    if (ratios > upper_bounds).any():
+    if (bin_ratios > upper_bounds).any():
         raise ValueError(message)
     del upper_bounds
 
-    encoding = _LVR_encoding(ratios, indices, d_encoding, 1.0, 0.0, stack=stack)
+    encoding = _LVR_encoding(bin_ratios, bin_indices, d_encoding, 1.0, 0.0, stack=stack)
     return encoding if is_torch else encoding.numpy()
 
 
@@ -436,6 +632,41 @@ def compute_piecewise_linear_encoding(
 
 
 def compute_piecewise_linear_encoding(X, bin_edges, *, stack: bool):
+    """Compute piecewise linear encoding as described in [1].
+
+    .. image:: ../images/piecewise_linear_encoding_figure.png
+        :scale: 25%
+        :alt: obtaining bins from decision trees (figure)
+
+    .. image:: ../images/piecewise_linear_encoding_equation.png
+        :scale: 25%
+        :alt: obtaining bins from decision trees (equation)
+
+    Args:
+        X: the feature matrix. Shape: ``(n_objects, n_features)``.
+        bin_edges: the bin edges. Size: ``n_features``. Can be computed via
+            `compute_quantile_bin_edges` and `compute_decision_tree_bin_edges`.
+        stack: (let ``bin_counts = [len(x) - 1 for x in bin_edges]``) if `True`, then
+            the output shape is ``(n_objects, n_features, max(bin_counts))``, otherwise
+            the output shape is ``(n_objects, sum(bin_counts))``.
+    Returns:
+        encoded input
+    Raises:
+        ValueError: for invalid input
+
+    References:
+        * [1] Yury Gorishniy, Ivan Rubachev, Artem Babenko, "On Embeddings for Numerical Features in Tabular Deep Learning", 2022
+
+    Examples:
+        .. testcode::
+
+            n_objects = 100
+            n_features = 4
+            X = torch.randn(n_objects, n_features)
+            n_bins = 3
+            bin_edges = compute_quantile_bin_edges(X, n_bins)
+            X_ple = compute_piecewise_linear_encoding(X, bin_edges, stack=False)
+    """
     bin_indices = compute_bin_indices(X, bin_edges)
     bin_ratios = compute_bin_linear_ratios(X, bin_indices, bin_edges)
     bin_counts = [len(x) - 1 for x in bin_edges]
@@ -443,10 +674,48 @@ def compute_piecewise_linear_encoding(X, bin_edges, *, stack: bool):
         bin_ratios,
         bin_indices,
         d_encoding=max(bin_counts) if stack else bin_counts,
+        stack=stack,
     )
 
 
 class PiecewiseLinearEncoder(BaseEstimator, TransformerMixin):
+    """Piecewise linear encoding as described in [1].
+
+    The Scikit-learn Transformer-style wrapper for `compute_piecewise_linear_encoding`.
+    Works only with dense NumPy arrays.
+
+    Attributes:
+        bin_edges_: the computed bin edges
+
+    References:
+        * [1] Yury Gorishniy, Ivan Rubachev, Artem Babenko, "On Embeddings for Numerical Features in Tabular Deep Learning", 2022
+
+    Examples:
+        .. testcode::
+
+            from sklearn.linear_model import LinearRegression
+
+            n_features = 4
+            X_train = np.random.randn(70, n_features)
+            X_test = np.random.randn(30, n_features)
+            y_train = np.random.randn(len(X_train))
+            encoder = PiecewiseLinearEncoder(
+                'decision_tree',
+                dict(
+                    n_bins=3,
+                    regression=True,
+                    tree_kwargs={'min_samples_leaf': 16},
+                ),
+                stack=False,  # to make the output suitable for a linear model
+            )
+            encoder.fit(X_train)
+            X_ple_train = encoder.transform(X_train)
+            X_ple_test = encoder.transform(X_test)
+            model = LinearRegression()
+            model.fit(X_ple_train, y_train)
+            y_pred_test = model.predict(X_ple_test)
+    """
+
     def __init__(
         self,
         bin_edges: Union[
@@ -457,6 +726,16 @@ class PiecewiseLinearEncoder(BaseEstimator, TransformerMixin):
         *,
         stack: bool,
     ) -> None:
+        """
+        Args:
+            bin_edges: if ``'quantile'``, then `compute_quantile_bin_edges` is used.
+                 If ``'decision_tree'``, then `compute_decision_tree_bin_edges` is used (
+                 ``y`` is passed automatically).
+                 If a custom function ``f``, then it will be called as follows:
+                 ``f(X_train, **bin_edges_params)`` and it is expected to return the list
+                 of NumPy arrays (bin edges).
+            bin_edges_params: the keyword arguments for the corresponding function
+        """
         self.bin_edges = bin_edges
         self.bin_edges_params = bin_edges_params
         self.stack = stack
@@ -464,6 +743,7 @@ class PiecewiseLinearEncoder(BaseEstimator, TransformerMixin):
     def fit(
         self, X: np.ndarray, y: Optional[np.ndarray] = None
     ) -> 'PiecewiseLinearEncoder':
+        """Fit the transformer."""
         if y is not None and len(X) != len(y):
             raise ValueError('X and y must have the same first dimension')
         compute_fn = cast(
@@ -485,6 +765,7 @@ class PiecewiseLinearEncoder(BaseEstimator, TransformerMixin):
         return self
 
     def transform(self, X: np.ndarray) -> np.ndarray:
+        """Transform the data."""
         return compute_piecewise_linear_encoding(X, self.bin_edges_, stack=self.stack)
 
 

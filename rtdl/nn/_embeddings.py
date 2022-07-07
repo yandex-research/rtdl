@@ -235,7 +235,9 @@ class PiecewiseLinearEncoder(nn.Module):
             return compute_piecewise_linear_encoding(x, bin_edges, stack=self.stack)
         else:
             # x represents ratios
-            return piecewise_linear_encoding(x, indices, self.d_encoding)
+            return piecewise_linear_encoding(
+                x, indices, self.d_encoding, stack=self.stack
+            )
 
 
 class PeriodicEmbeddings(nn.Module):
