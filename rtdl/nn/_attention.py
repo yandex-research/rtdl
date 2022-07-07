@@ -1,5 +1,5 @@
 import math
-from typing import Dict, Optional, Tuple
+from typing import Optional
 
 import torch.nn as nn
 import torch.nn.functional as F
@@ -11,9 +11,9 @@ from .._utils import INTERNAL_ERROR_MESSAGE, all_or_none
 class MultiheadAttention(nn.Module):
     """Multihead Attention (self-/cross-) with optional 'linear' (fast) attention.
 
-    To learn more about Multihead Attention, see [devlin2018bert]. See the implementation
+    To learn more about Multihead Attention, see [1]. See the implementation
     of `Transformer` and the examples below to learn how to use the compression technique
-    from [1] to speed up the module when the number of tokens is large.
+    from [2] to speed up the module when the number of tokens is large.
 
     Examples:
         .. testcode::
@@ -43,8 +43,8 @@ class MultiheadAttention(nn.Module):
             module(a, a)
 
     References:
-        * [devlin2018bert] Jacob Devlin, Ming-Wei Chang, Kenton Lee, Kristina Toutanova "BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding" 2018
-        * [wang2020linformer] Sinong Wang, Belinda Z. Li, Madian Khabsa, Han Fang, Hao Ma "Linformer: Self-Attention with Linear Complexity", 2020
+        * [1] Jacob Devlin, Ming-Wei Chang, Kenton Lee, Kristina Toutanova "BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding" 2018
+        * [2] Sinong Wang, Belinda Z. Li, Madian Khabsa, Han Fang, Hao Ma "Linformer: Self-Attention with Linear Complexity", 2020
     """
 
     def __init__(
@@ -92,9 +92,6 @@ class MultiheadAttention(nn.Module):
                 ``linformer_compression_ratio`` is not `None`.
         Raises:
             ValueError: if input arguments are not valid.
-
-        References:
-            * [1] Sinong Wang, Belinda Z. Li, Madian Khabsa, Han Fang, Hao Ma "Linformer: Self-Attention with Linear Complexity", 2020
         """
         super().__init__()
         if d_key is None:
@@ -128,6 +125,10 @@ class MultiheadAttention(nn.Module):
         self.W_out = nn.Linear(d_value, d_value, bias) if n_heads > 1 else None
         self.n_heads = n_heads
         self.dropout = nn.Dropout(dropout) if dropout else None
+        self._initialization = initialization
+        # the following modules enables hook-based introspection
+        self.logits_handler = nn.Identity()
+        self.probs_handler = nn.Identity()
 
         def make_linformer_compression():
             assert (
@@ -149,13 +150,16 @@ class MultiheadAttention(nn.Module):
             self.linformer_key_compression = None
             self.linformer_value_compression = None
 
+        self.reset_parameters()
+
+    def reset_parameters(self):
         for m in [self.W_q, self.W_k, self.W_v]:
             if m is None:
                 continue
             # the "xavier" branch tries to follow torch.nn.MultiheadAttention;
             # the second condition checks if W_v plays the role of W_out; the latter one
             # is initialized with Kaiming in torch
-            if initialization == 'xavier' and (
+            if self._initialization == 'xavier' and (
                 m is not self.W_v or self.W_out is not None
             ):
                 # gain is needed since W_qkv is represented with 3 separate layers (it
@@ -175,12 +179,12 @@ class MultiheadAttention(nn.Module):
             .reshape(batch_size * self.n_heads, n_tokens, d_head)
         )
 
-    def forward(self, x_q: Tensor, x_kv: Tensor) -> Tuple[Tensor, Dict[str, Tensor]]:
+    def forward(self, x_q: Tensor, x_kv: Tensor) -> Tensor:
         """Perform the forward pass.
 
         Args:
-            x_q: query token embeddings
-            x_kv: key-value token embeddings
+            x_q: query token embeddings. Shape: ``(batch_size, n_q_tokens, d_embedding)``.
+            x_kv: key-value token embeddings. Shape: ``(batch_size, n_kv_tokens, d_embedding)``.
         Returns:
             (new_token_embeddings, attention_stats)
         """
@@ -208,6 +212,11 @@ class MultiheadAttention(nn.Module):
         k = self._reshape(k)
         attention_logits = q @ k.transpose(1, 2) / math.sqrt(d_head_key)
         attention_probs = F.softmax(attention_logits, dim=-1)
+
+        _attention_shape = (batch_size, self.n_heads, n_k_tokens, n_q_tokens)
+        _ = self.logits_handler(attention_logits.reshape(*_attention_shape))
+        _ = self.probs_handler(attention_probs.reshape(*_attention_shape))
+
         if self.dropout is not None:
             attention_probs = self.dropout(attention_probs)
         x = attention_probs @ self._reshape(v)
@@ -219,9 +228,4 @@ class MultiheadAttention(nn.Module):
         if self.W_out is not None:
             x = self.W_out(x)
 
-        return x, {
-            name: locals()[name].reshape(
-                batch_size, self.n_heads, n_k_tokens, n_q_tokens
-            )
-            for name in ['attention_logits', 'attention_probs']
-        }
+        return x
