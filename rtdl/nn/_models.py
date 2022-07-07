@@ -260,7 +260,7 @@ def make_simple_model(
 _FT_TRANSFORMER_ACTIVATION = 'ReGLU'
 
 
-def make_ft_transformer(
+def _make_ft_transformer(
     n_num_features: int,
     cat_cardinalities: List[int],
     d_out: Optional[int],
@@ -270,7 +270,6 @@ def make_ft_transformer(
     ffn_d_hidden: int,
     ffn_dropout: float,
     residual_dropout: float,
-    last_block_pooling_token_only: bool = True,
     linformer_compression_ratio: Optional[float] = None,
     linformer_sharing_policy: Optional[str] = None,
 ) -> SimpleModel:
@@ -295,10 +294,9 @@ def make_ft_transformer(
         attention_dropout=attention_dropout,
         ffn_d_hidden=ffn_d_hidden,
         ffn_dropout=ffn_dropout,
-        activation=_FT_TRANSFORMER_ACTIVATION,
+        ffn_activation=_FT_TRANSFORMER_ACTIVATION,
         residual_dropout=residual_dropout,
         pooling='cls',
-        last_block_pooling_token_only=last_block_pooling_token_only,
         linformer_compression_ratio=linformer_compression_ratio,
         linformer_sharing_policy=linformer_sharing_policy,
         n_tokens=(
@@ -319,7 +317,6 @@ def make_ft_transformer_default(
     cat_cardinalities: List[int],
     d_out: Optional[int],
     n_blocks: int = 3,
-    last_block_pooling_token_only: bool = True,
     linformer_compression_ratio: Optional[float] = None,
     linformer_sharing_policy: Optional[str] = None,
 ) -> Tuple[SimpleModel, torch.optim.Optimizer]:
@@ -331,7 +328,7 @@ def make_ft_transformer_default(
     default_value_index = n_blocks - 1
     d_embedding = [96, 128, 192, 256, 320, 384][default_value_index]
     ffn_d_hidden_factor = (4 / 3) if _is_reglu(_FT_TRANSFORMER_ACTIVATION) else 2.0
-    model = make_ft_transformer(
+    model = _make_ft_transformer(
         n_num_features=n_num_features,
         cat_cardinalities=cat_cardinalities,
         d_out=d_out,
@@ -341,7 +338,6 @@ def make_ft_transformer_default(
         ffn_dropout=[0.0, 0.05, 0.1, 0.15, 0.2, 0.25][default_value_index],
         ffn_d_hidden=int(d_embedding * ffn_d_hidden_factor),
         residual_dropout=0.0,
-        last_block_pooling_token_only=last_block_pooling_token_only,
         linformer_compression_ratio=linformer_compression_ratio,
         linformer_sharing_policy=linformer_sharing_policy,
     )

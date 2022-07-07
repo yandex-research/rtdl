@@ -16,6 +16,8 @@ from ._utils import ModuleType, ModuleType0, ReGLU, make_nn_module
 class MLP(nn.Module):
     """The MLP model used in the paper "Revisiting Deep Learning Models for Tabular Data" [1].
 
+    **Input shape**: ``(n_objects, n_features)``.
+
     The following scheme describes the architecture:
 
     .. code-block:: text
@@ -25,7 +27,7 @@ class MLP(nn.Module):
         Head == Linear
 
     Attributes:
-        blocks: the main blocks of the model (`torch.nn.Sequential` of `MLP.Block`s)
+        blocks: the main blocks of the model (`torch.nn.Sequential` of `MLP.Block`)
         head: (optional) the last layer (`MLP.Head`)
 
     Examples:
@@ -131,14 +133,14 @@ class MLP(nn.Module):
 
         Args:
             d_in: the input size.
-            d_out: the output size of the `MLP.Head`. If `None`, then the output of MLP
+            d_out: the output size of `MLP.Head`. If `None`, then the output of MLP
                 will be the output of the last block, i.e. the model will be
                 backbone-only.
             n_blocks: the number of blocks.
             d_layer: the dimension of each linear layer.
             dropout: the dropout rate for all hidden layers.
         Returns:
-            MLP
+            mlp
         """
         if n_blocks <= 0:
             raise ValueError('n_blocks must be positive')
@@ -162,6 +164,8 @@ class MLP(nn.Module):
 class ResNet(nn.Module):
     """The ResNet model used in the paper "Revisiting Deep Learning Models for Tabular Data" [1].
 
+    **Input shape**: ``(n_objects, n_features)``.
+
     The following scheme describes the architecture:
 
     .. code-block:: text
@@ -175,7 +179,7 @@ class ResNet(nn.Module):
           Head: (in) -> Norm -> Activation -> Linear -> (out)
 
     Attributes:
-        blocks: the main blocks of the model (`torch.nn.Sequential` of `ResNet.Block`s)
+        blocks: the main blocks of the model (`torch.nn.Sequential` of `ResNet.Block`)
         head: (optional) the last module (`ResNet.Head`)
 
     Examples:
@@ -328,7 +332,7 @@ class ResNet(nn.Module):
 
         Args:
             d_in: the input size
-            d_out: the output size of the `ResNet.Head`. If `None`, then the output of
+            d_out: the output size of `ResNet.Head`. If `None`, then the output of
                 ResNet will be the output of the last block, i.e. the model will be
                 backbone-only.
             n_blocks: the number of blocks
@@ -337,6 +341,8 @@ class ResNet(nn.Module):
             dropout_first: the dropout rate of the first dropout layer in each block.
             dropout_second: the dropout rate of the second dropout layer in each block.
                 The value `0.0` is a good starting point.
+        Return:
+            resnet
         """
         return cls(
             d_in=d_in,
@@ -368,7 +374,51 @@ Pooling = Literal['cls', 'avg', 'first-token']
 class Transformer(nn.Module):
     """Transformer with extra features.
 
-    This module is the backbone of `FTTransformer`."""
+    **Input shape**: ``(n_objects, n_tokens, d_embedding)``.
+
+    The following scheme describes the architecture:
+
+    .. code-block:: text
+
+        Transformer: (in: 3d) -> Block -> ... -> Block -> Head -> (out: 2d)
+        Block: (in: 3d) -> <see the paper [1] or the impementation> -> (out: 3d)
+        Head: (in: 2d) -> HeadNormalization -> HeadActivation -> Linear -> (out: 2d)
+
+    Compared to the vanilla Transformer [1], this implementation provides several optional features:
+
+    * prenormalization (the common belief is that it enables easier optimization,
+        but sometimes at the cost of worse results)
+    * technique from Linformer [2] for faster attention when the number of tokens is large
+    * inference by average pooling instead of the CLS token
+    * managed CLS token
+
+    Attributes:
+        blocks: the main blocks of the model (`torch.nn.Sequential` of `Transformer.Block`)
+        head: (optional) the last layer (`Transformer.Head`)
+
+    Examples:
+        .. testcode::
+
+            x = torch.randn(4, 2, 3)
+            model = Transformer.make_baseline(
+                d_embedding=x.shape[-1],
+                d_out=1,
+                n_blocks=1,
+                attention_n_heads=1,
+                attention_dropout=0.0,
+                ffn_d_hidden=1,
+                ffn_dropout=0.0,
+                activation='Identity',
+                residual_dropout=0.0,
+                pooling: Optional[Pooling]='cls',
+                last_block_pooling_token_only=True,
+            )
+            assert model(x).shape == (len(x), 1)
+
+    References:
+        * [1] Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N. Gomez, Lukasz Kaiser, Illia Polosukhin, "Attention Is All You Need", NeurIPS 2017
+        * [2] Sinong Wang, Belinda Z. Li, Madian Khabsa, Han Fang, Hao Ma "Linformer: Self-Attention with Linear Complexity", 2020
+    """
 
     WARNINGS = {'first_prenormalization': True, 'prenormalization': True}
 
@@ -394,6 +444,7 @@ class Transformer(nn.Module):
             prenormalization: bool,
             pooling_index: Optional[int],
         ):
+            """The main building block of `Transformer`."""
             super().__init__()
             self.prenormalization = prenormalization
             self.pooling_index = pooling_index
@@ -462,7 +513,7 @@ class Transformer(nn.Module):
             return x
 
     class Head(nn.Module):
-        """The final module of the `Transformer`."""
+        """The output module of `Transformer`."""
 
         def __init__(
             self,
@@ -506,7 +557,6 @@ class Transformer(nn.Module):
         first_prenormalization: bool,
         # inference
         pooling: Optional[Pooling],
-        last_block_pooling_token_only: bool,
         # head
         head_activation: Optional[ModuleType0],
         head_normalization: Optional[ModuleType],
@@ -515,13 +565,14 @@ class Transformer(nn.Module):
         linformer_sharing_policy: Optional[str] = None,
         n_tokens: Optional[int] = None,
     ) -> None:
+        """
+        Note:
+            Use the `make_baseline` method instead of the constructor unless you need
+            more control over the architecture.
+        """
         super().__init__()
         if n_blocks < 1:
             raise ValueError('n_blocks must be positive')
-        if pooling == 'avg' and last_block_pooling_token_only:
-            raise ValueError(
-                'if pooling == "avg", then last_block_pooling_token_only must be False'
-            )
         pooling_valid_values = get_args(Pooling)
         if pooling not in pooling_valid_values:
             raise ValueError(f'pooling must be one of: {pooling_valid_values}')
@@ -562,6 +613,9 @@ class Transformer(nn.Module):
         self.pooling_index = None if pooling == 'avg' else 0
         self.cls_embedding = CLSEmbedding(d_embedding) if pooling == 'cls' else None
 
+        # for CLS-based inference, in the last block there is no need to perform
+        # computations for any token except for the CLS token
+        last_block_pooling_token_only = pooling != 'avg'
         self.blocks = nn.Sequential(
             *[
                 Transformer.Block(
@@ -619,14 +673,53 @@ class Transformer(nn.Module):
         attention_dropout: float,
         ffn_d_hidden: int,
         ffn_dropout: float,
-        activation: str,
+        ffn_activation: str,
         residual_dropout: float,
         pooling: Optional[Pooling],
-        last_block_pooling_token_only: bool,
         linformer_compression_ratio: Optional[float] = None,
         linformer_sharing_policy: Optional[str] = None,
         n_tokens: Optional[int] = None,
     ) -> 'Transformer':
+        """A simplified constructor for building baseline Transformers.
+
+        Features:
+
+        * Head activation is ``ReLU``
+        * normalizations are ``LayerNorm``
+        * prenormalization is on
+        * first prenormalization is off
+
+        Args:
+            d_embedding: the size of the embedding dimension
+            d_out: the output size of `Transformer.Head`. If `None`, then the output of
+                the Transformer will be the output of the last block, i.e. the model will be
+                backbone-only.
+            n_blocks: the number of blocks
+            attention_n_heads: the number of attention heads
+            attention_dropout: the dropout rate for attention maps
+            ffn_d_hidden: the hidden FFN representation size (formally, the input
+                size of the second linear layer of the FFN)
+            ffn_dropout: the dropout for the hidden FFN representation
+            ffn_activation: the activation used in FFN
+            residual_dropout: the dropout rate for outputs of all residual branches
+            pooling: the pooling strategy defining how the output of the last block is
+                transformed to the input for `Transformer.Head`. If ``'cls'``, then the
+                CLS token is used (it is created and appended under the hood, no need to pass it).
+                If ``'first_token'``, then the first token is treated as the CLS token.
+                If 'avg', the average pooling is used. ``pooling='cls'`` is equivalent
+                to placing `rtdl.nn.CLSEmbedding` before the transformer with ``pooling='first_token'``.
+            linformer_compression_ratio: the option for fast linear attention.
+                See `rtdl.nn.MultiheadAttention` for details.
+            linformer_sharing_policy: the option for fast linear attention.
+                See `rtdl.nn.MultiheadAttention` for details.
+            n_tokens: the option for fast linear attention.
+                See `rtdl.nn.MultiheadAttention` for details.
+        Return:
+            transformer
+
+        References:
+            * [1] Noam Shazeer, "GLU Variants Improve Transformer"
+        """
         normalization = 'LayerNorm'
         return Transformer(
             d_embedding=d_embedding,
@@ -638,13 +731,12 @@ class Transformer(nn.Module):
             attention_residual_dropout=residual_dropout,
             ffn_d_hidden=ffn_d_hidden,
             ffn_dropout=ffn_dropout,
-            ffn_activation=activation,
+            ffn_activation=ffn_activation,
             ffn_normalization=normalization,
             ffn_residual_dropout=residual_dropout,
             prenormalization=True,
             first_prenormalization=False,
             pooling=pooling,
-            last_block_pooling_token_only=last_block_pooling_token_only,
             head_activation='ReLU',
             head_normalization=normalization,
             linformer_compression_ratio=linformer_compression_ratio,
