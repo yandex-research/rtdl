@@ -259,8 +259,8 @@ class PeriodicEmbeddings(nn.Module):
         return torch.cat([torch.cos(x), torch.sin(x)], -1)
 
 
-class ELinear(nn.Module):
-    def __init__(self, d_in: int, d_out: int, n_tokens: int, bias: bool = True) -> None:
+class NLinear(nn.Module):
+    def __init__(self, n_tokens: int, d_in: int, d_out: int, bias: bool = True) -> None:
         super().__init__()
         self.weight = Parameter(Tensor(n_tokens, d_in, d_out))
         self.bias = Parameter(Tensor(n_tokens, d_out)) if bias else None
@@ -335,7 +335,7 @@ def make_ple_lr_embeddings(bin_edges: List[Tensor], d_embedding: int) -> nn.Modu
     assert isinstance(embeddings.d_encoding, int), INTERNAL_ERROR_MESSAGE
     return nn.Sequential(
         embeddings,
-        ELinear(embeddings.d_encoding, d_embedding, n_features),
+        NLinear(n_features, embeddings.d_encoding, d_embedding),
         nn.ReLU(),
     )
 
@@ -343,6 +343,6 @@ def make_ple_lr_embeddings(bin_edges: List[Tensor], d_embedding: int) -> nn.Modu
 def make_plr_embeddings(n_features: int, d_embedding: int, sigma: float) -> nn.Module:
     return nn.Sequential(
         PeriodicEmbeddings(n_features, d_embedding, sigma),
-        ELinear(d_embedding, d_embedding, n_features),
+        NLinear(n_features, d_embedding, d_embedding),
         nn.ReLU(),
     )
