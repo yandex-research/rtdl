@@ -361,57 +361,6 @@ def make_simple_model(
 _FT_TRANSFORMER_ACTIVATION = 'ReGLU'
 
 
-def _make_ft_transformer(
-    n_num_features: int,
-    cat_cardinalities: List[int],
-    d_out: Optional[int],
-    d_embedding: int,
-    n_blocks: int,
-    attention_dropout: float,
-    ffn_d_hidden: int,
-    ffn_dropout: float,
-    residual_dropout: float,
-    linformer_compression_ratio: Optional[float] = None,
-    linformer_sharing_policy: Optional[str] = None,
-) -> SimpleModel:
-    if not n_num_features and not cat_cardinalities:
-        raise ValueError(
-            f'At least one kind of features must be presented. The provided arguments are:'
-            f' n_num_features={n_num_features}, cat_cardinalities={cat_cardinalities}.'
-        )
-
-    input_modules: Dict[str, nn.Module] = {}
-    if n_num_features:
-        input_modules['x_num'] = LinearEmbeddings(n_num_features, d_embedding)
-    if cat_cardinalities:
-        input_modules['x_cat'] = CatEmbeddings(
-            cat_cardinalities, d_embedding, stack=True, bias=True
-        )
-    m_main = Transformer.make_baseline(
-        d_embedding=d_embedding,
-        d_out=d_out,
-        n_blocks=n_blocks,
-        attention_n_heads=8,
-        attention_dropout=attention_dropout,
-        ffn_d_hidden=ffn_d_hidden,
-        ffn_dropout=ffn_dropout,
-        ffn_activation=_FT_TRANSFORMER_ACTIVATION,
-        residual_dropout=residual_dropout,
-        pooling='cls',
-        linformer_compression_ratio=linformer_compression_ratio,
-        linformer_sharing_policy=linformer_sharing_policy,
-        n_tokens=(
-            None
-            if linformer_compression_ratio is None
-            else 1 + n_num_features + len(cat_cardinalities)  # +1 because of CLS
-        ),
-    )
-    return make_simple_model(
-        input_modules,  # type: ignore
-        m_main,
-    )
-
-
 def make_default_ft_transformer(
     *,
     n_num_features: int,
@@ -457,6 +406,11 @@ def make_default_ft_transformer(
 
             model, optimizer = make_ft_transformer_default()
     """
+    if not n_num_features and not cat_cardinalities:
+        raise ValueError(
+            f'At least one kind of features must be presented. The provided arguments are:'
+            f' n_num_features={n_num_features}, cat_cardinalities={cat_cardinalities}.'
+        )
     if not (1 <= n_blocks <= 6):
         raise ValueError('n_blocks must be in the range from 1 to 6 (inclusive)')
 
@@ -465,18 +419,37 @@ def make_default_ft_transformer(
     default_value_index = n_blocks - 1
     d_embedding = [96, 128, 192, 256, 320, 384][default_value_index]
     ffn_d_hidden_factor = (4 / 3) if _is_reglu(_FT_TRANSFORMER_ACTIVATION) else 2.0
-    model = _make_ft_transformer(
-        n_num_features=n_num_features,
-        cat_cardinalities=cat_cardinalities,
-        d_out=d_out,
+
+    input_modules: Dict[str, nn.Module] = {}
+    if n_num_features:
+        input_modules['x_num'] = LinearEmbeddings(n_num_features, d_embedding)
+    if cat_cardinalities:
+        input_modules['x_cat'] = CatEmbeddings(
+            cat_cardinalities, d_embedding, stack=True, bias=True
+        )
+    m_main = Transformer.make_baseline(
         d_embedding=d_embedding,
+        d_out=d_out,
         n_blocks=n_blocks,
+        attention_n_heads=8,
         attention_dropout=[0.1, 0.15, 0.2, 0.25, 0.3, 0.35][default_value_index],
-        ffn_dropout=[0.0, 0.05, 0.1, 0.15, 0.2, 0.25][default_value_index],
         ffn_d_hidden=int(d_embedding * ffn_d_hidden_factor),
+        ffn_dropout=[0.0, 0.05, 0.1, 0.15, 0.2, 0.25][default_value_index],
+        ffn_activation=_FT_TRANSFORMER_ACTIVATION,
         residual_dropout=0.0,
+        pooling='cls',
         linformer_compression_ratio=linformer_compression_ratio,
         linformer_sharing_policy=linformer_sharing_policy,
+        n_tokens=(
+            None
+            if linformer_compression_ratio is None
+            else 1 + n_num_features + len(cat_cardinalities)  # +1 because of CLS
+        ),
     )
+    model = make_simple_model(
+        input_modules,  # type: ignore
+        m_main,
+    )
+
     optimizer = torch.optim.AdamW(get_parameter_groups(model), 1e-4, weight_decay=1e-5)
     return model, optimizer
