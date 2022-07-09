@@ -14,4 +14,4 @@ from ._embeddings import (  # noqa
     make_ple_lr_embeddings,
     make_plr_embeddings,
 )
-from ._models import make_ft_transformer_default, make_simple_model  # noqa
+from ._models import make_default_ft_transformer, make_simple_model  # noqa

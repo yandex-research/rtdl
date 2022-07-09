@@ -37,7 +37,6 @@ MainModule = TypeVar('MainModule', bound=nn.Module)
 
 class SimpleModel(nn.Module, Generic[MainModule]):
     """
-
     Warning:
         Do not instantiate this class directly, use `make_simple_model` instead.
     """
@@ -149,61 +148,161 @@ def make_simple_model(
     main_input_ndim: Optional[int] = None,
     output: Optional[Dict[str, nn.Module]] = None,
 ) -> SimpleModel[MainModule]:
-    """Make a simple model (N input modules + 1 main module + M output modules).
+    """Make a simple model (N input modules + 1 main module [+ M output modules]).
 
-    Examples:
-        .. testcode::
+    See the tutorial below.
 
-            # data info
-            batch_size = 3
-            n_num_features = 4
-            n_cat_features = 2
-            cat_cardinalities = [3, 4]
-            d_num_embedding = 5
+    Args:
+        input: the input modules. If the main module is
+            `rtdl.nn.Transformer` or ``main_input_ndim == 3``, then the input modules must
+            produce three dimensional tensors. Otherwise, the the input modules can produce
+            two and three dimensional tensors.
+        main: the main module. See the tutorial below.
+        main_input_ndim: the number of dimensions of the main module's input.
+            Only `None`, ``2`` and ``3`` are supported. `None` is allowed only when
+            ``main`` is a one of: `rtdl.nn.MLP`, `rtdl.nn.ResNet`, `rtdl.nn.Transformer`.
+        output: the output modules. If presented, then the main module's output is
+            passed to all of the output modules, and the final output is a dictionary with
+            values produced by the output modules. This can be useful when building
+            a model with multiple "heads".
 
-            # inputs
-            x_num = torch.randn(batch_size, n_num_features)
-            x_cat = torch.tensor([[0, 1], [2, 3], [2, 0]])
-            assert len(x_cat) = batch_size
+    .. rubric:: Tutorial
 
-            # modules
-            m_num = rtdl.nn.make_plr_embeddings(d_num_embedding, n_num_features, 0.1)
-            m_cat = rtdl.nn.OneHotEncoder(cat_cardinalities)
-            m_main = rtdl.nn.MLP.make_baseline(
-                d_in=n_num_features * d_num_embedding + sum(cat_cardinalities),
-                d_out=1,
-                n_blocks=1,
-                d_layer=2,
-                dropout=0.1,
-            )
+    The basic usage is demonstrated in the following example:
 
-            model = make_simple_model(
-                dict(
-                    hello=m_num,
-                    world=m_cat,
-                ),
-                m_main,
-            )
-            y_pred = model(hello=x_num, world=x_cat)
+    .. testcode::
 
-    The line `hello=m_num,` in the dictionary above is equivalent to
-    `hello=(m_num, 'hello')`. The general pattern for the input modules is as follows::
+        # data info
+        batch_size = 3
+        n_num_features = 4  # numerical features
+        n_cat_features = 2  # categorical features
+        # first categorical feature takes 3 unique values
+        # second categorical feature takes 4 unique values
+        cat_cardinalities = [3, 4]
+        d_num_embedding = 5
+
+        # inputs
+        x_num = torch.randn(batch_size, n_num_features)
+        x_cat = torch.tensor([[0, 1], [2, 3], [2, 0]])
+        asssert x_cat.shape == (batch_size, n_cat_features)
+
+        # modules
+        m_num = rtdl.nn.make_plr_embeddings(d_num_embedding, n_num_features, 0.1)
+        # for a simple model without embeddings for numerical features:
+        # m_num = nn.Identity()
+        m_cat = rtdl.nn.OneHotEncoder(cat_cardinalities)
+        m_main = rtdl.nn.MLP.make_baseline(
+            d_in=n_num_features * d_num_embedding + sum(cat_cardinalities),
+            d_out=1,
+            n_blocks=1,
+            d_layer=2,
+            dropout=0.1,
+        )
+
+        model = make_simple_model(
+            dict(  # any number of input modules
+                hello=m_num,  # m_num is accessible as model.input['hello']
+                world=m_cat,  # m_cat is accessible as model.input['world']
+            ),
+            # the outputs of the input modules are merged into one tensor and passed
+            # to the main module
+            m_main,  # m_main is accessible as model.main
+        )
+
+        # x_num is the input for the module 'hello' (m_num)
+        # x_cat is the input for the module 'world' (m_cat)
+        y_pred = model(hello=x_num, world=x_cat)
+
+    Of course, in practice, you would use better names for the input modules, for example::
+
+        model = make_simple_model(dict(x_num=m_num, x_cat=m_cat), m_main)
+        ...
+        y_pred = model(x_num=x_num, x_cat=x_cat)
+
+    .. rubric:: Advanced usage
+
+    Let's consider this model::
+
+        model = make_simple_model(dict(hello=m_hello, world=m_world), m_main)
+        # usage: model(hello=..., world=...)
+
+    In fact, the snippet above is equivalent to the following::
 
         model = make_simple_model(
             dict(
-                a=module_0,  # -> a=(module_0, 'a'),
-                b=(module_1, 'arg_1'),
-                c=(module_2, 'arg_2', 'arg_3'),
-                d=[module_3, module_4]  # -> (batch_size, x4.shape[1], d3 + d4)
-            ),
-            m_main
+                # to the left of "=", the module name is given (hello)
+                # to the right of "=", the module (m_hello) and its inputs are given ('hello')
+                hello=(m_hello, 'hello'),
+                world=(m_world, 'world'),
+            )
         )
-        assert model.input['a'] is module_0
-        assert model.input['b'] is module_1
-        assert model.input['c'] is module_2
-        assert isinstance()
-        y_pred = model(a=x0, arg_1=x1, arg_2=x2, arg_3=x3, d=x4)
+        # usage: model(hello=..., world=...)
 
+    Let's change the last snippet to the following::
+
+        model = make_simple_model(
+            dict(
+                hello=(m_hello, 'a'),
+                world=(m_world, 'b'),
+            )
+        )
+        # usage: model(a=..., b=...)
+
+    So, the line ``hello=(m_hello, 'a'),`` means that:
+
+        * the module m_hello can be accessed as ``model.input['hello']``
+        * this module requires the input ``a``
+
+    The general pattern is as follows::
+
+        model = make_simple_model(
+            dict(
+                a=ma,  # this is transformed to: a=(m0, 'a'),
+                b=(mb, 'arg_1'),
+                c=(mc, 'arg_2', 'arg_3'),  # the module will be called as mc(arg_2, arg_3)
+                # one of the inputs for the module 'd' is the same as for the module 'b',
+                # this is allowed!
+                d=(md, 'arg_1', 'arg_4')
+            )
+        )
+        # usage: model(a=, arg_1=..., arg_2=..., arg_3=..., arg_4=...)
+
+    The last advanced technique is demonstrated in the following example::
+
+        m_num_plr = rtdl.nn.make_plr_embeddings(...)
+        m_num_ple_lr = rtdl.nn.make_ple_lr_embeddings(...)
+        m_cat = nn.OneHotEncoder(...)
+        m_main = rtdl.nn.Transformer.make_baseline(...)
+        model = make_simple_model(
+            dict(
+                x_num=[m_num_plr, m_num_ple_lr],
+                x_cat=x_cat,
+            ),
+            m_main,
+        )
+        y_pred = model(x_num=..., x_cat=...)
+
+    To understand it, let's simplify the notation:
+
+        model = make_simple_model(
+            dict(
+                x_num=[m0, m1],  # m0/m1 are accessible as model.input['x_num'][0/1]
+                x_cat=m2
+            )
+        )
+        # usage: model(x_num=..., x_cat=...)
+
+    Now, ``model.input['x_num']`` is not a module, but a group of modules. E.g. ``m0``
+    can be accessed as ``model.input['x_num'][0]``. Each module in a group can be
+    a module or a tuple as in the examples above.
+
+    Each module in a module group must produce three dimensional tensor as its output.
+    The outputs of all modules in a group are contatenated along the last dimension.
+    So, if ``m0(x_num)`` has the shape ``(batch_size, n_features, d0)`` and
+    ``m1(x_num)`` has the shape ``(batch_size, n_features, d1)``, then the output of
+    the group ``'x_num'`` has the shape ``(batch_size, n_features, d0 + d1)``. This can
+    be useful to combine different kinds of embeddings and pass them to backbones that
+    require three dimensional inputs (e.g. to Transformer).
     """
     if main_input_ndim is None:
         if isinstance(main, (MLP, ResNet)):
@@ -313,7 +412,7 @@ def _make_ft_transformer(
     )
 
 
-def make_ft_transformer_default(
+def make_default_ft_transformer(
     *,
     n_num_features: int,
     cat_cardinalities: List[int],
@@ -322,6 +421,42 @@ def make_ft_transformer_default(
     linformer_compression_ratio: Optional[float] = None,
     linformer_sharing_policy: Optional[str] = None,
 ) -> Tuple[SimpleModel, torch.optim.Optimizer]:
+    """Create the default FT-Transformer and the optimizer.
+
+    The function creates:
+
+        * FT-Transformer with the default hyperparameters
+        * the default optimizer for this model
+
+    as described in [1].
+
+    This function is useful if you want to quickly try a fancy model without investing
+    in hyperparameter tuning. For a zero-config solution, the average performance
+    can be considered as decent (especially if you have an ensemble of default
+    FT-Transformers). That said, for achieving the best results on a given task, more
+    customized solutions should be used.
+
+    Args:
+        n_num_features: the number of numerical features
+        cat_cardinalities: the cardinalities of categorical features
+            (``cat_cardinalities[i]`` is the number of unique values of the i-th
+            categorical feature)
+        d_out: the output size. If `None`, then the model is backbone-only.
+        n_blocks: the number of blocks. Other hyperparameters are determined based
+            ``n_blocks``.
+        linformer_compression_ratio: the option for the fast linear attention.
+            See `rtdl.nn.MultiheadAttention` for details.
+        linformer_sharing_policy: the option for the fast linear attention.
+            See `rtdl.nn.MultiheadAttention` for details.
+
+    References:
+        * [1] Yury Gorishniy, Ivan Rubachev, Valentin Khrulkov, Artem Babenko, "Revisiting Deep Learning Models for Tabular Data", 2021
+
+    Examples:
+        .. testcode::
+
+            model, optimizer = make_ft_transformer_default()
+    """
     if not (1 <= n_blocks <= 6):
         raise ValueError('n_blocks must be in the range from 1 to 6 (inclusive)')
 

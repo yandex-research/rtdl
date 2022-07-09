@@ -708,9 +708,9 @@ class Transformer(nn.Module):
                 If ``'first_token'``, then the first token is treated as the CLS token.
                 If 'avg', the average pooling is used. ``pooling='cls'`` is equivalent
                 to placing `rtdl.nn.CLSEmbedding` before the transformer with ``pooling='first_token'``.
-            linformer_compression_ratio: the option for fast linear attention.
+            linformer_compression_ratio: the option for the fast linear attention.
                 See `rtdl.nn.MultiheadAttention` for details.
-            linformer_sharing_policy: the option for fast linear attention.
+            linformer_sharing_policy: the option for the fast linear attention.
                 See `rtdl.nn.MultiheadAttention` for details.
             n_tokens: the option for fast linear attention.
                 See `rtdl.nn.MultiheadAttention` for details.
