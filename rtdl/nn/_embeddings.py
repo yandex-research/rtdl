@@ -27,7 +27,7 @@ class CLSEmbedding(nn.Module):
 
     To learn about the [CLS]-based inference, see [devlin2018bert].
 
-    When used as a module, the [CLS]-embedding is appended **to the beginning** of each
+    In the forward pass, the module appends [CLS]-embedding **to the beginning** of each
     item in the batch.
 
     Examples:
@@ -36,11 +36,11 @@ class CLSEmbedding(nn.Module):
             batch_size = 2
             n_tokens = 3
             d = 4
-            cls_embedding = CLSEmbedding(d, 'uniform')
+            cls_embedding = CLSEmbedding(d)
             x = torch.randn(batch_size, n_tokens, d)
             x = cls_embedding(x)
             assert x.shape == (batch_size, n_tokens + 1, d)
-            assert (x[:, 0, :] == cls_embedding.expand(len(x))).all()
+            assert (x[:, 0, :] == cls_embedding.weight.expand_as(x)).all()
 
     References:
         * [devlin2018bert] Jacob Devlin, Ming-Wei Chang, Kenton Lee, Kristina Toutanova "BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding" 2018
@@ -58,51 +58,14 @@ class CLSEmbedding(nn.Module):
     def reset_parameters(self) -> None:
         _initialize_embeddings(self.weight, self.weight.shape[-1])
 
-    def expand(self, *d_leading: int) -> Tensor:
-        """Repeat the [CLS]-embedding (e.g. to make a batch).
-
-        Namely, this::
-
-            cls_batch = cls_embedding.expand(d1, d2, ..., dN)
-
-        is equivalent to this::
-
-            new_dimensions = (1,) * N
-            cls_batch = cls_embedding.weight.view(*new_dimensions, -1).expand(
-                d1, d2, ..., dN, len(cls_embedding.weight)
-            )
-
-        Examples:
-            .. testcode::
-
-                batch_size = 2
-                n_tokens = 3
-                d = 4
-                x = torch.randn(batch_size, n_tokens, d)
-                cls_embedding = CLSEmbedding(d, 'uniform')
-                assert cls_embedding.expand(len(x)).shape == (len(x), d)
-                assert cls_embedding.expand(len(x), 1).shape == (len(x), 1, d)
-
-        Note:
-            Under the hood, the `torch.Tensor.expand` method is applied to the
-            underlying :code:`weight` parameter, so gradients will be propagated as
-            expected.
-
-        Args:
-            d_leading: the additional new dimensions
-
-        Returns:
-            tensor of the shape :code:`(*d_leading, len(self.weight))`
-        """
-        if not d_leading:
-            return self.weight
-        new_dims = (1,) * (len(d_leading) - 1)
-        return self.weight.view(*new_dims, -1).expand(*d_leading, -1)
-
     def forward(self, x: Tensor) -> Tensor:
         if x.ndim != 3:
             raise ValueError('The input must have three dimensions')
-        return torch.cat([self.expand(len(x), 1), x], dim=1)
+        if x.shape[-1] != len(self.weight):
+            raise ValueError(
+                'The last dimension of x must be equal to the embedding size'
+            )
+        return torch.cat([self.weight.expand_as(x), x], dim=1)
 
 
 class OneHotEncoder(nn.Module):
