@@ -163,7 +163,8 @@ def make_simple_model(
             If the main module is one of {`rtdl.nn.MLP`, `rtdl.nn.ResNet`, `rtdl.nn.Transformer`},
             then ``main_input_ndim`` must be `None` and it will be set to the correct value
             under the hood (2, 2 and 3 respectively). Otherwise, it must be
-            either ``2`` or ``3``.
+            either ``2`` or ``3``. For ``3`` (i.e. for transformer-like main modules),
+            the merge (concatenation) happens along the dimension ``1``.
         output: the output modules. See the tutorial below.
 
     .. rubric:: Tutorial

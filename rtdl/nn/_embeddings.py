@@ -376,7 +376,8 @@ class PeriodicEmbeddings(nn.Module):
 
     Warning:
         For better performance and to avoid some failure modes, it is recommended
-        to insert `NLinear` after this module. Alternatively, you can use
+        to insert `NLinear` after this module (even if the next module after that is the
+        first linear layer of the model's backbone). Alternatively, you can use
         `make_plr_embeddings`.
 
     Examples:
@@ -538,7 +539,7 @@ def make_ple_lr_embeddings(bin_edges: List[Tensor], d_embedding: int) -> nn.Modu
 
     Specifically, the T-LR and Q-LR embeddings were described in the paper, both of which
     are special cases of the PLE-LR embeddings. The hyphen in all the names highlights
-    the fact that the parameters of the piecewise linear encoding are not trained
+    the fact that the bin edges of the piecewise linear encoding are not trained
     end-to-end with the rest of the model.
 
     This embedding sequantially applies three transformations:
