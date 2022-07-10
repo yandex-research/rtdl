@@ -281,7 +281,7 @@ class LinearEmbeddings(nn.Module):
 
 
 class PiecewiseLinearEncoder(nn.Module):
-    """Piecewise linear encoding described in 'On Embeddings for Numerical Features in Tabular Deep Learning' [1].
+    """Piecewise linear encoding for numerical features described in [1].
 
     See `rtdl.nn.compute_piecewise_linear_encoding` for details.
 
@@ -372,7 +372,7 @@ class PiecewiseLinearEncoder(nn.Module):
 
 
 class PeriodicEmbeddings(nn.Module):
-    """Periodic embeddings described in 'On Embeddings for Numerical Features in Tabular Deep Learning' [1].
+    """Periodic embeddings for numerical features described in [1].
 
     Warning:
         For better performance and to avoid some failure modes, it is recommended
@@ -386,7 +386,7 @@ class PeriodicEmbeddings(nn.Module):
             n_features = 3
             d_embedding = 4
             x = torch.randn(batch_size, n_features)
-            sigma = 1.0  # THIS MUST BE TUNED CAREFULLY
+            sigma = 1.0  # THIS HYPERPARAMETER MUST BE TUNED CAREFULLY
             m = PeriodicEmbeddings(n_features, d_embedding, sigma)
             # for better performance: m = nn.Sequantial(PeriodicEmbeddings(...), NLinear(...))
             assert m(x).shape == (batch_size, n_features, d_embedding)
@@ -429,7 +429,7 @@ class PeriodicEmbeddings(nn.Module):
 
 
 class NLinear(nn.Module):
-    """N linear layers for N token embeddings.
+    """N linear layers for N token (feature) embeddings.
 
     To understand this module, let's revise `torch.nn.Linear`. When `torch.nn.Linear` is
     applied to three-dimensional inputs of the shape
@@ -491,15 +491,15 @@ class NLinear(nn.Module):
 
 
 def make_lr_embeddings(n_features: int, d_embedding: int) -> nn.Module:
-    """The LR embeddings for numerical features from [1].
+    """The LR embeddings for numerical features described in [1].
 
     This embedding module is easy to use, and it usually provides performance gain over
     the embeddings-free approach (given the same backbone architecture). Depending on a
-    task, however, one may try to achieve better performance with more advanced modules.
+    task, however, one may try to achieve better performance with more advanced embedding modules.
 
-    This embedding consists of two parts:
+    This embedding sequantially applies two transformations:
 
-    * (L) Linear embeddings (via `LinearEmbeddings`)
+    * (L) Linear transformation (`LinearEmbeddings`)
     * (R) ReLU activation
 
     In [1], the following models used these embeddings: MLP-LR, ResNet-LR, Transformer-LR.
@@ -534,6 +534,55 @@ def make_lr_embeddings(n_features: int, d_embedding: int) -> nn.Module:
 
 
 def make_ple_lr_embeddings(bin_edges: List[Tensor], d_embedding: int) -> nn.Module:
+    """The PLE-LR embeddings for numerical features described in [1].
+
+    Specifically, the T-LR and Q-LR embeddings were described in the paper, both of which
+    are special cases of the PLE-LR embeddings. The hyphen in all the names highlights
+    the fact that the parameters of the piecewise linear encoding are not trained
+    end-to-end with the rest of the model.
+
+    This embedding sequantially applies three transformations:
+
+    * (PLE) Piecewise linear encoding (`PiecewiseLinearEncoder`)
+    * (L) Linear transformation (`NLinear`)
+    * (R) ReLU activation
+
+    In [1], the following models used these embeddings:
+
+        * MLP-Q-LR, ResNet-Q-LR, Transformer-Q-LR
+        * MLP-T-LR, ResNet-T-LR, Transformer-T-LR
+
+    Args:
+        bin_edges: the bin edges for `PiecewiseLinearEncoder` (the size of this list
+            is interpreted as the number of features).
+        d_embedding: the embedding size.
+    Returns:
+        embeddings: the embedding module
+
+    See also:
+        `make_lr_embeddings`
+        `make_plr_embeddings`
+
+    References:
+        * [1] Yury Gorishniy, Ivan Rubachev, Artem Babenko, "On Embeddings for Numerical Features in Tabular Deep Learning", 2022
+
+    Examples:
+        .. testcode::
+
+            train_size = 100
+            n_features = 4
+            X = torch.randn(train_size, n_features)
+            n_bins = 3
+            bin_edges = compute_quantile_bin_edges(X, n_bins)  # Q-LR
+            # bin_edges = compute_decision_tree_bin_edges(X, n_bins, ...)  # T-LR
+
+            batch_size = 2
+            n_features = 3
+            d_embedding = 4
+            x = X[:batch_size]
+            m = make_ple_lr_embeddings(bin_edges, d_embedding)
+            assert m(x).shape == (batch_size, n_features, d_embedding)
+    """
     n_features = len(bin_edges)
     embeddings = PiecewiseLinearEncoder(bin_edges, stack=True)
     assert isinstance(embeddings.d_encoding, int), INTERNAL_ERROR_MESSAGE
@@ -544,9 +593,48 @@ def make_ple_lr_embeddings(bin_edges: List[Tensor], d_embedding: int) -> nn.Modu
     )
 
 
-def make_plr_embeddings(n_features: int, d_embedding: int, sigma: float) -> nn.Module:
+def make_plr_embeddings(
+    n_features: int, d_embedding: int, d_periodic_embedding: int, sigma: float
+) -> nn.Module:
+    """The PLR embeddings for numerical features described in [1].
+
+    This embedding sequantially applies three transformations:
+
+    * (P) `Periodic`
+    * (L) Linear transformation (`NLinear`)
+    * (R) ReLU activation
+
+    In [1], the following models used these embeddings: MLP-PLR, ResNet-PLR, Transformer-PLR
+
+    Args:
+        n_features: the number of features
+        d_embedding: the embedding size
+        d_periodic_embedding: the embedding size produced by the `Periodic` module
+        sigma: the **super important** paramerer for `Periodic`
+    Returns:
+        embeddings: the embedding module
+
+    See also:
+        `make_lr_embeddings`
+        `make_ple_lr_embeddings`
+
+    References:
+        * [1] Yury Gorishniy, Ivan Rubachev, Artem Babenko, "On Embeddings for Numerical Features in Tabular Deep Learning", 2022
+
+    Examples:
+        .. testcode::
+
+            batch_size = 2
+            n_features = 3
+            d_periodic_embedding = 4
+            sigma = 5.0  # THIS HYPERPARAMETER MUST BE TUNED CAREFULLY
+            d_embedding = 6
+            x = torch.randn(batch_size, n_features)
+            m = make_plr_embeddings(n_features, d_embedding, d_periodic_embedding, sigma)
+            assert m(x).shape == (batch_size, n_features, d_embedding)
+    """
     return nn.Sequential(
-        PeriodicEmbeddings(n_features, d_embedding, sigma),
-        NLinear(n_features, d_embedding, d_embedding),
+        PeriodicEmbeddings(n_features, d_periodic_embedding, sigma),
+        NLinear(n_features, d_periodic_embedding, d_embedding),
         nn.ReLU(),
     )
