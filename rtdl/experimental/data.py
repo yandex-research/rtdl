@@ -13,17 +13,23 @@ class NoisyQuantileTransformer(QuantileTransformer):
     for tabular data problems (in addition to more popular ones such as
     `sklearn.preprocessing.StandardScaler`).
 
-    TODO: explain the difference with `sklearn.preprocessing.QuantileTransformer`
+    Compared to the bare `sklearn.preprocessing.QuantileTransformer`
+    (which is the base class for this transformer), `NoisyQuantileTransformer` is more
+    robust to columns with few unique values. It is achieved by applying noise
+    (typically, of a very low magnitude) to the data during the fitting stage
+    (but not during the transformation!) to deduplicate equal values.
 
-    As of now, no default parameter values are provided. However, a good starting
-    point is the configuration used in some papers on tabular deep learning [1,2]:
+    Note:
 
-    - `n_quantiles=min(train_size // 30, 1000)` where `train_size` is the number of
-        objects passed to the `.fit()` method. This heuristic rule was tested on
-        datasets with `train_size >= 5000`.
-    - `output_distribution='normal'`
-    - `subsample=10**9`
-    - `noise_std=1e-3`
+        As of now, no default parameter values are provided. However, a good starting
+        point is the configuration used in some papers on tabular deep learning [1,2]:
+
+        * ``n_quantiles=min(train_size // 30, 1000)`` where ``train_size`` is the number of
+            objects passed to the ``.fit()`` method. This heuristic rule was tested on
+            datasets with ``train_size >= 5000``.
+        * ``output_distribution='normal'``
+        * ``subsample=10**9``
+        * ``noise_std=1e-3``
 
     References:
         * [1] Yury Gorishniy, Ivan Rubachev, Valentin Khrulkov, Artem Babenko, "Revisiting Deep Learning Models for Tabular Data", NeurIPS 2021
@@ -39,7 +45,15 @@ class NoisyQuantileTransformer(QuantileTransformer):
         noise_std: float,
         **kwargs,
     ) -> None:
-        """TODO"""
+        """
+        Args:
+            n_quantiles: the argument for `sklearn.preprocessing.QuantileTransformer`
+            output_distribution: the argument for `sklearn.preprocessing.QuantileTransformer`
+            subsample: the argument for `sklearn.preprocessing.QuantileTransformer`
+            noise_std: the scale of noise that is applied to "deduplicate" equal values
+                during the fitting stage.
+            kwargs: other arguments for `sklearn.preprocessing.QuantileTransformer`
+        """
         if noise_std <= 0.0:
             raise ValueError(
                 'noise_std must be positive. Note that with noise_std=0 the transformer'
