@@ -40,7 +40,7 @@ class CLSEmbedding(nn.Module):
             x = torch.randn(batch_size, n_tokens, d)
             x = cls_embedding(x)
             assert x.shape == (batch_size, n_tokens + 1, d)
-            assert (x[:, 0, :] == cls_embedding.weight.expand_as(x)).all()
+            assert (x[:, 0, :] == cls_embedding.weight.expand(len(x), -1)).all()
 
     References:
         * [devlin2018bert] Jacob Devlin, Ming-Wei Chang, Kenton Lee, Kristina Toutanova "BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding" 2018
@@ -65,7 +65,7 @@ class CLSEmbedding(nn.Module):
             raise ValueError(
                 'The last dimension of x must be equal to the embedding size'
             )
-        return torch.cat([self.weight.expand_as(x), x], dim=1)
+        return torch.cat([self.weight.expand(len(x), 1, -1), x], dim=1)
 
 
 class OneHotEncoder(nn.Module):
