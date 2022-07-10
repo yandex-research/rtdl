@@ -232,7 +232,33 @@ class CatEmbeddings(nn.Module):
 
 
 class LinearEmbeddings(nn.Module):
-    """Linear embeddings for numerical features."""
+    """Linear embeddings for numerical features.
+
+    * **Input shape**: ``(batch_size, n_features)``
+    * **Output shape**: ``(batch_size, n_features, d_embedding)``
+
+    For each feature, a separate linear layer is allocated (``n_features`` layers in total).
+    One such layer can be represented as ``torch.nn.Linear(1, d_embedding)``
+
+    The embedding process is illustrated in the following pseudocode::
+
+        layers = [nn.Linear(1, d_embedding) for _ in range(n_features)]
+        x = torch.randn(batch_size, n_features)
+        x_embeddings = torch.stack(
+            [layers[i](x[:, i:i+1]) for i in range(n_features)],
+            1,
+        )
+
+    Examples:
+        .. testcode::
+
+            batch_size = 2
+            n_features = 3
+            d_embedding = 4
+            x = torch.randn(batch_size, n_features)
+            m = LinearEmbeddings(n_features, d_embedding)
+            assert m(x).shape == (batch_size, n_features, d_embedding)
+    """
 
     def __init__(self, n_features: int, d_embedding: int, bias: bool = True):
         super().__init__()
@@ -255,10 +281,63 @@ class LinearEmbeddings(nn.Module):
 
 
 class PiecewiseLinearEncoder(nn.Module):
+    """Piecewise linear encoding described in 'On Embeddings for Numerical Features in Tabular Deep Learning' [1].
+
+    See `rtdl.nn.compute_piecewise_linear_encoding` for details.
+
+    Examples:
+        .. testcode::
+
+            train_size = 100
+            n_features = 4
+            X = torch.randn(train_size, n_features)
+            n_bins = 3
+            bin_edges = compute_quantile_bin_edges(X, n_bins)
+            bin_counts = [len(x) - 1 for x in bin_edges]
+            batch_size = 3
+            x = X[:batch_size]
+
+            m_ple = PiecewiseLinearEncoder(bin_edges, stack=False)
+            assert m_ple(x).shape == (n_objects, sum(bin_counts))
+
+            m_ple = PiecewiseLinearEncoder(bin_edges, stack=True)
+            assert m_ple(x).shape == (n_objects, n_features, max(bin_counts))
+
+            x_bin_indices = compute_bin_indices(x, bin_edges)
+            x_bin_ratios = compute_bin_linear_ratios(x, x_bin_indices, bin_edges)
+            m_ple = PiecewiseLinearEncoder(
+                bin_edges, stack=True, expect_ratios_and_indices=True
+            )
+            assert m_ple(x_bin_ratios, x_bin_indices).shape == (
+                n_objects, n_features, max(bin_counts)
+            )
+
+    References:
+        * [1] Yury Gorishniy, Ivan Rubachev, Artem Babenko, "On Embeddings for Numerical Features in Tabular Deep Learning", 2022
+    """
+
     bin_edges: Tensor
     d_encoding: Union[int, List[int]]
 
-    def __init__(self, bin_edges: List[Tensor], *, stack: bool) -> None:
+    def __init__(
+        self,
+        bin_edges: List[Tensor],
+        *,
+        stack: bool,
+        expect_ratios_and_indices: bool = False,
+    ) -> None:
+        """
+        Args:
+            bin_edges: the bin edges. Can be obtained via
+                `rtdl.data.compute_quantile_bin_edges` or `rtdl.data.compute_decision_tree_bin_edges`
+            stack: the argument for `rtdl.data.compute_piecewise_linear_encoding`.
+            expect_ratios_and_indices: if `True`, then the module will expect two arguments
+                in its forward pass: bin ratios (produced by `rtdl.data.compute_bin_linear_ratios`)
+                and indices (produced by `rtdl.data.compute_bin_indices`). Otherwise,
+                the modules will expect one argument (raw numerical feature values).
+                This option can be usefull if computing ratios and indices on-the-fly
+                is a bottleneck and you want to use precomputed values.
+        """
         super().__init__()
         self.register_buffer('bin_edges', torch.cat(bin_edges), False)
         self.edge_counts = [len(x) for x in bin_edges]
@@ -268,13 +347,24 @@ class PiecewiseLinearEncoder(nn.Module):
             if self.stack
             else [x - 1 for x in self.edge_counts]
         )
+        self.expect_ratios_and_indices = expect_ratios_and_indices
 
-    def forward(self, x: Tensor, indices: Optional[Tensor]) -> Tensor:
+    def forward(self, x: Tensor, indices: Optional[Tensor] = None) -> Tensor:
         if indices is None:
+            if self.expect_ratios_and_indices:
+                raise ValueError(
+                    'The module expects two arguments (ratios and indices),'
+                    ' because the argument expect_ratios_and_indices was set to `True` in the constructor'
+                )
             # x represents raw values
             bin_edges = self.bin_edges.split(self.edge_counts)
             return compute_piecewise_linear_encoding(x, bin_edges, stack=self.stack)
         else:
+            if not self.expect_ratios_and_indices:
+                raise ValueError(
+                    'The module expects one arguments (raw numerical feature values),'
+                    ' because the argument expect_ratios_and_indices was set to `False` in the constructor'
+                )
             # x represents ratios
             return piecewise_linear_encoding(
                 x, indices, self.d_encoding, stack=self.stack
@@ -282,8 +372,44 @@ class PiecewiseLinearEncoder(nn.Module):
 
 
 class PeriodicEmbeddings(nn.Module):
+    """Periodic embeddings described in 'On Embeddings for Numerical Features in Tabular Deep Learning' [1].
+
+    Warning:
+        For better performance and to avoid some failure modes, it is recommended
+        to insert `NLinear` after this module. Alternatively, you can use
+        `make_plr_embeddings`.
+
+    Examples:
+        .. testcode::
+
+            batch_size = 2
+            n_features = 3
+            d_embedding = 4
+            x = torch.randn(batch_size, n_features)
+            sigma = 1.0  # THIS MUST BE TUNED CAREFULLY
+            m = PeriodicEmbeddings(n_features, d_embedding, sigma)
+            # for better performance: m = nn.Sequantial(PeriodicEmbeddings(...), NLinear(...))
+            assert m(x).shape == (batch_size, n_features, d_embedding)
+
+    References:
+        * [1] Yury Gorishniy, Ivan Rubachev, Artem Babenko, "On Embeddings for Numerical Features in Tabular Deep Learning", 2022
+    """
+
     # Source: https://github.com/Yura52/tabular-dl-num-embeddings/blob/e49e95c52f829ad0ab7d653e0776c2a84c03e261/lib/deep.py#L28
     def __init__(self, n_features: int, d_embedding: int, sigma: float) -> None:
+        """
+        Args:
+            n_features: the number of numerical features
+            d_embedding: the embedding size, must be an even positive integer.
+            sigma: the scale of the weight initialization.
+                **This is a super important parameter which significantly affects performance**.
+                Its optimal value can be dramatically different for different datasets, so
+                no "default value" can exist for this parameter, and it must be tuned for
+                each dataset. In the original paper, during hyperparameter tuning, this
+                parameter was sampled from the distribution ``LogUniform[1e-2, 1e2]``.
+                A similar grid would be ``[1e-2, 1e-1, 1e0, 1e1, 1e2]``.
+                If possible, add more intermidiate values to this grid.
+        """
         if d_embedding % 2:
             raise ValueError('d_embedding must be even')
 
@@ -303,7 +429,42 @@ class PeriodicEmbeddings(nn.Module):
 
 
 class NLinear(nn.Module):
+    """N linear layers for N token embeddings.
+
+    To understand this module, let's revise `torch.nn.Linear`. When `torch.nn.Linear` is
+    applied to three-dimensional inputs of the shape
+    ``(batch_size, n_tokens, d_embedding)``, then the same linear transformation is
+    applied to each of ``n_tokens`` token (feature) embeddings.
+
+    By contrast, `NLinear` allocates one linear layer per token (``n_tokens`` layers in total).
+    One such layer can be represented as ``torch.nn.Linear(d_in, d_out)``.
+    So, the i-th linear transformation is applied to the i-th token embedding, as
+    illustrated in the following pseudocode::
+
+        layers = [nn.Linear(d_in, d_out) for _ in range(n_tokens)]
+        x = torch.randn(batch_size, n_tokens, d_in)
+        result = torch.stack([layers[i](x[:, i]) for i in range(n_tokens)], 1)
+
+    Examples:
+        .. testcode::
+
+            batch_size = 2
+            n_features = 3
+            d_embedding_in = 4
+            d_embedding_out = 5
+            x = torch.randn(batch_size, n_features, d_embedding_in)
+            m = NLinear(n_features, d_embedding_in, d_embedding_out)
+            assert m(x).shape == (batch_size, n_features, d_embedding_out)
+    """
+
     def __init__(self, n_tokens: int, d_in: int, d_out: int, bias: bool = True) -> None:
+        """
+        Args:
+            n_tokens: the number of tokens (features)
+            d_in: the input dimension
+            d_out: the output dimension
+            bias: indicates if the underlying linear layers have biases
+        """
         super().__init__()
         self.weight = Parameter(Tensor(n_tokens, d_in, d_out))
         self.bias = Parameter(Tensor(n_tokens, d_out)) if bias else None
