@@ -155,16 +155,13 @@ def make_simple_model(
     Args:
         input: the input modules. If the main module is
             `rtdl.nn.Transformer` or ``main_input_ndim == 3``, then the input modules must
-            produce three dimensional tensors. Otherwise, the the input modules can produce
-            two and three dimensional tensors.
+            produce three dimensional tensors. Otherwise, the input modules are allowed
+            to produce two and three dimensional tensors.
         main: the main module. See the tutorial below.
         main_input_ndim: the number of dimensions of the main module's input.
             Only `None`, ``2`` and ``3`` are supported. `None` is allowed only when
             ``main`` is a one of: `rtdl.nn.MLP`, `rtdl.nn.ResNet`, `rtdl.nn.Transformer`.
-        output: the output modules. If presented, then the main module's output is
-            passed to all of the output modules, and the final output is a dictionary with
-            values produced by the output modules. This can be useful when building
-            a model with multiple "heads".
+        output: the output modules. See the tutorial below.
 
     .. rubric:: Tutorial
 
@@ -218,6 +215,21 @@ def make_simple_model(
         model = make_simple_model(dict(x_num=m_num, x_cat=m_cat), m_main)
         ...
         y_pred = model(x_num=x_num, x_cat=x_cat)
+
+    Optionally, you can set output modules. For example, if you want the model to have
+    two heads (one for the downstream task and another one for the auxiliary input
+    reconstruction task serving as a regularization), then the code can look like this::
+
+        model = make_simple_model(
+            dict(x_num=m_num, x_cat=m_cat),
+            m_main,
+            output=dict(y_pred=m_pred, x_rec=m_reconstruction)
+        )
+        # model(x_num=..., x_cat=...) produces a dictionary:
+        # {
+        #     'y_pred': m_pred(<output of the main module>),
+        #     'x_rec': m_reconstruction(<output of the main module>),
+        # }
 
     .. rubric:: Advanced usage
 
