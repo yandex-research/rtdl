@@ -158,9 +158,12 @@ def make_simple_model(
             produce three dimensional tensors. Otherwise, the input modules are allowed
             to produce two and three dimensional tensors.
         main: the main module. See the tutorial below.
-        main_input_ndim: the number of dimensions of the main module's input.
-            Only `None`, ``2`` and ``3`` are supported. `None` is allowed only when
-            ``main`` is a one of: `rtdl.nn.MLP`, `rtdl.nn.ResNet`, `rtdl.nn.Transformer`.
+        main_input_ndim: the number of dimensions of the main module's input. The outputs
+            of all input modules are merged into a tensor with ``main_input_ndim`` dimensions.
+            If the main module is one of {`rtdl.nn.MLP`, `rtdl.nn.ResNet`, `rtdl.nn.Transformer`},
+            then ``main_input_ndim`` must be `None` and it will be set to the correct value
+            under the hood (2, 2 and 3 respectively). Otherwise, it must be
+            either ``2`` or ``3``.
         output: the output modules. See the tutorial below.
 
     .. rubric:: Tutorial
@@ -176,18 +179,22 @@ def make_simple_model(
         # first categorical feature takes 3 unique values
         # second categorical feature takes 4 unique values
         cat_cardinalities = [3, 4]
-        d_num_embedding = 5
 
         # inputs
         x_num = torch.randn(batch_size, n_num_features)
         x_cat = torch.tensor([[0, 1], [2, 3], [2, 0]])
         asssert x_cat.shape == (batch_size, n_cat_features)
 
-        # modules
-        m_num = rtdl.nn.make_plr_embeddings(d_num_embedding, n_num_features, 0.1)
-        # for a simple model without embeddings for numerical features:
-        # m_num = nn.Identity()
+        # (1) the module for numerical features
+        # no transformations for numerical features:
+        m_num = nn.Identity()
+        # for a fancy model with embeddings for numerical features, it would be:
+        # m_num = make_fancy_num_embedding_module(...)
+
+        # (2) the module for categorical features
         m_cat = rtdl.nn.OneHotEncoder(cat_cardinalities)
+
+        # (3) the main module (backbone)
         m_main = rtdl.nn.MLP.make_baseline(
             d_in=n_num_features * d_num_embedding + sum(cat_cardinalities),
             d_out=1,

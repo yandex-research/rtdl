@@ -69,9 +69,30 @@ class CLSEmbedding(nn.Module):
 
 
 class OneHotEncoder(nn.Module):
+    """One hot encoding for categorical features.
+
+    * **Input shape**: ``(batch_size, n_categorical_features)``
+    * **Input data type**: ``integer``
+
+    Examples::
+
+        # three categorical features
+        cardinalities = [3, 4, 5]
+        ohe = OneHotEncoder(cardinalities)
+        batch_size = 2
+        x_cat = torch.stack([torch.randint(0, c, (batch_size,)) for c in cardinalities], 1)
+        assert ohe(x_cat).shape == (batch_size, sum(cardinalities))
+        assert (x_cat.sum(1) == len(cardinalities)).all()
+    """
+
     cardinalities: Tensor
 
     def __init__(self, cardinalities: List[int]) -> None:
+        """
+        Args:
+            cardinalities: ``cardinalities[i]`` is the number of unique values for the
+                i-th categorical feature.
+        """
         super().__init__()
         self.register_buffer('cardinalities', torch.tensor(cardinalities))
 
@@ -86,6 +107,34 @@ class OneHotEncoder(nn.Module):
 
 
 class CatEmbeddings(nn.Module):
+    """Embeddings for categorical features.
+
+    * **Input shape**: ``(batch_size, n_categorical_features)``
+    * **Input data type**: ``integer``
+
+    To obtain embeddings for the i-th feature, use `get_embeddings`.
+
+    Examples:
+        .. testcode::
+
+            # three categorical features
+            cardinalities = [3, 4, 5]
+            embedding_sizes = [6, 7, 8]
+            m_cat = CatEmbeddings(list(zip(cardinalities, embedding_sizes)))
+            batch_size = 2
+            x_cat = torch.stack([
+                torch.randint(0, c, (batch_size,))
+                for c, _ in cardinalities_and_dimensions
+            ], 1)
+            assert m_cat(x_cat).shape == (batch_size, sum(embedding_sizes))
+            i = 1
+            assert m_cat.get_embeddings(i).shape == (cardinalities[i], embedding_sizes[i])
+
+            d_embedding = 9
+            m_cat = CatEmbeddings(cardinalities, d_embedding, stack=True)
+            m_cat(x_cat).shape == (batch_size, len(cardinalities), d_embedding)
+    """
+
     def __init__(
         self,
         _cardinalities_and_maybe_dimensions: Union[List[int], List[Tuple[int, int]]],
@@ -94,6 +143,20 @@ class CatEmbeddings(nn.Module):
         stack: bool = False,
         bias: bool = False,
     ) -> None:
+        """
+        Args:
+            _cardinalities_and_maybe_dimensions: (positional-only argument!) either a
+                list of cardinalities or a list of ``(cardinality, embedding_size)`` pairs.
+            d_embedding: if not `None`, then (1) the first argument must be a list of
+                cardinalities, (2) all the features will have the same embedding size,
+                (3) ``stack=True`` becomes allowed.
+            stack: if `True`, then ``d_embedding`` must be provided, and the module will
+                produce outputs of the shape ``(batch_size, n_cat_features, d_embedding)``.
+            bias: this argument is presented for historical reasons, just keep it `False`
+                (when it is `True`, then for a each feature one more trainable vector is
+                allocated, and it is added to the main embedding regardless of the
+                feature values).
+        """
         spec = _cardinalities_and_maybe_dimensions
         if not spec:
             raise ValueError('The first argument must be non-empty')
@@ -128,6 +191,18 @@ class CatEmbeddings(nn.Module):
                 _initialize_embeddings(x, x.shape[-1])
 
     def get_embeddings(self, feature_idx: int) -> Tensor:
+        """Get embeddings for the i-th feature.
+
+        This method is needed because of the ``bias`` option (when it is set to `True`,
+        the embeddings provided by the underlying `torch.nn.Embedding` are not "complete").
+
+        Args:
+            feature_idx: the feature index
+        Return:
+            embeddings for the feature ``feature_idx``
+        Raises:
+            ValueError: for invalid inputs
+        """
         if feature_idx < 0 or feature_idx >= len(self._embeddings):
             raise ValueError(
                 f'feature_idx must be in the range(0, {len(self._embeddings)}).'
