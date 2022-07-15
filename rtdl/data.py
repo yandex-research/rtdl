@@ -8,6 +8,7 @@ __all__ = [
     'piecewise_linear_encoding',
     'PiecewiseLinearEncoder',
     'get_category_sizes',
+    'NoisyQuantileTransformer',
 ]
 
 import math
@@ -15,11 +16,16 @@ import warnings
 from typing import Any, Callable, Dict, List, Optional, TypeVar, Union, cast, overload
 
 import numpy as np
+import scipy.sparse
 import torch
 from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.preprocessing import QuantileTransformer, StandardScaler
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
+from sklearn.utils import check_random_state
 from torch import Tensor, as_tensor
 from typing_extensions import Literal
+
+from ._utils import experimental
 
 Number = TypeVar('Number', int, float)
 
@@ -767,6 +773,97 @@ class PiecewiseLinearEncoder(BaseEstimator, TransformerMixin):
     def transform(self, X: np.ndarray) -> np.ndarray:
         """Transform the data."""
         return compute_piecewise_linear_encoding(X, self.bin_edges_, stack=self.stack)
+
+
+@experimental
+class NoisyQuantileTransformer(QuantileTransformer):
+    """**[EXPERIMENTAL]** A variation of `sklearn.preprocessing.QuantileTransformer`.
+
+    This transformer can be considered as one of the default preprocessing strategies
+    for tabular data problems (in addition to more popular ones such as
+    `sklearn.preprocessing.StandardScaler`).
+
+    Compared to the bare `sklearn.preprocessing.QuantileTransformer`
+    (which is the base class for this transformer), `NoisyQuantileTransformer` is more
+    robust to columns with few unique values. It is achieved by applying noise
+    (typically, of a very low magnitude) to the data during the fitting stage
+    (but not during the transformation!) to deduplicate equal values.
+
+    Note:
+
+        As of now, no default parameter values are provided. However, a good starting
+        point is the configuration used in some papers on tabular deep learning [1,2]:
+
+        * ``n_quantiles=min(train_size // 30, 1000)`` where ``train_size`` is the number of
+            objects passed to the ``.fit()`` method. This heuristic rule was tested on
+            datasets with ``train_size >= 5000``.
+        * ``output_distribution='normal'``
+        * ``subsample=10**9``
+        * ``noise_std=1e-3``
+
+    References:
+        * [1] Yury Gorishniy, Ivan Rubachev, Valentin Khrulkov, Artem Babenko, "Revisiting Deep Learning Models for Tabular Data", NeurIPS 2021
+        * [2] Yury Gorishniy, Ivan Rubachev, Artem Babenko, "On Embeddings for Numerical Features in Tabular Deep Learning", arXiv 2022
+    """
+
+    def __init__(
+        self,
+        *,
+        n_quantiles: int,
+        output_distribution: str,
+        subsample: int,
+        noise_std: float,
+        **kwargs,
+    ) -> None:
+        """
+        Args:
+            n_quantiles: the argument for `sklearn.preprocessing.QuantileTransformer`
+            output_distribution: the argument for `sklearn.preprocessing.QuantileTransformer`
+            subsample: the argument for `sklearn.preprocessing.QuantileTransformer`
+            noise_std: the scale of noise that is applied to "deduplicate" equal values
+                during the fitting stage.
+            kwargs: other arguments for `sklearn.preprocessing.QuantileTransformer`
+        """
+        if noise_std <= 0.0:
+            raise ValueError(
+                'noise_std must be positive. Note that with noise_std=0 the transformer'
+                ' is equivalent to `sklearn.preprocessing.QuantileTransformer`'
+            )
+        super().__init__(
+            n_quantiles=n_quantiles,
+            output_distribution=output_distribution,
+            subsample=subsample,
+            **kwargs,
+        )
+        self.noise_std = noise_std
+
+    def fit(self, X, y=None):
+        exception = ValueError('X must be either `numpy.ndarray` or `pandas.DataFrame`')
+        if isinstance(X, np.ndarray):
+            X_ = X
+        elif hasattr(X, 'values'):
+            try:
+                import pandas
+
+                if not isinstance(X, pandas.DataFrame):
+                    raise exception
+            except ImportError:
+                raise exception
+            X_ = X.values
+        else:
+            raise exception
+        if scipy.sparse.issparse(X_):
+            raise ValueError(
+                'rtdl.data.NoisyQuantileTransformer does not support sparse input'
+            )
+
+        self.scaler_ = StandardScaler(with_mean=False)
+        X_ = self.scaler_.fit_transform(X_)
+        random_state = check_random_state(self.random_state)
+        return super().fit(X_ + random_state.normal(0.0, self.noise_std, X_.shape), y)
+
+    def transform(self, X):
+        return super().transform(self.scaler_.transform(X))
 
 
 def get_category_sizes(X: np.ndarray) -> List[int]:

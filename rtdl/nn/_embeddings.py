@@ -9,7 +9,7 @@ import torch.nn.functional as F
 from torch import Tensor
 from torch.nn.parameter import Parameter
 
-from .._utils import INTERNAL_ERROR_MESSAGE
+from .._utils import INTERNAL_ERROR_MESSAGE, experimental
 from ..data import compute_piecewise_linear_encoding, piecewise_linear_encoding
 
 
@@ -491,8 +491,9 @@ class NLinear(nn.Module):
         return x
 
 
+@experimental
 def make_lr_embeddings(n_features: int, d_embedding: int) -> nn.Module:
-    """The LR embeddings for numerical features described in [1].
+    """**[EXPERIMENTAL]** The LR embeddings for numerical features described in [1].
 
     This embedding module is easy to use, and it usually provides performance gain over
     the embeddings-free approach (given the same backbone architecture). Depending on a
@@ -534,8 +535,9 @@ def make_lr_embeddings(n_features: int, d_embedding: int) -> nn.Module:
     )
 
 
+@experimental
 def make_ple_lr_embeddings(bin_edges: List[Tensor], d_embedding: int) -> nn.Module:
-    """The PLE-LR embeddings for numerical features described in [1].
+    """**[EXPERIMENTAL]** The PLE-LR embeddings for numerical features described in [1].
 
     Specifically, the T-LR and Q-LR embeddings were described in the paper, both of which
     are special cases of the PLE-LR embeddings. The hyphen in all the names highlights
@@ -594,10 +596,11 @@ def make_ple_lr_embeddings(bin_edges: List[Tensor], d_embedding: int) -> nn.Modu
     )
 
 
+@experimental
 def make_plr_embeddings(
     n_features: int, d_embedding: int, d_periodic_embedding: int, sigma: float
 ) -> nn.Module:
-    """The PLR embeddings for numerical features described in [1].
+    """**[EXPERIMENTAL]** The PLR embeddings for numerical features described in [1].
 
     This embedding sequantially applies three transformations:
 
