@@ -446,7 +446,7 @@ def _LVR_encoding(
 
     if type(left) is not type(right):
         raise ValueError('left and right must be of the same type')
-    if str(type(left)) not in str(values.dtype):
+    if type(left).__name__ not in str(values.dtype):
         raise ValueError(
             'The `values` array has dtype incompatible with left and right'
         )

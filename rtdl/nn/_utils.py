@@ -18,7 +18,7 @@ class ReGLU(nn.Module):
 
 def make_nn_module(module_type: ModuleType, *args) -> nn.Module:
     if isinstance(module_type, str):
-        if str == 'ReGLU':
+        if module_type == 'ReGLU':
             cls = ReGLU
         else:
             try:

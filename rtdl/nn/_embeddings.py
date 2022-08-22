@@ -124,7 +124,7 @@ class CatEmbeddings(nn.Module):
             batch_size = 2
             x_cat = torch.stack([
                 torch.randint(0, c, (batch_size,))
-                for c, _ in cardinalities_and_dimensions
+                for c in cardinalities
             ], 1)
             assert m_cat(x_cat).shape == (batch_size, sum(embedding_sizes))
             i = 1
@@ -160,11 +160,14 @@ class CatEmbeddings(nn.Module):
         spec = _cardinalities_and_maybe_dimensions
         if not spec:
             raise ValueError('The first argument must be non-empty')
-        if (d_embedding is None) ^ isinstance(spec[0], int):
+        if not (
+            (isinstance(spec[0], tuple) and d_embedding is None)
+            or (isinstance(spec[0], int) and d_embedding is not None)
+        ):
             raise ValueError(
                 'Invalid arguments. Valid combinations are:'
-                ' (1) spec is a list of tuples (cardinality, d_embedding) AND d_embedding is None'
-                ' (2) spec is a list of cardinalities AND d_embedding is an integer'
+                ' (1) the first argument is a list of (cardinality, embedding)-tuples AND d_embedding is None'
+                ' (2) the first argument is a list of cardinalities AND d_embedding is an integer'
             )
         if stack and d_embedding is None:
             raise ValueError('stack can be True only when d_embedding is not None')

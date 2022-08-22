@@ -624,7 +624,7 @@ class Transformer(nn.Module):
                     attention_dropout=attention_dropout,
                     attention_normalization=(
                         'Identity'
-                        if self.prenormalization
+                        if prenormalization
                         and block_idx == 0
                         and not first_prenormalization
                         else attention_normalization
