@@ -31,7 +31,9 @@ dtest:
 	make -C $(DOCS_DIR) doctest
 
 spelling:
-	make -C $(DOCS_DIR) docs SPHINXOPTS="-W -b spelling"
+	if [[ $(shell uname -m) != "arm64" ]]; then\
+		make -C $(DOCS_DIR) docs SPHINXOPTS="-W -b spelling";\
+	fi
 
 lint:
 	python -m pre_commit_hooks.debug_statement_hook **/*.py
