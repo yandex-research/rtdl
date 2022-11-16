@@ -1309,7 +1309,7 @@ class FTTransformer(nn.Module):
             transformer_config['head_activation'] = None
         if transformer_config['kv_compression_ratio'] is not None:
             transformer_config['n_tokens'] = feature_tokenizer.n_tokens + 1
-        return FTTransformer(
+        return cls(
             feature_tokenizer,
             Transformer(**transformer_config),
         )
