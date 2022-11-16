@@ -562,7 +562,7 @@ class MLP(nn.Module):
                 'In this constructor, if d_layers contains more than two elements, then'
                 ' all elements except for the first and the last ones must be equal.'
             )
-        return MLP(
+        return cls(
             d_in=d_in,
             d_layers=d_layers,  # type: ignore
             dropouts=dropout,
