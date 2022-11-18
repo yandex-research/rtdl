@@ -106,7 +106,7 @@ def compute_quantile_bin_edges(X, n_bins: int):
     edges = []
     for column, adjusted_n_bins in zip(X.T, adjusted_bin_counts):
         # quantiles include 0.0 and 1.0
-        quantiles = torch.linspace(0.0, 1.0, adjusted_n_bins + 1)
+        quantiles = torch.linspace(0.0, 1.0, adjusted_n_bins + 1).to(column)
         edges.append(torch.sort(torch.unique(torch.quantile(column, quantiles))).values)
     return edges if is_torch else [x.numpy() for x in edges]
 
@@ -246,7 +246,7 @@ def compute_decision_tree_bin_edges(
                 tree_thresholds.append(tree.threshold[node_id])
         tree_thresholds.append(column.min())
         tree_thresholds.append(column.max())
-        edges.append(np.array(sorted(set(tree_thresholds))))
+        edges.append(np.array(sorted(set(tree_thresholds)), dtype=X.dtype))
     return [as_tensor(x, device=X_device) for x in edges] if is_torch else edges
 
 
@@ -386,9 +386,8 @@ def compute_bin_linear_ratios(X, bin_indices, bin_edges):
                 f'The indices in indices[:, {c_i}] are not compatible with bin_edges[{c_i}]'
             )
         effective_c_bin_edges = torch.cat((-inf, c_bin_edges[1:-1], inf))
-        if (
-            (c_values < effective_c_bin_edges[c_indices]).any()
-            or (c_values > effective_c_bin_edges[c_indices + 1])
+        if (c_values < effective_c_bin_edges[c_indices]).any() or (
+            c_values > effective_c_bin_edges[c_indices + 1]
         ).any():
             raise ValueError(
                 'Values in X are not consistent with the provided bin indices and edges.'
@@ -442,7 +441,7 @@ def _LVR_encoding(
     """
     is_torch = isinstance(values, Tensor)
     values = as_tensor(values)
-    indices = as_tensor(values)
+    indices = as_tensor(indices)
 
     if type(left) is not type(right):
         raise ValueError('left and right must be of the same type')
@@ -465,7 +464,7 @@ def _LVR_encoding(
             raise ValueError(
                 'If d_encoding is a list, then its size must be equal to `values.shape[1]`'
             )
-        if (indices >= np.array(d_encoding)[None]).any():
+        if (indices >= torch.tensor(d_encoding).to(indices)[None]).any():
             raise ValueError(
                 'All indices must be less than the corresponding d_encoding'
             )
@@ -606,18 +605,12 @@ def piecewise_linear_encoding(
         raise ValueError(message)
     del lower_bounds
 
-    upper_bounds = torch.ones_like(bin_ratios)
-    is_last_bin = bin_indices + 1 == (
-        d_encoding
-        if isinstance(d_encoding, int)
-        else torch.as_tensor(
-            d_encoding, dtype=bin_indices.dtype, device=bin_indices.device
-        )
-    )
-    upper_bounds[is_last_bin] = math.inf
-    if (bin_ratios > upper_bounds).any():
-        raise ValueError(message)
-    del upper_bounds
+    # upper_bounds = torch.ones_like(bin_ratios)
+    # is_last_bin = bin_indices + 1 == as_tensor(list(map(len, bin_edges)))
+    # upper_bounds[is_last_bin] = math.inf
+    # if (bin_ratios > upper_bounds).any():
+    #     raise ValueError(message)
+    # del upper_bounds
 
     encoding = _LVR_encoding(bin_ratios, bin_indices, d_encoding, 1.0, 0.0, stack=stack)
     return encoding if is_torch else encoding.numpy()
