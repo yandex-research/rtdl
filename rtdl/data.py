@@ -317,19 +317,19 @@ def compute_bin_indices(X, bin_edges):
 
 @overload
 def compute_bin_linear_ratios(
-    X: np.ndarray, bin_indices: np.ndarray, bin_edges: List[np.ndarray]
+    X: np.ndarray, bin_edges: List[np.ndarray], bin_indices: np.ndarray
 ) -> np.ndarray:
     ...
 
 
 @overload
 def compute_bin_linear_ratios(
-    X: Tensor, bin_indices: Tensor, bin_edges: List[Tensor]
+    X: Tensor, bin_edges: List[Tensor], bin_indices: Tensor
 ) -> Tensor:
     ...
 
 
-def compute_bin_linear_ratios(X, bin_indices, bin_edges):
+def compute_bin_linear_ratios(X, bin_edges, bin_indices):
     """Compute the ratios for piecewise linear encoding as described in [1].
 
     The output of this function can be passed as input to:
@@ -359,7 +359,7 @@ def compute_bin_linear_ratios(X, bin_indices, bin_edges):
             n_bins = 3
             bin_edges = compute_quantile_bin_edges(X, n_bins)
             bin_indices = compute_bin_indices(X, bin_edges)
-            bin_ratios = compute_bin_linear_ratios(X, bin_indices, bin_edges)
+            bin_ratios = compute_bin_linear_ratios(X, bin_edges, bin_indices)
     """
     is_torch = isinstance(X, Tensor)
     X = as_tensor(X)
@@ -401,8 +401,8 @@ def compute_bin_linear_ratios(X, bin_indices, bin_edges):
 
 @overload
 def _LVR_encoding(
-    values: Tensor,
     indices: Tensor,
+    values: Tensor,
     d_encoding: Union[int, List[int]],
     left: Number,
     right: Number,
@@ -414,8 +414,8 @@ def _LVR_encoding(
 
 @overload
 def _LVR_encoding(
-    values: np.ndarray,
     indices: np.ndarray,
+    values: np.ndarray,
     d_encoding: Union[int, List[int]],
     left: Number,
     right: Number,
@@ -426,8 +426,8 @@ def _LVR_encoding(
 
 
 def _LVR_encoding(
-    values,
     indices,
+    values,
     d_encoding: Union[int, List[int]],
     left: Number,
     right: Number,
@@ -517,8 +517,8 @@ def _LVR_encoding(
 
 @overload
 def piecewise_linear_encoding(
-    bin_ratios: Tensor,
     bin_indices: Tensor,
+    bin_ratios: Tensor,
     d_encoding: Union[int, List[int]],
     *,
     stack: bool,
@@ -528,8 +528,8 @@ def piecewise_linear_encoding(
 
 @overload
 def piecewise_linear_encoding(
-    bin_ratios: np.ndarray,
     bin_indices: np.ndarray,
+    bin_ratios: np.ndarray,
     d_encoding: Union[int, List[int]],
     *,
     stack: bool,
@@ -538,7 +538,7 @@ def piecewise_linear_encoding(
 
 
 def piecewise_linear_encoding(
-    bin_ratios, bin_indices, d_encoding: Union[int, List[int]], *, stack: bool
+    bin_indices, bin_ratios, d_encoding: Union[int, List[int]], *, stack: bool
 ):
     """Construct piecewise linear encoding as described in [1].
 
@@ -575,9 +575,9 @@ def piecewise_linear_encoding(
             n_bins = 3
             bin_edges = compute_quantile_bin_edges(X, n_bins)
             bin_indices = compute_bin_indices(X, bin_edges)
-            bin_ratios = compute_bin_linear_ratios(X, bin_indices, bin_edges)
+            bin_ratios = compute_bin_linear_ratios(X, bin_edges, bin_indices)
             bin_counts = [len(x) - 1 for x in bin_edges]
-            X_ple = piecewise_linear_encoding(bin_ratios, bin_indices, bin_counts, stack=True)
+            X_ple = piecewise_linear_encoding(bin_indices, bin_ratios, bin_counts, stack=True)
     """
     is_torch = isinstance(bin_ratios, Tensor)
     bin_ratios = torch.as_tensor(bin_ratios)
@@ -612,7 +612,7 @@ def piecewise_linear_encoding(
     #     raise ValueError(message)
     # del upper_bounds
 
-    encoding = _LVR_encoding(bin_ratios, bin_indices, d_encoding, 1.0, 0.0, stack=stack)
+    encoding = _LVR_encoding(bin_indices, bin_ratios, d_encoding, 1.0, 0.0, stack=stack)
     return encoding if is_torch else encoding.numpy()
 
 
@@ -667,11 +667,11 @@ def compute_piecewise_linear_encoding(X, bin_edges, *, stack: bool):
             X_ple = compute_piecewise_linear_encoding(X, bin_edges, stack=False)
     """
     bin_indices = compute_bin_indices(X, bin_edges)
-    bin_ratios = compute_bin_linear_ratios(X, bin_indices, bin_edges)
+    bin_ratios = compute_bin_linear_ratios(X, bin_edges, bin_indices)
     bin_counts = [len(x) - 1 for x in bin_edges]
     return piecewise_linear_encoding(
-        bin_ratios,
         bin_indices,
+        bin_ratios,
         d_encoding=max(bin_counts) if stack else bin_counts,
         stack=stack,
     )
