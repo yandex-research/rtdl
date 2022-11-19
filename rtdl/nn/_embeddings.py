@@ -353,6 +353,7 @@ class PiecewiseLinearEncoder(nn.Module):
         self.expect_ratios_and_indices = expect_ratios_and_indices
 
     def forward(self, x: Tensor, indices: Optional[Tensor] = None) -> Tensor:
+        bin_edges = self.bin_edges.split(self.edge_counts)
         if indices is None:
             if self.expect_ratios_and_indices:
                 raise ValueError(
@@ -360,7 +361,6 @@ class PiecewiseLinearEncoder(nn.Module):
                     ' because the argument expect_ratios_and_indices was set to `True` in the constructor'
                 )
             # x represents raw values
-            bin_edges = self.bin_edges.split(self.edge_counts)
             return compute_piecewise_linear_encoding(x, bin_edges, stack=self.stack)
         else:
             if not self.expect_ratios_and_indices:
@@ -368,9 +368,9 @@ class PiecewiseLinearEncoder(nn.Module):
                     'The module expects one arguments (raw numerical feature values),'
                     ' because the argument expect_ratios_and_indices was set to `False` in the constructor'
                 )
-            # x represents ratios
+            ratios = x
             return piecewise_linear_encoding(
-                x, indices, self.d_encoding, stack=self.stack
+                bin_edges, ratios, indices, self.d_encoding, stack=self.stack
             )
 
 

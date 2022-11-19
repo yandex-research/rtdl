@@ -517,6 +517,7 @@ def _LVR_encoding(
 
 @overload
 def piecewise_linear_encoding(
+    bin_edges: Tensor,
     bin_indices: Tensor,
     bin_ratios: Tensor,
     d_encoding: Union[int, List[int]],
@@ -528,6 +529,7 @@ def piecewise_linear_encoding(
 
 @overload
 def piecewise_linear_encoding(
+    bin_edges: np.ndarray,
     bin_indices: np.ndarray,
     bin_ratios: np.ndarray,
     d_encoding: Union[int, List[int]],
@@ -538,7 +540,12 @@ def piecewise_linear_encoding(
 
 
 def piecewise_linear_encoding(
-    bin_indices, bin_ratios, d_encoding: Union[int, List[int]], *, stack: bool
+    bin_edges,
+    bin_indices,
+    bin_ratios,
+    d_encoding: Union[int, List[int]],
+    *,
+    stack: bool,
 ):
     """Construct piecewise linear encoding as described in [1].
 
@@ -577,9 +584,10 @@ def piecewise_linear_encoding(
             bin_indices = compute_bin_indices(X, bin_edges)
             bin_ratios = compute_bin_linear_ratios(X, bin_edges, bin_indices)
             bin_counts = [len(x) - 1 for x in bin_edges]
-            X_ple = piecewise_linear_encoding(bin_indices, bin_ratios, bin_counts, stack=True)
+            X_ple = piecewise_linear_encoding(bin_edges, bin_indices, bin_ratios, bin_counts, stack=True)
     """
     is_torch = isinstance(bin_ratios, Tensor)
+    bin_edges = torch.as_tensor(bin_ratios)
     bin_ratios = torch.as_tensor(bin_ratios)
     bin_indices = torch.as_tensor(bin_indices)
 
@@ -605,12 +613,13 @@ def piecewise_linear_encoding(
         raise ValueError(message)
     del lower_bounds
 
-    # upper_bounds = torch.ones_like(bin_ratios)
-    # is_last_bin = bin_indices + 1 == as_tensor(list(map(len, bin_edges)))
-    # upper_bounds[is_last_bin] = math.inf
-    # if (bin_ratios > upper_bounds).any():
-    #     raise ValueError(message)
-    # del upper_bounds
+    upper_bounds = torch.ones_like(bin_ratios)
+    # it is important to use bin_edges here, not d_encoding
+    is_last_bin = bin_indices + 1 == as_tensor(list(map(len, bin_edges)))
+    upper_bounds[is_last_bin] = math.inf
+    if (bin_ratios > upper_bounds).any():
+        raise ValueError(message)
+    del upper_bounds
 
     encoding = _LVR_encoding(bin_indices, bin_ratios, d_encoding, 1.0, 0.0, stack=stack)
     return encoding if is_torch else encoding.numpy()
@@ -670,6 +679,7 @@ def compute_piecewise_linear_encoding(X, bin_edges, *, stack: bool):
     bin_ratios = compute_bin_linear_ratios(X, bin_edges, bin_indices)
     bin_counts = [len(x) - 1 for x in bin_edges]
     return piecewise_linear_encoding(
+        bin_edges,
         bin_indices,
         bin_ratios,
         d_encoding=max(bin_counts) if stack else bin_counts,
