@@ -390,7 +390,7 @@ class PeriodicEmbeddings(nn.Module):
             n_features = 3
             d_embedding = 4
             x = torch.randn(batch_size, n_features)
-            sigma = 1.0  # THIS HYPERPARAMETER MUST BE TUNED CAREFULLY
+            sigma = 0.1  # THIS HYPERPARAMETER MUST BE TUNED CAREFULLY
             m = PeriodicEmbeddings(n_features, d_embedding, sigma)
             # for better performance: m = nn.Sequantial(PeriodicEmbeddings(...), NLinear(...))
             assert m(x).shape == (batch_size, n_features, d_embedding)
@@ -634,7 +634,7 @@ def make_plr_embeddings(
             batch_size = 2
             n_features = 3
             d_periodic_embedding = 4
-            sigma = 5.0  # THIS HYPERPARAMETER MUST BE TUNED CAREFULLY
+            sigma = 0.1  # THIS HYPERPARAMETER MUST BE TUNED CAREFULLY
             d_embedding = 6
             x = torch.randn(batch_size, n_features)
             m = make_plr_embeddings(n_features, d_embedding, d_periodic_embedding, sigma)
