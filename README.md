@@ -12,7 +12,7 @@ Feel free to report [issues](https://github.com/Yura52/rtdl/issues) and post [qu
 
 | Name                                                          | Location                                                        | Comment        |
 | :------------------------------------------------------------ | :-------------------------------------------------------------- | :------------- |
-| Revisiting Pretrarining Objectives for Tabular Deep Learning  | [link](https://github.com/puhsu/tabular-dl-pretrain-objectives) | arXiv 2022     |
+| Revisiting Pretraining Objectives for Tabular Deep Learning   | [link](https://github.com/puhsu/tabular-dl-pretrain-objectives) | arXiv 2022     |
 | On Embeddings for Numerical Features in Tabular Deep Learning | [link](https://github.com/Yura52/tabular-dl-num-embeddings)     | arXiv 2022     |
 | Revisiting Deep Learning Models for Tabular Data              | [link](https://github.com/Yura52/tabular-dl-revisiting-models)  | NeurIPS 2021   |
 | `rtdl`                                                        | [link](https://github.com/Yura52/rtdl)                          | Python package |
