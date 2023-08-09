@@ -587,7 +587,6 @@ def piecewise_linear_encoding(
             X_ple = piecewise_linear_encoding(bin_edges, bin_indices, bin_ratios, bin_counts, stack=True)
     """
     is_torch = isinstance(bin_ratios, Tensor)
-    bin_edges = torch.as_tensor(bin_edges)
     bin_ratios = torch.as_tensor(bin_ratios)
     bin_indices = torch.as_tensor(bin_indices)
 
