@@ -1,18 +1,22 @@
 # Research on Tabular Deep Learning
 
-**For paper implementations, see the section ["Papers and projects"](#papers-and-projects).**
+## ANNOUNCEMENT
+- **The `rtdl` package will be splitted into individual packages:**
+    - [x] ([already available](https://yandex-research.github.io/tabular-dl-revisiting-models)) "Revisiting Deep Learning Models for Tabular Data"
+    - [ ] (planned) "On Embeddings for Numerical Features in Tabular Deep Learning"
+    - [ ] (planned) "TabR: Unlocking the Power of Retrieval-Augmented Tabular Deep Learning" 
+- **You can still follow this repository to stay up to date with new projects and papers.** Press "Watch" to receive notifications.
 
-`rtdl` is a PyTorch-based package providing a user-friendly API for the main models and concepts from our [papers](#papers-and-projects). See the [documentation](https://Yura52.github.io/rtdl).
-
-Press "Watch" to stay up to date with new papers and releases!
+---
 
 Feel free to report [issues](https://github.com/Yura52/rtdl/issues) and post [questions/feedback/ideas](https://github.com/Yura52/rtdl/discussions).
 
 ## Papers and projects
 
-| Name                                                          | Location                                                        | Comment        |
-| :------------------------------------------------------------ | :-------------------------------------------------------------- | :------------- |
-| Revisiting Pretraining Objectives for Tabular Deep Learning   | [link](https://github.com/puhsu/tabular-dl-pretrain-objectives) | arXiv 2022     |
-| On Embeddings for Numerical Features in Tabular Deep Learning | [link](https://github.com/Yura52/tabular-dl-num-embeddings)     | arXiv 2022     |
-| Revisiting Deep Learning Models for Tabular Data              | [link](https://github.com/Yura52/tabular-dl-revisiting-models)  | NeurIPS 2021   |
-| `rtdl`                                                        | [link](https://github.com/Yura52/rtdl)                          | Python package |
+| Name                                                                   | Year  | Link                                      |
+| :--------------------------------------------------------------------- | :---: | :---------------------------------------- |
+| TabR: Unlocking the Power of Retrieval-Augmented Tabular Deep Learning | 2023  | [arXiv](https://arxiv.org/abs/2307.14338) |
+| TabDDPM: Modelling Tabular Data with Diffusion Models                  | 2022  | [arXiv](https://arxiv.org/abs/2209.15421) |
+| Revisiting Pretraining Objectives for Tabular Deep Learning            | 2022  | [arXiv](https://arxiv.org/abs/2207.03208) |
+| On Embeddings for Numerical Features in Tabular Deep Learning          | 2022  | [arXiv](https://arxiv.org/abs/2203.05556) |
+| Revisiting Deep Learning Models for Tabular Data                       | 2021  | [arXiv](https://arxiv.org/abs/2106.11959) |
