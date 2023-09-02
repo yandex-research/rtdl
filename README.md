@@ -1,8 +1,16 @@
 # Research on Tabular Deep Learning
 
-Follow this repository to stay up to date with our new papers, packages and projects on tabular deep learning. Press "Watch" to receive notifications.
+**Project status (as of September 2, 2023):**
+- The table below is up-to-date.
+- The following papers have their individual Python packages:
+    - ["Revisiting Deep Learning Models for Tabular Data"](https://yandex-research.github.io/tabular-dl-revisiting-models)
+- The `rtdl` package is not actively maintained.
 
-Feel free to report [issues](https://github.com/Yura52/rtdl/issues) and post [questions/feedback/ideas](https://github.com/Yura52/rtdl/discussions).
+---
+
+To follow announcements on new papers, packages and projects on tabular deep learning, press "Watch -> Custom -> Releases".
+
+Feel free to post questions, feedback and ideas in [discussions](https://github.com/Yura52/rtdl/discussions).
 
 | Name                                                                   | Year  | Link                                      |
 | :--------------------------------------------------------------------- | :---: | :---------------------------------------- |
