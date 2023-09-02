@@ -2,10 +2,8 @@
 
 ## ANNOUNCEMENT
 
-- **The `rtdl` package will be split into individual packages:**
-    - [x] ([already available](https://yandex-research.github.io/tabular-dl-revisiting-models)) "Revisiting Deep Learning Models for Tabular Data"
-    - [ ] (planned) "On Embeddings for Numerical Features in Tabular Deep Learning"
-    - [ ] (planned) "TabR: Unlocking the Power of Retrieval-Augmented Tabular Deep Learning" 
+- **The `rtdl` package will be split into individual packages.** The following packages are already available:
+    - [paper_tabular_dl_revisiting_models](https://yandex-research.github.io/tabular-dl-revisiting-models)
 - **You can still follow this repository to stay up to date with new projects and papers.** Press "Watch" to receive notifications.
 
 ---
