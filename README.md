@@ -8,7 +8,7 @@
 
 ---
 
-To receive notifications about our new papers, packages and projects on tabular deep learning, press "Watch -> Custom -> Releases".
+To receive notifications about our new papers, packages and projects on tabular deep learning, in the GitHub interface, press "Watch -> Custom -> Releases".
 
 Feel free to report [issues](https://github.com/Yura52/rtdl/issues) and post [questions/feedback/ideas](https://github.com/Yura52/rtdl/discussions).
 
