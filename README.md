@@ -8,9 +8,9 @@
 
 ---
 
-To follow announcements on new papers, packages and projects on tabular deep learning, press "Watch -> Custom -> Releases".
+To receive notifications about our new papers, packages and projects on tabular deep learning, press "Watch -> Custom -> Releases".
 
-Feel free to post questions, feedback and ideas in [discussions](https://github.com/Yura52/rtdl/discussions).
+Feel free to report [issues](https://github.com/Yura52/rtdl/issues) and post [questions/feedback/ideas](https://github.com/Yura52/rtdl/discussions).
 
 Our projects on tabular deep learning:
 
