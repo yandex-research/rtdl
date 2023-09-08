@@ -3,6 +3,7 @@
 **Project status (as of September 2, 2023):**
 - The table below is up-to-date.
 - News about the `rtdl` package coming soon, stay tuned!
+    - Please note that the code in the "main" branch not released to PyPI is unstable and should not be used
 
 ---
 
