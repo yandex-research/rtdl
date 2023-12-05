@@ -1,6 +1,6 @@
 """Research on tabular deep learning."""
 
-__version__ = '0.0.14'
+__version__ = '0.0.14.dev7'
 
 import warnings
 
