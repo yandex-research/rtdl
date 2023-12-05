@@ -1,8 +1,20 @@
+"""@private"""
 import enum
 import math
 import time
 import warnings
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union, cast
+from typing import (
+    Any,
+    Callable,
+    ClassVar,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+    cast,
+)
 
 import torch
 import torch.nn as nn
@@ -923,7 +935,10 @@ class Transformer(nn.Module):
 
     This module is the backbone of `FTTransformer`."""
 
-    WARNINGS = {'first_prenormalization': True, 'prenormalization': True}
+    WARNINGS: ClassVar[Dict[str, bool]] = {
+        'first_prenormalization': True,
+        'prenormalization': True,
+    }
 
     class FFN(nn.Module):
         """The Feed-Forward Network module used in every `Transformer` block."""

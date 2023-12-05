@@ -3,28 +3,16 @@ build-backend = "flit_core.buildapi"
 requires = ["flit_core >=3.2,<4"]
 
 [project]
-authors = [
-    {name = "rtdl authors", email = "strausmg@gmail.com"}
-]
+authors = [{ name = "Yury Gorishniy" }]
 classifiers = [
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.7",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
-    "Topic :: Scientific/Engineering :: Mathematics",
-    "Topic :: Software Development :: Libraries :: Python Modules"
+    "Topic :: Software Development :: Libraries :: Python Modules",
 ]
-dependencies = [
-    "numpy >=1.18,<2",
-    "scikit-learn >=1.0,<2",
-    "torch >= 1.7,<2",
-    "typing-extensions >= 4.0.1,<5",
-]
+dependencies = ["torch >=1.8,<3"]
 dynamic = ["version", "description"]
 keywords = [
     "artificial intelligence",
@@ -34,19 +22,19 @@ keywords = [
     "pytorch",
     "research",
     "torch",
+    "tabular",
+    "tabular data",
 ]
-license = {file = "LICENSE"}
+license = { file = "LICENSE" }
 name = "rtdl"
-requires-python = ">=3.7"
-urls = {Documentation = "https://Yura52.github.io/rtdl", Code = "https://github.com/Yura52/rtdl"}
+requires-python = ">=3.8"
+
+[project.urls]
+Code = "https://github.com/yandex-research/rtdl"
+Documentation = "https://github.com/yandex-research/rtdl"
 
 [tool.black]
 skip_string_normalization = true
-
-[tool.coverage.run]
-branch = true
-omit = "rtdl/tests/*"
-source = "rtdl"
 
 [tool.flit.module]
 name = "rtdl"
@@ -59,6 +47,17 @@ known_first_party = ["rtdl"]
 [tool.mypy]
 check_untyped_defs = true
 ignore_missing_imports = true
+
+[tool.ruff]
+line-length = 88
+extend-select = ["RUF", "UP", "E101", "E501"]
+target-version = "py38"
+
+[tool.ruff.per-file-ignores]
+"rtdl/_utils.py" = ["E501"]
+"rtdl/data.py" = ["E501"]
+"rtdl/modules.py" = ["E501"]
+"rtdl/nn/*" = ["E501"]
 
 [[tool.mypy.overrides]]
 module = "rtdl.*.tests.*"

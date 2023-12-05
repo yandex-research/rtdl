@@ -1,51 +1,30 @@
-.PHONY: default clean coverage _docs docs dtest format lint pages pre-commit spelling test typecheck
+.PHONY: default clean doctest lint pre-commit typecheck
 
-PYTEST_CMD = pytest rtdl
-VIEW_HTML_CMD = open
-DOCS_DIR = docs
+PACKAGE_ROOT = rtdl
 
 default:
 	echo "Hello, World!"
 
 clean:
-	find rtdl -type f -name "*.py[co]" -delete -o -type d -name __pycache__ -delete
-	rm -f .coverage
+	find . -type f -name "*.py[co]" -delete -o -type d -name __pycache__ -delete
 	rm -rf .ipynb_checkpoints
 	rm -rf .mypy_cache
 	rm -rf .pytest_cache
+	rm -rf .ruff_cache
 	rm -rf dist
-	rm -rf $(DOCS_DIR)/api
-	make -C $(DOCS_DIR) clean
 
-coverage:
-	coverage run -m $(PYTEST_CMD)
-	coverage report -m
-
-docs:
-	make -C $(DOCS_DIR) html
-
-_docs: docs
-	$(VIEW_HTML_CMD) $(DOCS_DIR)/build/html/index.html
-
-dtest:
-	make -C $(DOCS_DIR) doctest
-
-spelling:
-	if [[ $(shell uname -m) != "arm64" ]]; then\
-		make -C $(DOCS_DIR) docs SPHINXOPTS="-W -b spelling";\
-	fi
+doctest:
+	xdoctest $(PACKAGE_ROOT)
+	python test_code_blocks.py rtdl/revisiting_models/README.md
+	python test_code_blocks.py rtdl/num_embeddings/README.md
 
 lint:
-	python -m pre_commit_hooks.debug_statement_hook **/*.py
-	isort rtdl --check-only
-	black rtdl --check
-	flake8 rtdl
+	isort $(PACKAGE_ROOT) --check-only
+	black $(PACKAGE_ROOT) --check
+	ruff check .
 
-# the order is important: clean must be first, docs must precede dtest
-pre-commit: clean lint typecheck test docs dtest spelling
-
-test:
-	PYTHONPATH='.' $(PYTEST_CMD) $(ARGV)
+# The order is important.
+pre-commit: clean lint doctest typecheck
 
 typecheck:
-	mypy rtdl
+	mypy $(PACKAGE_ROOT)
