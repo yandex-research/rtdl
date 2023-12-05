@@ -33,11 +33,11 @@ subscribe to releases in the GitHub interface: "Watch -> Custom -> Releases".*
 > 
 > Python packages are located inside paper repositories.
 
-| Name                                                                   | Year  | Paper                                     | Code                                                                        | Package                  |
-| :--------------------------------------------------------------------- | :---: | :---------------------------------------- | :-------------------------------------------------------------------------- | :----------------------- |
-| TabR: Unlocking the Power of Retrieval-Augmented Tabular Deep Learning | 2023  | [arXiv](https://arxiv.org/abs/2307.14338) | [GitHub](https://github.com/yandex-research/tabular-dl-tabr)                | -                        |
-| TabDDPM: Modelling Tabular Data with Diffusion Models                  | 2022  | [arXiv](https://arxiv.org/abs/2209.15421) | [GitHub](https://github.com/yandex-research/tab-ddpm)                       | -                        |
-| Revisiting Pretraining Objectives for Tabular Deep Learning            | 2022  | [arXiv](https://arxiv.org/abs/2207.03208) | [GitHub](https://github.com/yandex-research/tabular-dl-pretrain-objectives) | -                        |
-| On Embeddings for Numerical Features in Tabular Deep Learning          | 2022  | [arXiv](https://arxiv.org/abs/2203.05556) | [GitHub](https://github.com/yandex-research/tabular-dl-num-embeddings)      | `rtdl_num_embeddings`    |
-| Revisiting Deep Learning Models for Tabular Data                       | 2021  | [arXiv](https://arxiv.org/abs/2106.11959) | [GitHub](https://github.com/yandex-research/tabular-dl-revisiting-models)   | `rtdl_revisiting_models` |
-| Neural Oblivious Decision Ensembles for Deep Learning on Tabular Data  | 2019  | [arXiv](https://arxiv.org/abs/1909.06312) | [GitHub](https://github.com/Qwicen/node)                                    | -                        |
+| Name                                                                   | Year  | Paper                                     | Code                                                                      | Package                  |
+| :--------------------------------------------------------------------- | :---: | :---------------------------------------- | :------------------------------------------------------------------------ | :----------------------- |
+| TabR: Unlocking the Power of Retrieval-Augmented Tabular Deep Learning | 2023  | [arXiv](https://arxiv.org/abs/2307.14338) | [GitHub](https://github.com/yandex-research/tabular-dl-tabr)              | -                        |
+| TabDDPM: Modelling Tabular Data with Diffusion Models                  | 2022  | [arXiv](https://arxiv.org/abs/2209.15421) | [GitHub](https://github.com/yandex-research/tab-ddpm)                     | -                        |
+| Revisiting Pretraining Objectives for Tabular Deep Learning            | 2022  | [arXiv](https://arxiv.org/abs/2207.03208) | [GitHub](https://github.com/puhsu/tabular-dl-pretrain-objectives)         | -                        |
+| On Embeddings for Numerical Features in Tabular Deep Learning          | 2022  | [arXiv](https://arxiv.org/abs/2203.05556) | [GitHub](https://github.com/yandex-research/tabular-dl-num-embeddings)    | `rtdl_num_embeddings`    |
+| Revisiting Deep Learning Models for Tabular Data                       | 2021  | [arXiv](https://arxiv.org/abs/2106.11959) | [GitHub](https://github.com/yandex-research/tabular-dl-revisiting-models) | `rtdl_revisiting_models` |
+| Neural Oblivious Decision Ensembles for Deep Learning on Tabular Data  | 2019  | [arXiv](https://arxiv.org/abs/1909.06312) | [GitHub](https://github.com/Qwicen/node)                                  | -                        |
