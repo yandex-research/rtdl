@@ -26,6 +26,5 @@ lint:
 # The order is important.
 pre-commit: clean lint doctest typecheck
 
-
 typecheck:
 	mypy $(PACKAGE_ROOT)
