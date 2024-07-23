@@ -48,7 +48,11 @@ pip install "scikit-learn>=1.0,<2"
 
 # Papers
 
-(2023) TabR: Tabular Deep Learning Meets Nearest Neighbors in 2023
+(2024) TabReD: A Benchmark of Tabular Machine Learning in-the-Wild
+<br> [Paper](https://arxiv.org/abs/2406.19380)
+&nbsp; [Code](https://github.com/yandex-research/tabred)
+
+(2023) TabR: Tabular Deep Learning Meets Nearest Neighbors
 <br> [Paper](https://arxiv.org/abs/2307.14338)
 &nbsp; [Code](https://github.com/yandex-research/tabular-dl-tabr)
 
