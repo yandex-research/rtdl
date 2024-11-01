@@ -2,12 +2,7 @@
 
 RTDL (**R**esearch on **T**abular **D**eep **L**earning) is a collection of papers and packages on deep learning for tabular data.
 
-<!-- :bell: *To follow announcements on new papers and projects,
-subscribe to releases in the GitHub interface: "Watch -> Custom -> Releases".* -->
-
-:bell: *To follow announcements on new papers and projects*:
-- *Follow the authors of the papers on Twitter and GitHub.*
-- *Subscribe to releases in this GitHub repository: "Watch -> Custom -> Releases".*
+:bell: *To follow announcements on new papers and projects, subscribe to releases in this GitHub repository: "Watch -> Custom -> Releases".*
 
 > [!NOTE]
 > The previous `rtdl` package is now replaced
