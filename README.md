@@ -43,10 +43,6 @@ pip install "scikit-learn>=1.0,<2"
 
 # Papers
 
-(2024) TabM: Advancing Tabular Deep Learning with Parameter-Efficient Ensembling
-<br> [Paper](https://arxiv.org/abs/2410.24210)
-&nbsp; [Code](https://github.com/yandex-research/tabm)
-
 (2024) TabReD: A Benchmark of Tabular Machine Learning in-the-Wild
 <br> [Paper](https://arxiv.org/abs/2406.19380)
 &nbsp; [Code](https://github.com/yandex-research/tabred)
