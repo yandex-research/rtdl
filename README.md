@@ -1,49 +1,39 @@
 # RTDL (Research on Tabular Deep Learning)
 
-RTDL (**R**esearch on **T**abular **D**eep **L**earning) is a collection of papers and packages on deep learning for tabular data.
+RTDL (**R**esearch on **T**abular **D**eep **L**earning) is a collection of papers and packages
+on deep learning for tabular data.
 
-:bell: *To follow announcements on new papers and projects, subscribe to releases in this GitHub repository: "Watch -> Custom -> Releases".*
+:bell: *To follow announcements on new projects, subscribe to releases in this GitHub repository:
+"Watch -> Custom -> Releases".*
 
 > [!NOTE]
-> The previous `rtdl` package is now replaced
-> with individual packages (see the next sections).
-> If you used <code>rtdl</code>, please, read the details.
+> The list of projects below is up-to-date, but the `rtdl` Python package is deprecated.
+> If you used the <code>rtdl</code> package, please, read the details.
 >
 > <details>
-> <summary>Show details</summary>
 >
-> 1. This repository is **NOT** deprecated.
-> 2. However, the package `rtdl`
->    is deprecated and replaced with individual packages.
-> 3. If you used the latest `rtdl==0.0.13` installed from PyPI (not from GitHub!)
+> 1. First, to clarify, this repository is **NOT** deprecated,
+>    only the package `rtdl` is deprecated: it is replaced with other packages.
+> 2. If you used the latest `rtdl==0.0.13` installed from PyPI (not from GitHub!)
 >    as `pip install rtdl`, then the same models
 >    (MLP, ResNet, FT-Transformer) can be found in the `rtdl_revisiting_models` package,
 >    though API is slightly different.
-> 4. :exclamation: **If you used the unfinished code from the main branch, it is highly**
+> 3. :exclamation: **If you used the unfinished code from the main branch, it is highly**
 >    **recommended to switch to the new packages.** In particular,
 >    the unfinished implementation of embeddings for continuous features
->    contained many unresolved issues (the new `rtdl_num_embeddings` package, in turn,
+>    contained many unresolved issues (the `rtdl_num_embeddings` package, in turn,
 >    is more efficient and correct).
 >
 > </details>
 
-# Installation
-
-**The documentation is available through the "Package" links in the ["Papers"](#papers) section.**
-
-The following snippet installs all available packages
-including optional dependencies.
-
-```
-pip install rtdl_num_embeddings
-pip install rtdl_revisiting_models
-
-pip install "scikit-learn>=1.0,<2"
-```
-
 # Papers
 
-(2024) TabReD: A Benchmark of Tabular Machine Learning in-the-Wild
+(2024) TabM: Advancing Tabular Deep Learning with Parameter-Efficient Ensembling
+<br> [Paper](https://arxiv.org/abs/2410.24210)
+&nbsp; [Code](https://github.com/yandex-research/tabm)
+&nbsp; [Usage example](https://github.com/yandex-research/tabm/blob/main/example.ipynb)
+
+(2024) TabReD: Analyzing Pitfalls and Filling the Gaps in Tabular Deep Learning Benchmarks
 <br> [Paper](https://arxiv.org/abs/2406.19380)
 &nbsp; [Code](https://github.com/yandex-research/tabred)
 
