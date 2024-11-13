@@ -31,7 +31,7 @@ on deep learning for tabular data.
 (2024) TabM: Advancing Tabular Deep Learning with Parameter-Efficient Ensembling
 <br> [Paper](https://arxiv.org/abs/2410.24210)
 &nbsp; [Code](https://github.com/yandex-research/tabm)
-&nbsp; [Usage example](https://github.com/yandex-research/tabm/blob/main/example.ipynb)
+&nbsp; [Usage](https://github.com/yandex-research/tabm#using-tabm-in-practice)
 
 (2024) TabReD: Analyzing Pitfalls and Filling the Gaps in Tabular Deep Learning Benchmarks
 <br> [Paper](https://arxiv.org/abs/2406.19380)
