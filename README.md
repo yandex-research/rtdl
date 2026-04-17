@@ -28,6 +28,17 @@ on deep learning for tabular data.
 
 # Papers
 
+(2026) Benchmarking Optimizers for MLPs in Tabular Deep Learning
+<br> [Paper](https://arxiv.org/abs/2604.15297)
+&nbsp; [Code](https://github.com/yandex-research/tabular-dl-optimizers)
+
+(2025) Unveiling the Role of Data Uncertainty in Tabular Deep Learning
+<br> [Paper](https://arxiv.org/abs/2509.04430)
+
+(2025) On Finetuning Tabular Foundation Models
+<br> [Paper](https://arxiv.org/abs/2506.08982)
+&nbsp; [Code](https://github.com/yandex-research/tabpfn-finetuning)
+
 (2024) TabM: Advancing Tabular Deep Learning with Parameter-Efficient Ensembling
 <br> [Paper](https://arxiv.org/abs/2410.24210)
 &nbsp; [Code](https://github.com/yandex-research/tabm)
